@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+data_processing/pre_processed_books/*
+data_processing/processed_books/*
+data_processing/marker
+
 # C extensions
 *.so
 
