@@ -35,6 +35,7 @@ def get_title(page):
 
 def get_categories(page):
     """
+    TODO: check that this works
     Extract the categories of a page.
     The categories are the text between the [[Category: and ]] tags.
     """
@@ -45,13 +46,14 @@ def get_categories(page):
     return categories
 
 
-def scroll_pages(print_condition=lambda x: True):
+def scroll_pages(stop_condition=lambda x: True):
     """
     Iterate over all pages in the wikipedia dump file.
     If print_condition(page) is True, print the page and
     wait for the user to press Enter before continuing.
     """
     i = 0
+    titles = []
     with open(dump_path, "r") as f:
         while True:
             i += 1
@@ -62,14 +64,16 @@ def scroll_pages(print_condition=lambda x: True):
                 break
             title = get_title(page)
             categories = get_categories(page)
-            if print_condition(page):
-                print(page)
-                input('Press Enter to continue...')
+            if stop_condition(page):
+                titles.append(title)
+                # input('Press Enter to continue...')
+    return titles
 
 
 def stop_condition(page):
     categories = get_categories(page)
     for category in categories:
+        category = category.replace(" ", "_")
         if category.lower() in selected_categories:
             return True
     return False
@@ -94,10 +98,12 @@ def subsample_pages(selected_categories, write_path="subsample.xml"):
                 if stop_condition(page):
                     g.write(page)
 
-
 subsample_pages(selected_categories)
 
-# scroll_pages(print_condition=stop_condition)
+dump_path = "subsample.xml"
+titles = scroll_pages()
+with open("titles.txt", "w") as f:
+    f.write('\n'.join(sorted(titles)))
 
 
 # with open(dump_path, "r") as f:
