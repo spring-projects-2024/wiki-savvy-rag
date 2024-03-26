@@ -1,27 +1,13 @@
 import json
 
+from wikipedia_data.utils import extract_next_page
+
 dump_path = "../../enwiki-20231220-pages-articles-multistream.xml"
 json_path = "selected_categories.json"
 
 with open(json_path, "r") as f:
     selected_categories = json.load(f)
 selected_categories = set(selected_categories)
-
-
-def extract_next_page(f):
-    """
-    Extract the next page from an xml file.
-    pages are separated by <page> and </page> tags.
-    """
-    page = ""
-    print_ = False
-    for line in f:
-        if line.strip() == "<page>":
-            page = ""
-        page += line
-        if line.strip() == "</page>":
-            return page
-    return None
 
 
 def get_title(page):
@@ -97,6 +83,8 @@ def subsample_pages(selected_categories, write_path="subsample.xml"):
                     break
                 if stop_condition(page):
                     g.write(page)
+
+
 
 subsample_pages(selected_categories)
 
