@@ -1,17 +1,20 @@
 # todo:
 # remove comments
 # execute macros
-
+import concurrent.futures
 import os
 import tarfile
+import time
+from typing import List
 from urllib.request import urlretrieve
-
 import arxiv
+import tqdm
+from refextract import extract_references_from_url
 
-c = arxiv.Client()
+arx_client = arxiv.Client(delay_seconds=.0)
 
 
-def get_id_from_title(title, client):
+def get_info_from_title(title, client) -> arxiv.Result:
     search = arxiv.Search(
         query=title,
         max_results=1,
@@ -20,10 +23,23 @@ def get_id_from_title(title, client):
     results = client.results(search)
 
     for result in results:
-        print(f"{title} - {result.title}")
-        return result.get_short_id()
+        return result
 
     raise Exception(f"No papers with title {title} found")
+
+
+def get_title_from_id(id, client) -> str:
+    search = arxiv.Search(
+        query=id,
+        max_results=1,
+    )
+
+    results = client.results(search)
+
+    for result in results:
+        return result.title
+
+    raise Exception(f"No papers with id {id} found")
 
 
 def download_source_files(id):
@@ -48,40 +64,94 @@ def download_source_files(id):
             print(f"Error extracting {path}")
 
 
-def get_cited_papers(id):
-    extensions = [".bib", ".bbl"]
-    # iterate over files in directory
-    # check if file has extension in extensions
-    # open file and extract citations
-    # return list of citations
-    bib_text = ""
-    bbl_text = ""
+def get_references_raw(id) -> List:
+    """
+    Extract list of references from an ArXiv paper. Given the ArXiv ID of the paper,
+     builds the url of pdf version (required for the retrieval)
+    :param id: paper id
+    """
+    reference = extract_references_from_url("http://arxiv.org/pdf/" + str(id) + ".pdf")
+    return reference
+
+
+def get_text_from_extensions(id, extensions) -> str:
+    """
+    Returns the text of all files in the directory with the given extensions
+    :param id: paper id
+    :param extensions: list of extensions to search for
+    :return: text of all files with the given extensions
+    """
+    text = ""
     with os.scandir(id) as entries:
         for entry in entries:
             if entry.is_file() and entry.name.endswith(tuple(extensions)):
                 with open(entry, "r") as file:
-                    if entry.name.endswith(".bib"):
-                        bib_text += file.read()
-                    if entry.name.endswith(".bbl"):
-                        bbl_text += file.read()
-
-    return bib_text, bbl_text
+                    text += file.read()
+    return text
 
 
-titles = [
-    "ra-dit",
-    "dino",
-    "flat minima optimizers",
-    "yolo",
-    "barker dynamics"
-]
+def parse_single_ref(ref) -> str | None:
+    """
+    :param ref: reference dict as output by refextract
+    :return: id of the reference if found, None otherwise
+    """
+    if "reportnumber" in ref:
+        rpnum = ref["reportnumber"]
+        rpnum = rpnum[0].replace("arXiv:", "")
+        return rpnum
 
-# for t in titles:
-#     x = get_id_from_title(t, c)
-#     download_source_files(x)
+    if "raw_ref" in ref:
+        raw = ref["raw_ref"]
+        # remove [number] from the beginning
+        raw = raw[0].split("]")[1]
+        pieces = raw.split(".")
+        pieces.sort(key=len, reverse=True)
+        for p in pieces:
 
-bib, bbl = get_cited_papers("2310.01352v3")
-print(bib)
-print(bbl)
+            # if only contains spaces and numbers continue
+            if all(ch == "," or ch.isdigit() or ch.isspace() for ch in p):
+                continue
 
-d = 0
+            p = p.strip()
+            try:
+                info_paper = get_info_from_title(p, arx_client)
+                att_id = info_paper.get_short_id()
+                title = info_paper.title
+
+                if title.lower() in raw.lower():
+                    return att_id
+            except:
+                continue
+    print(ref["raw_ref"])
+    return None
+
+
+def parse_references(references):
+    """
+    :param references: list of references as output by refextract
+    :return: list of ids of the references, not ordered and without the ones that could not be found
+    """
+
+    MAX_THREADS = 100
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
+        results = executor.map(parse_single_ref, references)
+
+    id_list = [result for result in results if result is not None]
+
+    return id_list
+
+
+if __name__ == '__main__':
+    title = "Deep Residual Learning for Image Recognition"  # random paper, 2016
+
+    id = get_info_from_title(title, arx_client).get_short_id()
+    print(f"{id=}")
+    print(f"ID found in {time.process_time()} seconds")
+
+    references = get_references_raw(id)
+    print(f"Number of references to search: {len(references)}")
+    print(f"References found in {time.process_time()} seconds")
+
+    ids = parse_references(references)
+    print(f"Number of references found: {len(ids)}")
+    print(f"References parsed in {time.process_time()} seconds")
