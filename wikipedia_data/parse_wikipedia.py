@@ -90,7 +90,7 @@ subsample_pages(selected_categories)
 
 dump_path = "subsample.xml"
 titles = scroll_pages()
-with open("titles.txt", "w") as f:
+with open("subsampled_titles.txt", "w") as f:
     f.write('\n'.join(sorted(titles)))
 
 
