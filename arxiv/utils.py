@@ -14,21 +14,33 @@ from refextract import extract_references_from_url
 arx_client = arxiv.Client(delay_seconds=.0)
 
 
-def get_info_from_title(title, client) -> arxiv.Result:
+def get_info_from_title(title: str, client: arxiv.Client = arx_client) -> arxiv.Result:
+    """
+    Get info from a paper given its title.
+    :raises Exception if no paper is found
+    """
     search = arxiv.Search(
         query=title,
-        max_results=1,
+        max_results=20,
+        sort_by=arxiv.SortCriterion.Relevance,
     )
 
     results = client.results(search)
 
+    results = list(results)
+
     for result in results:
-        return result
+        if result.title.lower() == title.lower():
+            return result
 
     raise Exception(f"No papers with title {title} found")
 
 
-def get_title_from_id(id, client) -> str:
+def get_title_from_id(id: str, client: arxiv.Client) -> str:
+    """
+    Get the title from the id.
+    :raises exception if no paper is found
+    """
     search = arxiv.Search(
         query=id,
         max_results=1,
@@ -42,7 +54,7 @@ def get_title_from_id(id, client) -> str:
     raise Exception(f"No papers with id {id} found")
 
 
-def download_source_files(id):
+def download_source_files(id: str):
     """
     Skips downloading and extracting if the file already exists
     :param id:
@@ -109,7 +121,7 @@ def parse_single_ref(ref) -> str | None:
         for p in pieces:
 
             # if only contains spaces and numbers continue
-            if all(ch == "," or ch.isdigit() or ch.isspace() for ch in p):
+            if all(ch == "," or ch.isdigit() or ch.isspace() for ch in p) or len(p) < 10:
                 continue
 
             p = p.strip()
@@ -142,7 +154,7 @@ def parse_references(references):
 
 
 if __name__ == '__main__':
-    title = "Deep Residual Learning for Image Recognition"  # random paper, 2016
+    title = "Supersymmetric Quantum Mechanics, multiphoton algebras and coherent states"
 
     id = get_info_from_title(title, arx_client).get_short_id()
     print(f"{id=}")
