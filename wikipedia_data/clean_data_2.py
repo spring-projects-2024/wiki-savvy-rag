@@ -26,3 +26,4 @@ with open(output_file, "a") as out:
             page = "\n".join([s for s in page.split("\n") if s])
 
             out.write(page)
+            out.write("\n")
