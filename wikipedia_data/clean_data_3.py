@@ -13,7 +13,8 @@ TAGS = ["ref", "span"]
 reg = r"^\*.*$"
 regex = re.compile(reg, re.MULTILINE)
 
-remove_ref_html_tag = r"<(ref|span|gallery|timeline|imagemap|mapframe|div).*?/[a-zA-Z]{0,10}>"
+remove_ref_html_tag = r"<(ref|span|gallery|timeline|imagemap|mapframe|div).*?/(\1|)>"
+
 remove_html_comment = re.compile(remove_ref_html_tag, re.DOTALL)
 
 with open(output_file, "a") as out:
