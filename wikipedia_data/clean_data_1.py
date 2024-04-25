@@ -10,7 +10,7 @@ input_file = "subsample.xml"
 
 output_file = "subsample_out_1.xml"
 
-r = r"\{\|\s?class((.|\n)*?)\|\}"
+r = r"\{\|\s?(class|style)((.|\n)*?)\|\}"
 regex = re.compile(r, re.IGNORECASE)
 
 

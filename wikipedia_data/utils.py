@@ -54,7 +54,7 @@ def greedy_remove_template_tags(s):
     new_s = ""
 
     while i < LEN - 1:
-        nxt= i + 1
+        nxt = i + 1
         if s[i] == "<":
             if s[nxt:i + 5] == "math":
                 is_latex = True
@@ -78,7 +78,6 @@ def greedy_remove_template_tags(s):
         elif open_counter > 0 and s[i] == s[nxt] == "}":
             open_counter -= 1
             if open_counter == 0:
-
                 new_s += s[last_start:first_open]
                 last_start = i + 2
 
@@ -89,11 +88,64 @@ def greedy_remove_template_tags(s):
 
     new_s += s[last_start:]
 
+    return new_s
+
+
+def greedy_remove_wiki_tags(s):
+    is_template = False
+    open_counter = 0
+
+    i = 0
+    LEN = len(s)
+    new_s = ""
+
+    last_start = 0
+    first_open = None
+
+    while i < LEN - 1:
+        nxt = i + 1
+        if s[i] == s[nxt] == "[":
+            if open_counter == 0:
+                is_template = False
+                first_open = i
+                open_counter += 1
+                i += 2
+
+                while ord("a") <= ord(s[i]) <= ord("z") or ord("A") <= ord(s[i]) <= ord("Z"):
+                    i += 1
+                if s[i] == ":":
+                    is_template = True
+                    i += 1
+            else:
+                open_counter += 1
+                i += 2
+        elif s[i] == s[nxt] == "]":
+            open_counter -= 1
+            if open_counter == 0 and is_template:
+                is_template = False
+                new_s += s[last_start:first_open]
+                last_start = i + 2
+
+            i += 2
+        else:
+            i += 1
+
+    new_s += s[last_start:]
 
     return new_s
 
 
+def get_paragraph(page: str):
+    for l in page.splitlines():
+        pass
+
+
 if __name__ == '__main__':
-    prova = "{{1{{2}}}}aa{{<math></math>}} <math>{{a}}</math>"
-    p = greedy_remove_template_tags(prova)
-    print(p)
+    import re
+
+    prova = "<sub> <ref name='Mackenzie_1980'/> for </sub> <ref>  aaa </ref>"
+    remove_ref_html_tag = r"<ref.*?/[a-zA-Z]{0,10}>"
+    # remove_ref_html_tag = r"</ref>"
+    remove_html_comment = re.compile(remove_ref_html_tag, re.DOTALL)
+
+    print(re.sub(remove_html_comment, "", prova))
