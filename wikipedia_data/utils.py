@@ -76,6 +76,9 @@ def greedy_remove_template_tags(s):
             i += 2
             continue
         elif open_counter > 0 and s[i] == s[nxt] == "}":
+            if open_counter <= 0:
+                i += 2
+                continue
             open_counter -= 1
             if open_counter == 0:
                 new_s += s[last_start:first_open]
@@ -120,6 +123,10 @@ def greedy_remove_wiki_tags(s):
                 open_counter += 1
                 i += 2
         elif s[i] == s[nxt] == "]":
+            if open_counter <= 0:
+                i += 2
+                continue
+
             open_counter -= 1
             if open_counter == 0 and is_template:
                 is_template = False
@@ -135,6 +142,57 @@ def greedy_remove_wiki_tags(s):
     return new_s
 
 
+def greedy_remove_template_tags_table(s):
+    is_latex = False
+    i = 0
+    last_start = 0
+    first_open = None
+    open_counter = 0
+    LEN = len(s)
+    new_s = ""
+
+    while i < LEN - 1:
+        nxt = i + 1
+        if s[i] == "<":
+            if s[nxt:i + 5] == "math":
+                is_latex = True
+                i += 5
+                continue
+            elif s[nxt:i + 6] == "/math":
+                is_latex = False
+                i += 6
+                continue
+
+        if is_latex:
+            i += 1
+            continue
+
+        if s[i] == "{" and s[nxt] == "|":
+            if open_counter == 0:
+                first_open = i
+            open_counter += 1
+            i += 2
+            continue
+        elif open_counter > 0 and s[i] == "|" and s[nxt] == "}":
+            if open_counter <= 0:
+                i += 2
+                continue
+
+            open_counter -= 1
+
+            if open_counter == 0:
+                new_s += s[last_start:first_open]
+                last_start = i + 2
+
+            i += 2
+            continue
+
+        i += 1
+
+    new_s += s[last_start:]
+
+    return new_s
+
 def get_paragraph(page: str):
     for l in page.splitlines():
         pass
@@ -143,9 +201,17 @@ def get_paragraph(page: str):
 if __name__ == '__main__':
     import re
 
-    prova = " alphabet, similar to Turkish.<ref></ref><ref><bdi>[https://www.akorda.kz/ru/legal_acts/decrees/o-perevode-alfavita-kazahskogo-yazyka-s-kirillicy-na-latinskuyu-grafiku О переводе алфавита казахского языка с кириллицы на латинскую графику]</bdi> [On the change of the alphabet of the Kazakh language from the Cyrillic to the Latin script] (in Russian). [[President of the Republic of Kazakhstan]]. 26 October 2017. Archived from the original on 27 October 2017. Retrieved 26 October 2017.</ref> The Cyrillic script used to be official in Uzbekistan and Turkmenistan before they all switched to the Latin alphabet, including Uzbekistan that is having a reform of the alphabet to use diacritics on the letters that are marked by apostrophes and the letters that are digraphs.<ref></ref><ref></ref>"
-    remove_ref_html_tag = r"<(ref|sub).*?/(\1|)>"
-    # remove_ref_html_tag = r"</ref>"
-    remove_html_comment = re.compile(remove_ref_html_tag, re.DOTALL)
+    # prova = " alphabet, similar to Turkish.<ref></ref><ref><bdi>[https://www.akorda.kz/ru/legal_acts/decrees/o-perevode-alfavita-kazahskogo-yazyka-s-kirillicy-na-latinskuyu-grafiku О переводе алфавита казахского языка с кириллицы на латинскую графику]</bdi> [On the change of the alphabet of the Kazakh language from the Cyrillic to the Latin script] (in Russian). [[President of the Republic of Kazakhstan]]. 26 October 2017. Archived from the original on 27 October 2017. Retrieved 26 October 2017.</ref> The Cyrillic script used to be official in Uzbekistan and Turkmenistan before they all switched to the Latin alphabet, including Uzbekistan that is having a reform of the alphabet to use diacritics on the letters that are marked by apostrophes and the letters that are digraphs.<ref></ref><ref></ref>"
+    # remove_ref_html_tag = r"<(ref|sub).*?/(\1|)>"
+    # # remove_ref_html_tag = r"</ref>"
+    # remove_html_comment = re.compile(remove_ref_html_tag, re.DOTALL)
+    #
+    # print(re.sub(remove_html_comment, "", prova))
+    a = "a{| ciao {| buongionro |} |}b  a"
 
-    print(re.sub(remove_html_comment, "", prova))
+    # remove_ref_html_tag = r"<(ref|span|gallery|timeline|imagemap|mapframe|div).*?/(\1|)>"
+    #
+    # remove_html_comment = re.compile(remove_ref_html_tag, re.DOTALL)
+
+    # a = remove_html_comment.sub("", a)
+    print(greedy_remove_template_tags_table(a))
