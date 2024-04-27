@@ -19,6 +19,8 @@ def test_remove_template_tags(input, expected):
     (
     "{|This should be removed <math> {|as well as this, despite being in latex|} </math> |}leaving only this{|and not this|}",
     "leaving only this"),
+    ("stuff{|this input is not well formed {|because a closing tag is missing |} but we do not want to discard everything in that case",
+     "stuff{|this input is not well formed {|because a closing tag is missing |} but we do not want to discard everything in that case"),
 ])
 def test_remove_table_tags(input, expected):
     assert remove_table_tags(input) == expected
@@ -33,6 +35,7 @@ def test_remove_table_tags(input, expected):
     ("[[ this should : be kept]]", "[[ this should : be kept]]"),
     ("[[ this: [[should be removed]] removed]]kept", "kept"),
     ("[[ this [[should[[be]]]] kept]]", "[[ this [[should[[be]]]] kept]]"),
+    ("[[ this: is not [[ well formed: stuff here]]", "[[ this: is not [[ well formed: stuff here]]"),
 ])
 def test_remove_wiki_tags(input, expected):
     assert remove_wiki_tags(input) == expected
@@ -42,6 +45,8 @@ def test_remove_wiki_tags(input, expected):
     ("[[Title]]", "Title"),
     ("[[Title|Alias]]", "Title"),
     ("<math>[[Title|Alias]]</math>", "<math>[[Title|Alias]]</math>"),
+    ("[[First|[[Second]]", "First"),
+    # ("[[[[Title]]]]", ""),
 ])
 def test_remove_square_brackets_around_links(input, expected):
     assert remove_square_brackets_around_links(input) == expected

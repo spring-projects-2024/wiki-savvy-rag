@@ -269,19 +269,5 @@ def get_paragraph(page: str):
 
 
 if __name__ == '__main__':
-    import re
-
-    # prova = " alphabet, similar to Turkish.<ref></ref><ref><bdi>[https://www.akorda.kz/ru/legal_acts/decrees/o-perevode-alfavita-kazahskogo-yazyka-s-kirillicy-na-latinskuyu-grafiku О переводе алфавита казахского языка с кириллицы на латинскую графику]</bdi> [On the change of the alphabet of the Kazakh language from the Cyrillic to the Latin script] (in Russian). [[President of the Republic of Kazakhstan]]. 26 October 2017. Archived from the original on 27 October 2017. Retrieved 26 October 2017.</ref> The Cyrillic script used to be official in Uzbekistan and Turkmenistan before they all switched to the Latin alphabet, including Uzbekistan that is having a reform of the alphabet to use diacritics on the letters that are marked by apostrophes and the letters that are digraphs.<ref></ref><ref></ref>"
-    # remove_ref_html_tag = r"<(ref|sub).*?/(\1|)>"
-    # # remove_ref_html_tag = r"</ref>"
-    # remove_html_comment = re.compile(remove_ref_html_tag, re.DOTALL)
-    #
-    # print(re.sub(remove_html_comment, "", prova))
-    a = "a{| ciao {| buongionro |} |}b  a"
-
-    # remove_ref_html_tag = r"<(ref|span|gallery|timeline|imagemap|mapframe|div).*?/(\1|)>"
-    #
-    # remove_html_comment = re.compile(remove_ref_html_tag, re.DOTALL)
-
-    # a = remove_html_comment.sub("", a)
-    print(remove_table_tags(a))
+    prova = "[[[[Title]]]]"
+    print(remove_square_brackets_around_links(prova))
