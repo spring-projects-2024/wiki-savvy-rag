@@ -291,4 +291,4 @@ def extract_xml_tags(page: str):
         extract_tag(page, "text") + \
         "</page>"
 
-    return s
+    return s + "\n"

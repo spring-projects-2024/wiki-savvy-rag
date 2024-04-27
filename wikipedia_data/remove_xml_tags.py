@@ -12,4 +12,3 @@ if __name__ == "__main__":
         with open(input_file, "r") as f:
             for page in tqdm(scroll_pages(f), total=N_PAGES):
                 out.write(extract_xml_tags(page))
-                out.write("\n")
