@@ -6,6 +6,9 @@ from tqdm import tqdm
 
 regex = r"^\s*(={2,10}).*\1\s*$"
 regex = re.compile(regex, re.MULTILINE)
+input_file = "subsample_cleaner.xml"
+output_file = "subsample_chunked.xml"
+N_PAGES = 2357969
 
 
 def get_list_of_titles(stack):
@@ -59,16 +62,23 @@ def prepare_for_disk(chunks):
     return s
 
 
-N_PAGES = 2357969
-
-input_file = "subsample_cleaner.xml"
-output_file = "subsample_chunked.xml"
-
 if __name__ == '__main__':
-
     with open(input_file, "r") as f:
         with open(output_file, "a") as out:
             for page in tqdm(scroll_pages(f), total=N_PAGES):
                 chunk = extract_tree(page)
                 p = prepare_for_disk(chunk)
                 out.write(p)
+
+
+# # example of how to read the data
+# dump_path = "../subsample_chunked.xml"
+# with open(dump_path, "r") as f:
+#     for page in scroll_pages(f):
+#         page = extract_tag(page, tag="page", add_tag=False)
+#         page = json.loads(page)
+#         for chunk in page:
+#             print(chunk["text"])
+#             print(chunk["titles"])
+#             break
+#         break
