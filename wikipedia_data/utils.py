@@ -87,7 +87,7 @@ def remove_square_brackets_around_links(s):
                 is_latex = False
                 i += 6
                 continue
-        
+
         if is_latex:
             i += 1
             continue
@@ -190,7 +190,7 @@ def remove_wiki_tags(s):
                     i += 1
                 while s[i].isspace():  # skip spaces
                     i += 1
-                
+
                 if s[i] == ":":
                     is_template = True
                     i += 1
@@ -268,6 +268,29 @@ def get_paragraph(page: str):
         pass
 
 
-if __name__ == '__main__':
-    prova = "[[[[Title]]]]"
-    print(remove_square_brackets_around_links(prova))
+TAGS_TO_KEEP = [
+    "title",
+    "text",
+]
+
+
+def extract_tag(page, tag):
+    tag_content = ""
+    INITIAL_TAG = f"<{tag}"
+    FINAL_TAG = f"</{tag}>"
+
+    page = page[page.find(INITIAL_TAG):]
+    page = page[page.find(">") + 1:]
+
+    page = page[:page.rfind(FINAL_TAG)]
+
+    return INITIAL_TAG + ">\n" + page + "\n" + FINAL_TAG + "\n"
+
+
+def extract_xml_tags(page: str):
+    s = "<page>\n" + \
+        extract_tag(page, "title") + \
+        extract_tag(page, "text") + \
+        "</page>"
+
+    return s
