@@ -269,7 +269,7 @@ TAGS_TO_KEEP = [
 ]
 
 
-def extract_tag(page, tag):
+def extract_tag(page, tag, add_tag=True):
     tag_content = ""
     INITIAL_TAG = f"<{tag}"
     FINAL_TAG = f"</{tag}>"
@@ -279,7 +279,10 @@ def extract_tag(page, tag):
 
     page = page[:page.rfind(FINAL_TAG)]
 
-    return INITIAL_TAG + ">\n" + page + "\n" + FINAL_TAG + "\n"
+    if add_tag:
+        return INITIAL_TAG + ">\n" + page + "\n" + FINAL_TAG + "\n"
+    else:
+        return page
 
 
 def extract_xml_tags(page: str):
