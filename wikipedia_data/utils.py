@@ -215,6 +215,7 @@ def greedy_remove_template_tags_table(s):
 
     return new_s
 
+
 def get_paragraph(page: str):
     for l in page.splitlines():
         pass
