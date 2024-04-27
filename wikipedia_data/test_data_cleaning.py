@@ -22,7 +22,9 @@ def test_remove_table_tags(input, expected):
 
 @pytest.mark.parametrize("input, expected", [
     ("[[word: this should be removed]]this should be kept", "this should be kept"),
-    # ("[[ class: this should be removed]]this should be kept", "this should be kept"),
+    ("[[ class: this should be removed]]this should be kept", "this should be kept"),
+    ("[[class : this should be removed]]this should be kept", "this should be kept"),
+    ("[[ class  : this should be removed]]this should be kept", "this should be kept"),
     ("[[this should be kept]]", "[[this should be kept]]"),
 ])
 def test_remove_wiki_tags(input, expected):

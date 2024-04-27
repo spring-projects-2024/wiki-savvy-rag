@@ -184,8 +184,13 @@ def remove_wiki_tags(s):
                 open_counter += 1
                 i += 2
 
+                while s[i].isspace():  # skip spaces
+                    i += 1
                 while ord("a") <= ord(s[i]) <= ord("z") or ord("A") <= ord(s[i]) <= ord("Z"):
                     i += 1
+                while s[i].isspace():  # skip spaces
+                    i += 1
+                
                 if s[i] == ":":
                     is_template = True
                     i += 1
