@@ -1,5 +1,5 @@
 from tqdm import tqdm
-from utils import scroll_pages, greedy_remove_wiki_tags
+from utils import scroll_pages, remove_wiki_tags
 import re
 
 N_PAGES = 2357969
@@ -21,7 +21,7 @@ with open(output_file, "a") as out:
             # replace ref tags
             page = remove_html_comment.sub("", page)
             # remove wiki tags
-            page = greedy_remove_wiki_tags(page)
+            page = remove_wiki_tags(page)
             # remove empty lines
             page = "\n".join([s for s in page.split("\n") if s])
 

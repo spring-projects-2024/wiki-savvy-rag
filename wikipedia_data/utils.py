@@ -43,27 +43,27 @@ def scroll_pages(file):
         yield page
 
 
-def greedy_replace(s, opening_tag, opening_delimiter, closing_delimiter):
-    """
-    I could not find a regex that would work for this, so I wrote this function.
-    """
-    i = s.find(opening_tag)
-    if i == -1:
-        return s, False
-    if s[i:i + len(opening_tag)] == opening_tag:
-        opened = 0
-        for j in range(i, len(s)):
-            if s[j] == opening_delimiter:
-                opened += 1
-            if s[j] == closing_delimiter:
-                opened -= 1
-            if opened == 0:
-                break
+# def greedy_replace(s, opening_tag, opening_delimiter, closing_delimiter):
+#     """
+#     I could not find a regex that would work for this, so I wrote this function.
+#     """
+#     i = s.find(opening_tag)
+#     if i == -1:
+#         return s, False
+#     if s[i:i + len(opening_tag)] == opening_tag:
+#         opened = 0
+#         for j in range(i, len(s)):
+#             if s[j] == opening_delimiter:
+#                 opened += 1
+#             if s[j] == closing_delimiter:
+#                 opened -= 1
+#             if opened == 0:
+#                 break
 
-        s = s[:i] + s[j + 1:]
-        return s, True
+#         s = s[:i] + s[j + 1:]
+#         return s, True
 
-    raise ValueError("This should not happen")
+#     raise ValueError("This should not happen")
 
 
 def remove_template_tags(s):
@@ -97,26 +97,21 @@ def remove_template_tags(s):
             open_counter += 1
             i += 2
             continue
-        elif open_counter > 0 and s[i] == s[nxt] == "}":
-            if open_counter <= 0:
-                i += 2
-                continue
-            open_counter -= 1
-            if open_counter == 0:
-                new_s += s[last_start:first_open]
-                last_start = i + 2
-
+        elif s[i] == s[nxt] == "}":
+            if open_counter > 0:
+                open_counter -= 1
+                if open_counter == 0:
+                    new_s += s[last_start:first_open]
+                    last_start = i + 2
             i += 2
             continue
-
         i += 1
 
     new_s += s[last_start:]
-
     return new_s
 
 
-def greedy_remove_wiki_tags(s):
+def remove_wiki_tags(s):
     is_template = False
     open_counter = 0
 
@@ -160,7 +155,6 @@ def greedy_remove_wiki_tags(s):
             i += 1
 
     new_s += s[last_start:]
-
     return new_s
 
 
@@ -195,24 +189,19 @@ def remove_template_tags_table(s):
             open_counter += 1
             i += 2
             continue
-        elif open_counter > 0 and s[i] == "|" and s[nxt] == "}":
-            if open_counter <= 0:
-                i += 2
-                continue
-
-            open_counter -= 1
-
-            if open_counter == 0:
-                new_s += s[last_start:first_open]
-                last_start = i + 2
-
+        elif s[i] == "|" and s[nxt] == "}":
+            if open_counter > 0:
+                open_counter -= 1
+                if open_counter == 0:
+                    new_s += s[last_start:first_open]
+                    last_start = i + 2
+            else:
+                print("closing tag for table without matching opening tag!\n\n", s)
             i += 2
             continue
-
         i += 1
 
     new_s += s[last_start:]
-
     return new_s
 
 
