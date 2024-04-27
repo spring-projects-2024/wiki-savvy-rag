@@ -1,7 +1,5 @@
 *.xml
-*.txt
-*.json
-*.csv
+wikipedia_data/data
 .DS_Store
 pypyenv
 
