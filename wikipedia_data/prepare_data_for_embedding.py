@@ -1,19 +1,11 @@
 import re
-
-import tqdm
-
-regex = r"^\s*(={2,10}).*\1\s*$"
-
-test_str = " ==Heading==\n==Another Heading==\n===Subheading===\n====Subsubheading====\n==Heading==\n"
-
-regex = re.compile(regex, re.MULTILINE)
-
-# for matchNum, match in enumerate(matches, start=1):
-#     print("Match {matchNum} was found at {start}-{end}: {match}".format(
-#         matchNum=matchNum, start=match.start(), end=match.end(), match=match.group()
-#     ))
 from utils import scroll_pages, extract_tag
 import json
+from tqdm import tqdm
+
+
+regex = r"^\s*(={2,10}).*\1\s*$"
+regex = re.compile(regex, re.MULTILINE)
 
 
 def get_list_of_titles(stack):
@@ -76,7 +68,7 @@ if __name__ == '__main__':
 
     with open(input_file, "r") as f:
         with open(output_file, "a") as out:
-            for page in tqdm.tqdm(scroll_pages(f), total=N_PAGES):
+            for page in tqdm(scroll_pages(f), total=N_PAGES):
                 chunk = extract_tree(page)
                 p = prepare_for_disk(chunk)
                 out.write(p)
