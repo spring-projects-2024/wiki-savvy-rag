@@ -6,7 +6,7 @@ from utils import remove_table_tags, remove_template_tags, remove_wiki_tags, rem
 
 
 N_PAGES = 2357969
-input_file = "subsample.xml"
+input_file = "../../subsample.xml"
 output_file = "subsample_clean.xml"
 
 asterisk_reg = r"^\*.*$"  # match lines that start with *

@@ -96,8 +96,6 @@ def remove_square_brackets_around_links(s):
             if open_counter == 0:
                 first_open = i
                 title = None
-            else:
-                print("nested square brackets!\n\n", s)
             open_counter += 1
             i += 2
             continue
@@ -105,7 +103,6 @@ def remove_square_brackets_around_links(s):
             title = s[first_open + 2:i]  # skip the [[
         elif s[i] == "]" and s[nxt] == "]":
             if open_counter <= 0:
-                print("closing tag for square brackets without matching opening tag!\n\n", s)
                 i += 2
                 continue
             open_counter -= 1
@@ -253,8 +250,6 @@ def remove_table_tags(s):
                 if open_counter == 0:
                     new_s += s[last_start:first_open]
                     last_start = i + 2
-            else:
-                print("closing tag for table without matching opening tag!\n\n", s)
             i += 2
             continue
         i += 1
