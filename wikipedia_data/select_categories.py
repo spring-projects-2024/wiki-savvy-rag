@@ -4,8 +4,8 @@ import pandas as pd
 from collections import defaultdict
 
 
-tree_path = "children_cats.csv"
-roots_path = "roots.json"
+tree_path = "data/children_cats.csv"
+roots_path = "data/roots.json"
 max_depth = 3
 
 

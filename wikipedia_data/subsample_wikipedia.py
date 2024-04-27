@@ -3,7 +3,7 @@ from utils import extract_next_page, get_title, get_categories
 
 
 DUMP_PATH = "../../enwiki-20231220-pages-articles-multistream.xml"
-CATEGORY_PATH = "selected_categories.json"
+CATEGORY_PATH = "data/selected_categories.json"
 
 
 def scroll_pages(condition=lambda x: True, stop_on_hit=False):
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         selected_categories = json.load(f)
         selected_categories = set(selected_categories)
     dump_path = "subsample.xml"
-    titles_path = "subsampled_titles.txt"
+    titles_path = "data/subsampled_titles.txt"
 
     titles = save_subsample_of_pages(selected_categories, dump_path)
     with open(titles_path, "w") as f:
