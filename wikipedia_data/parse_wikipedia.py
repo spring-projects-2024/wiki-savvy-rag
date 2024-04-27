@@ -1,46 +1,21 @@
 import json
-
-from wikipedia_data.utils import extract_next_page
-
-dump_path = "../../enwiki-20231220-pages-articles-multistream.xml"
-json_path = "selected_categories.json"
-
-with open(json_path, "r") as f:
-    selected_categories = json.load(f)
-selected_categories = set(selected_categories)
+from utils import extract_next_page, get_title, get_categories
 
 
-def get_title(page):
-    """
-    Extract the title of a page.
-    The title is the text between the <title> and </title> tags.
-    """
-    title = page.split("<title>")[1].split("</title>")[0]
-    return title
+DUMP_PATH = "../../enwiki-20231220-pages-articles-multistream.xml"
+CATEGORY_PATH = "selected_categories.json"
 
 
-def get_categories(page):
-    """
-    TODO: check that this works
-    Extract the categories of a page.
-    The categories are the text between the [[Category: and ]] tags.
-    """
-    categories = []
-    for category in page.split("[[Category:")[1:]:
-        category = category.split("]]")[0]
-        categories.append(category)
-    return categories
-
-
-def scroll_pages(stop_condition=lambda x: True):
+def scroll_pages(condition=lambda x: True, stop_on_hit=False):
     """
     Iterate over all pages in the wikipedia dump file.
-    If print_condition(page) is True, print the page and
-    wait for the user to press Enter before continuing.
+    If condition(page) is True, add the page title to a list.
+    Additionally, if stop_on_hit is True, print the title and
+    categories of the page and wait for the user to press Enter.
     """
     i = 0
     titles = []
-    with open(dump_path, "r") as f:
+    with open(DUMP_PATH, "r") as f:
         while True:
             i += 1
             if i % 10000 == 0:
@@ -50,9 +25,12 @@ def scroll_pages(stop_condition=lambda x: True):
                 break
             title = get_title(page)
             categories = get_categories(page)
-            if stop_condition(page):
+            if condition(page):
                 titles.append(title)
-                # input('Press Enter to continue...')
+                if stop_on_hit:
+                    print(title)
+                    print(categories)
+                    input('Press Enter to continue...')
     return titles
 
 
@@ -65,14 +43,15 @@ def stop_condition(page):
     return False
 
 
-def subsample_pages(selected_categories, write_path="subsample.xml"):
+def save_subsample_of_pages(selected_categories, write_path="subsample.xml"):
     """
     Create a subsample of pages from the wikipedia dump file.
     The subsample contains all pages that have at least one category
     that is in the selected_categories set.
     """
-    with open(dump_path, "r") as f:
-        with open(write_path, "w") as g:
+    titles = []
+    with open(DUMP_PATH, "r") as f:
+        with open(write_path, "w") as out:
             i = 0
             while True:
                 i += 1
@@ -82,37 +61,18 @@ def subsample_pages(selected_categories, write_path="subsample.xml"):
                 if page is None:
                     break
                 if stop_condition(page):
-                    g.write(page)
+                    titles.append(get_title(page))
+                    out.write(page)
+    return titles
 
 
+if __name__ == "__main__":
+    with open(CATEGORY_PATH, "r") as f:
+        selected_categories = json.load(f)
+        selected_categories = set(selected_categories)
+    dump_path = "subsample.xml"
+    titles_path = "subsampled_titles.txt"
 
-subsample_pages(selected_categories)
-
-dump_path = "subsample.xml"
-titles = scroll_pages()
-with open("subsampled_titles.txt", "w") as f:
-    f.write('\n'.join(sorted(titles)))
-
-
-# with open(dump_path, "r") as f:
-#     total = 0
-#     nonempty_categories = 0
-#     kept = 0
-#     while True:
-#         page = extract_next_page(f)
-#         total += 1
-#         title = get_title(page)
-#         categories = get_categories(page)
-#         if len(categories) > 0:
-#             nonempty_categories += 1
-#             if stop_condition(page):
-#                 kept += 1
-#         if total % 1000 == 0:
-#             print(total)
-#         if page is None or total > 10**5:
-#             break
-
-
-# print("Total pages:", total)
-# print("Nonempty categories:", nonempty_categories)
-# print("Kept pages:", kept)
+    titles = save_subsample_of_pages(selected_categories, dump_path)
+    with open(titles_path, "w") as f:
+        f.write('\n'.join(sorted(titles)))

@@ -13,6 +13,28 @@ def extract_next_page(f):
     return None
 
 
+def get_title(page):
+    """
+    Extract the title of a page.
+    The title is the text between the <title> and </title> tags.
+    """
+    title = page.split("<title>")[1].split("</title>")[0]
+    return title
+
+
+def get_categories(page):
+    """
+    TODO: check that this works
+    Extract the categories of a page.
+    The categories are the text between the [[Category: and ]] tags.
+    """
+    categories = []
+    for category in page.split("[[Category:")[1:]:
+        category = category.split("]]")[0]
+        categories.append(category)
+    return categories
+
+
 def scroll_pages(file):
     while True:
         page = extract_next_page(file)
