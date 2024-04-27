@@ -1,4 +1,5 @@
 import re
+import json
 
 # this files extracts the categories from the html of the wikipedia page
 
@@ -246,13 +247,15 @@ def find_cats(a):
     finds = []
     for x in matches:
         finds.append(x[2].replace(" ", "_"))
-
     return finds
 
 
-results = []
-for raw in raw_html:
-    results.extend(find_cats(raw))
+if __name__ == "__main__":
+    results = []
+    for raw in raw_html:
+        results.extend(find_cats(raw))
 
-print(results)
-print(len(results))
+    print(results)
+    print(len(results))
+    with open("data/roots.json", "w") as f:
+        json.dump(results, f)

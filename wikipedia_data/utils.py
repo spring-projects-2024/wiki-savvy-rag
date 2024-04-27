@@ -66,6 +66,59 @@ def scroll_pages(file):
 #     raise ValueError("This should not happen")
 
 
+def remove_square_brackets_around_links(s):
+    is_latex = False
+    i = 0
+    last_start = 0
+    first_open = None
+    open_counter = 0
+    LEN = len(s)
+    new_s = ""
+
+    while i < LEN - 1:
+        nxt = i + 1
+        if s[i] == "<":
+            if s[nxt:i + 5] == "math":
+                is_latex = True
+                i += 5
+                continue
+            elif s[nxt:i + 6] == "/math":
+                # assumes latex is not nested
+                is_latex = False
+                i += 6
+                continue
+        
+        if is_latex:
+            i += 1
+            continue
+
+        if s[i] == "[" and s[nxt] == "[":
+            if open_counter == 0:
+                first_open = i
+                title = None
+            else:
+                print("nested square brackets!\n\n", s)
+            open_counter += 1
+            i += 2
+            continue
+        elif s[i] == "|" and open_counter > 0 and title is None:
+            title = s[first_open + 2:i]  # skip the [[
+        elif s[i] == "]" and s[nxt] == "]":
+            if open_counter <= 0:
+                print("closing tag for square brackets without matching opening tag!\n\n", s)
+                i += 2
+                continue
+            open_counter -= 1
+            if title is None:
+                title = s[first_open + 2:i]
+            new_s += s[last_start:first_open] + title
+            last_start = i + 2  # skip the ]]
+        i += 1
+
+    new_s += s[last_start:]
+    return new_s
+
+
 def remove_template_tags(s):
     is_latex = False
     i = 0

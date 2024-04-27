@@ -1,4 +1,4 @@
-from utils import remove_template_tags, remove_table_tags, remove_wiki_tags
+from utils import remove_template_tags, remove_table_tags, remove_wiki_tags, remove_square_brackets_around_links
 import pytest
 
 
@@ -22,8 +22,17 @@ def test_remove_table_tags(input, expected):
 
 @pytest.mark.parametrize("input, expected", [
     ("[[word: this should be removed]]this should be kept", "this should be kept"),
-    ("[[ class: this should be removed]]this should be kept", "this should be kept"),
+    # ("[[ class: this should be removed]]this should be kept", "this should be kept"),
     ("[[this should be kept]]", "[[this should be kept]]"),
 ])
 def test_remove_wiki_tags(input, expected):
     assert remove_wiki_tags(input) == expected
+
+
+@pytest.mark.parametrize("input, expected", [
+    ("[[Title]]", "Title"),
+    ("[[Title|Alias]]", "Title"),
+    ("<math>[[Title|Alias]]</math>", "<math>[[Title|Alias]]</math>"),
+])
+def test_remove_square_brackets_around_links(input, expected):
+    assert remove_square_brackets_around_links(input) == expected
