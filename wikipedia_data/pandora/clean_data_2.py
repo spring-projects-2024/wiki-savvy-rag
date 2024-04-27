@@ -1,5 +1,5 @@
 from tqdm import tqdm
-from utils import scroll_pages, greedy_remove_template_tags
+from utils import scroll_pages, remove_template_tags
 import re
 
 N_PAGES = 2357969
@@ -16,7 +16,7 @@ remove_html_comment = re.compile(remove_html_comment_reg, re.DOTALL)
 with open(output_file, "a") as out:
     with open(input_file, "r") as f:
         for page in tqdm(scroll_pages(f), total=N_PAGES):
-            page = greedy_remove_template_tags(page)
+            page = remove_template_tags(page)
             page = regex.sub("", page)
             page = remove_html_comment.sub("", page)
             page = "\n".join([s for s in page.split("\n") if s])  # remove empty lines
