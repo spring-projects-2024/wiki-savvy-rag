@@ -5,16 +5,20 @@ import pytest
 @pytest.mark.parametrize("input, expected", [
     ("{{this should be removed}}this should be kept", "this should be kept"),
     ("{{this should be removed}}", ""),
-    ("<math>{{this should be kept because it's within latex}}</math>{{but this should not}}", "<math>{{this should be kept because it's within latex}}</math>"),
+    ("<math>{{this should be kept because it's within latex}}</math>{{but this should not}}",
+     "<math>{{this should be kept because it's within latex}}</math>"),
 ])
 def test_remove_template_tags(input, expected):
     assert remove_template_tags(input) == expected
 
 
 @pytest.mark.parametrize("input, expected", [
-    ("<math>{|this should be kept because it's within latex|}</math>{|but this should not|}", "<math>{|this should be kept because it's within latex|}</math>"),
+    ("<math>{|this should be kept because it's within latex|}</math>{|but this should not|}",
+     "<math>{|this should be kept because it's within latex|}</math>"),
     ("{|This should be removed {|as well as this|} |}leaving only this", "leaving only this"),
-    ("{|This should be removed <math> {|as well as this, despite being in latex|} </math> |}leaving only this{|and not this|}", "leaving only this"),
+    (
+    "{|This should be removed <math> {|as well as this, despite being in latex|} </math> |}leaving only this{|and not this|}",
+    "leaving only this"),
 ])
 def test_remove_table_tags(input, expected):
     assert remove_table_tags(input) == expected
@@ -26,6 +30,9 @@ def test_remove_table_tags(input, expected):
     ("[[class : this should be removed]]this should be kept", "this should be kept"),
     ("[[ class  : this should be removed]]this should be kept", "this should be kept"),
     ("[[this should be kept]]", "[[this should be kept]]"),
+    ("[[ this should : be kept]]", "[[ this should : be kept]]"),
+    ("[[ this: [[should be removed]] removed]]kept", "kept"),
+    ("[[ this [[should[[be]]]] kept]]", "[[ this [[should[[be]]]] kept]]"),
 ])
 def test_remove_wiki_tags(input, expected):
     assert remove_wiki_tags(input) == expected
