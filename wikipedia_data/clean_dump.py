@@ -2,7 +2,7 @@ from html import unescape
 from tqdm import tqdm
 from utils import scroll_pages
 import re
-from utils import remove_template_tags_table, remove_template_tags, remove_wiki_tags
+from utils import remove_table_tags, remove_template_tags, remove_wiki_tags
 
 
 N_PAGES = 2357969
@@ -27,7 +27,7 @@ if __name__ == "__main__":
                 page = remove_html_comment.sub("", page)
                 page = remove_ref_tag.sub("", page)
 
-                page = remove_template_tags_table(page)
+                page = remove_table_tags(page)
                 page = remove_template_tags(page)
                 page = remove_wiki_tags(page)
 

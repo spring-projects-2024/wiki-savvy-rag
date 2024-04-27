@@ -158,7 +158,7 @@ def remove_wiki_tags(s):
     return new_s
 
 
-def remove_template_tags_table(s):
+def remove_table_tags(s):
     is_latex = False
     i = 0
     last_start = 0
@@ -226,4 +226,4 @@ if __name__ == '__main__':
     # remove_html_comment = re.compile(remove_ref_html_tag, re.DOTALL)
 
     # a = remove_html_comment.sub("", a)
-    print(remove_template_tags_table(a))
+    print(remove_table_tags(a))
