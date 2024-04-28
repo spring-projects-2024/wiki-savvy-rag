@@ -9,6 +9,7 @@ regex = re.compile(regex, re.MULTILINE)
 input_file = "subsample_cleaner.xml"
 output_file = "subsample_chunked.xml"
 N_PAGES = 2357969
+SHORT_TEXT_LENGTH = 50
 
 
 def get_list_of_titles(stack):
@@ -17,6 +18,10 @@ def get_list_of_titles(stack):
 
 def extract_tree(page):
     title = extract_tag(page, "title", False).strip()
+    
+    # remove meta Wikipedia pages (e.g. https://en.wikipedia.org/wiki/Wikipedia:Help_desk/Archive_44) 
+    if title[:10] == "Wikipedia:" or title[:9] == "Template:":
+        return None
 
     page = extract_tag(page, "text", False)
     stack = []
@@ -27,14 +32,21 @@ def extract_tree(page):
 
     last_end = 0
 
+    # if the text is a redirect, we can ignore the page
+    if page.lower().find("#redirect") != -1:
+        return None
+
     for match in matches:
         level = match.group().count("=") // 2
         title = match.group().strip()[level:-level].strip()
-        text = page[last_end:match.start()].strip()
+        text = page[last_end : match.start()].strip()
+        
+        if text.lower().find("#redirect") != -1:
+            raise 1
 
-        if text != "":
+        if len(text) > SHORT_TEXT_LENGTH:
             chunks.append({
-                "titles": get_list_of_titles(stack),
+                "titles": get_list_of_titles(stack), 
                 "text": text
             })
 
@@ -46,11 +58,17 @@ def extract_tree(page):
 
     text = page[last_end:].strip()
 
-    if text != "":
+    if len(text) > SHORT_TEXT_LENGTH:
         chunks.append({
-            "titles": get_list_of_titles(stack),
+            "titles": get_list_of_titles(stack), 
             "text": text
         })
+    
+    if text.lower().find("#redirect") != -1:
+        raise 1
+        
+    if len(chunks) == 0:
+        return None
 
     return chunks
 
@@ -62,13 +80,14 @@ def prepare_for_disk(chunks):
     return s
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     with open(input_file, "r") as f:
-        with open(output_file, "a") as out:
+        with open(output_file, "w") as out:
             for page in tqdm(scroll_pages(f), total=N_PAGES):
                 chunk = extract_tree(page)
-                p = prepare_for_disk(chunk)
-                out.write(p)
+                if chunk is not None:
+                    p = prepare_for_disk(chunk)
+                    out.write(p)
 
 
 # # example of how to read the data

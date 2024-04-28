@@ -2,7 +2,12 @@ from html import unescape
 from tqdm import tqdm
 from utils import scroll_pages
 import re
-from utils import remove_table_tags, remove_template_tags, remove_wiki_tags, remove_square_brackets_around_links
+from utils import (
+    remove_table_tags,
+    remove_template_tags,
+    remove_wiki_tags,
+    remove_square_brackets_around_links,
+)
 
 
 N_PAGES = 2357969
@@ -13,7 +18,7 @@ asterisk_reg = r"^\*.*$"  # match lines that start with *
 asterisk_regex = re.compile(asterisk_reg, re.MULTILINE)
 remove_html_comment_reg = r"<!--.*?-->"  # match html comments
 remove_html_comment = re.compile(remove_html_comment_reg, re.DOTALL)
-ref_tag_reg = r"<(ref|span|gallery|timeline|imagemap|mapframe|div).*?/(\1|)>"  # match <ref ... /> tags and similar
+ref_tag_reg = r"<(ref|span|gallery|timeline|imagemap|mapframe|div|references).*?/(\1|)>"  # match <ref ... /> tags and similar
 remove_ref_tag = re.compile(ref_tag_reg, re.DOTALL)
 
 
