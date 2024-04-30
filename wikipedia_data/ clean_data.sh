@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd ~/path/to/project/wikipedia_data
+cd ~/path/to/project/wikipedia_data/data_cleaning
 python extract_category.py
 python select_categories.py
 python subsample_pages.py
