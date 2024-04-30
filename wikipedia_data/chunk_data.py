@@ -11,6 +11,8 @@ output_file = "subsample_chunked.xml"
 N_PAGES = 2357969
 SHORT_TEXT_LENGTH = 50
 
+# md5 of output: 8b602ef6d2a6f356e70c4a15d9e49382
+
 
 def get_list_of_titles(stack):
     return [title for title, _ in stack]

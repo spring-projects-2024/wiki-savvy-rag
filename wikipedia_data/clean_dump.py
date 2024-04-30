@@ -11,7 +11,7 @@ from utils import (
 
 
 N_PAGES = 2357969
-input_file = "../../subsample.xml"
+input_file = "subsample.xml"
 output_file = "subsample_clean.xml"
 
 asterisk_reg = r"^\*.*$"  # match lines that start with *
