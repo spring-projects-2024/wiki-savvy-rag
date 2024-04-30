@@ -12,45 +12,33 @@ from embeddings import EmbedderWrapper
 
 
 # order of arguments: dimension, train set size, database (?) size, query set size
-# df = datasets.SyntheticDataset(DIM, 4000, 10_000, 50, metric=faiss.METRIC_INNER_PRODUCT)
-
-
-# # print(faiss.MatrixStats(df.xb).comments)
+# df = datasets.SyntheticDataset(64, 4000, 10_000, 50, metric=faiss.METRIC_INNER_PRODUCT)
+#
+# print(faiss.MatrixStats(df.xb).comments)
+#
 #
 # index_fs = faiss.index_factory(DIM, "OPQ16_64,IVF1000(IVF100,PQ32x4fs,RFlat),PQ16x4fsr,Refine(OPQ56_112,PQ56)",
 #                                faiss.METRIC_INNER_PRODUCT)
-# # index_fs = faiss.index_factory(DIM, "Flat", faiss.METRIC_INNER_PRODUCT)
-#
-# t = time.time()
-# index_fs.train(df.xb)
-# index_fs.add(df.xb)
-#
-# print(f"Time to train and add {df.xb.shape} vectors: {time.time() - t}")
-#
-# t = time.time()
-# k = 10
-# D, I = index_fs.search(df.xq, k)
-# print(f"Time to search {df.xq.shape} vectors for {k} neighbors: {time.time() - t}")
-#
-# faiss.write_index(index_fs, "index_fs.index")
-
 
 class FaissWrapper:
-    def __init__(self, index_path=None, index_str=None, n_neighbors=10, dataset=None, dim=None):
+    def __init__(self, *, index_path=None, index_str=None, n_neighbors=10, dataset=None, dim=None):
         """
         Instantiate a FaissWrapper object.
         :param index_path: path to a saved index, optional and exclusive with index_str
         :param index_str: Faiss index string, optional and exclusive with index_path
         :param n_neighbors: parameter k for knn, default 10
         :param dataset:
-        :param dim: dimensionality of the vectors
+        :param dim: dimensionality of the vectors (required if index_str is passed, ignored otherwise)
         """
         if index_path:
             self.index = faiss.read_index(index_path)
+            self.dim = self.index.d
+
         elif index_str:
             self.index = faiss.index_factory(dim, index_str, faiss.METRIC_INNER_PRODUCT)
+            self.dim = dim
 
-        self.embedder = EmbedderWrapper()
+        self.embedder = EmbedderWrapper(self.dim)
         self.n_neighbors = n_neighbors
         self.dataset = dataset
 
