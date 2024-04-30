@@ -8,6 +8,9 @@ import time
 from embeddings import EmbedderWrapper
 
 
+#TODO: allow processing queries in batches
+
+
 # order of arguments: dimension, train set size, database (?) size, query set size
 # df = datasets.SyntheticDataset(DIM, 4000, 10_000, 50, metric=faiss.METRIC_INNER_PRODUCT)
 
