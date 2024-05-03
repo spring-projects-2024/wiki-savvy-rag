@@ -1,7 +1,6 @@
 import json
 from typing import Dict, List
 
-
 N_PAGES = 2357969
 
 
@@ -288,7 +287,6 @@ TAGS_TO_KEEP = [
 
 
 def get_extracted_page_chunks(page) -> List[Dict]:
-def get_extracted_page_chunks(page) -> List[Dict]:
     page = extract_tag(page, tag="page", add_tag=False)
     return json.loads(page)
 
@@ -300,7 +298,12 @@ def extract_tag(page, tag, add_tag=True):
     page = page[page.find(INITIAL_TAG):]
     page = page[page.find(">") + 1:]
 
-    page = page[: page.rfind(FINAL_TAG)]
+    if tag == "text":
+        page = page[: page.rfind(FINAL_TAG)]
+    elif tag == "title":
+        page = page[: page.find(FINAL_TAG)]
+    else:
+        raise ValueError(f"Tag {tag} not recognized")
 
     if add_tag:
         return INITIAL_TAG + ">\n" + page + "\n" + FINAL_TAG + "\n"
@@ -309,6 +312,6 @@ def extract_tag(page, tag, add_tag=True):
 
 
 def extract_xml_tags(page: str):
-    s = "<page>\n" + extract_tag(page, "title") + extract_tag(page, "text") + "</page>"
-
+    title = extract_tag(page, "title")
+    s = "<page>\n" + title + extract_tag(page, "text") + "</page>"
     return s + "\n"

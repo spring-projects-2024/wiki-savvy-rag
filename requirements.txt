@@ -1,4 +1,4 @@
 pytest
 tqdm
 pandas
-nltk
+spacy
