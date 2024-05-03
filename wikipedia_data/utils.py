@@ -2,6 +2,7 @@ import json
 from typing import Dict, List
 
 
+N_PAGES = 2357969
 def extract_next_page(f):
     """
     Extract the next page from an xml file.
@@ -275,7 +276,7 @@ TAGS_TO_KEEP = [
 ]
 
 
-def get_extracted_page_chunks(page) -> List[Dict[str]]:
+def get_extracted_page_chunks(page) -> List[Dict]:
     page = extract_tag(page, tag="page", add_tag=False)
     return json.loads(page)
 

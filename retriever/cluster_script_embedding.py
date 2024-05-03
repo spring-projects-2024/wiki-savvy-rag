@@ -1,26 +1,40 @@
 import json
+from typing import List
+
+import torch
+from tqdm import tqdm
 
 from embeddings import EmbedderWrapper
 from wikipedia_data import utils
 
-import utils as utils_retriever
-
-input_file = "../wikipedia_data/subsample_chunked.xml"
-output_file = "output.json"
+input_file = "../wikipedia_data/subsample_chunkeder.xml"
+output_file = "../wikipedia_data/embeddings"
 
 if __name__ == '__main__':
 
     embedder = EmbedderWrapper()
 
+    MAX_ACCUMULATION = 300_000
+    file_counter = 0
+    acc_embeds_list: List = []
+    running_sum = 0
+
     with open(input_file, "r") as f:
-        with open(output_file, "w") as g:
-            for raw_page in utils.scroll_pages(f):
-                page = utils.get_extracted_page_chunks(raw_page)
+        for raw_page in tqdm(utils.scroll_pages(f), total=utils.N_PAGES):
 
-                for chunk in page:
-                    # todo: check conversion to list
-                    chunk["embedding"] = embedder.get_embedding(
-                        utils_retriever.construct_text_from_chunk(**chunk)).flatten().tolist()
+            page = utils.get_extracted_page_chunks(raw_page)
 
-                g.write("<page>/n" + json.dumps(page) + "</page>\n")
-                exit()
+            input_texts = [chunk["text"] for chunk in page]
+            embeddings: torch.Tensor = embedder.get_embedding(input_texts)
+
+            acc_embeds_list.append(embeddings)
+            running_sum += embeddings.shape[0]
+
+            if running_sum > MAX_ACCUMULATION:
+
+                stacked_embeddings = torch.cat(acc_embeds_list, dim=0)
+
+                torch.save(stacked_embeddings, output_file + f"{file_counter}.pt")
+                file_counter += 1
+                running_sum = 0
+                acc_embeds_list = []
