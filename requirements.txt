@@ -1,3 +1,4 @@
 pytest
 tqdm
 pandas
+nltk
