@@ -1,7 +1,7 @@
 import datasets
 from datasets import load_dataset
 from typing import Union, Optional
-from constants import stem_subcategories
+from backend.benchmark.constants import stem_subcategories
 
 
 def load_mmlu(split: str = "test", subset: Union[list, str, None] = "stem") -> datasets.Dataset:
@@ -34,7 +34,7 @@ def format_question(question: dict, include_answer: bool = False) -> str:
 
 
 def craft_query(
-    question: dict, chat=False, examples: Optional[list[dict]] = None
+    question: dict, chat=True, examples: Optional[list[dict]] = None
 ) -> str:
     """
     :param question: a dictionary with the following keys
