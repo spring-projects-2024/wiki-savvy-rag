@@ -1,3 +1,5 @@
+from typing import Dict
+
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
 
@@ -14,13 +16,16 @@ MODEL_NAME = "microsoft/phi-3-mini-128k-instruct"
 
 
 class LLMHandler:
-    def __init__(self, device):
+    def __init__(self, device, weight_path=None):
         self.model = AutoModelForCausalLM.from_pretrained(
             MODEL_NAME,
             device_map=device,
             torch_dtype="auto",
             trust_remote_code=True,
         )
+
+        # todo: add weight loading from disk and test it
+
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
         self.pipe = pipeline(
             "text-generation",
@@ -28,7 +33,7 @@ class LLMHandler:
             tokenizer=self.tokenizer,
         )
 
-    def inference(self, messages, generation_args=None):
+    def inference(self, messages, generation_args: Dict | None = None):
         """
         Example of messages structure:
             messages = [
