@@ -1,3 +1,4 @@
+from typing import Optional
 from backend.model.llm_handler import LLMHandler
 from backend.vector_database.faiss_wrapper import FaissWrapper
 from backend.model.prompt_utils import (
@@ -7,9 +8,24 @@ from backend.model.prompt_utils import (
 
 
 class RagHandler:
-    def __init__(self, device):
-        self.faiss = FaissWrapper(device=device)
-        self.llm = LLMHandler(device)
+    def __init__(
+            self, 
+            model_name: str, 
+            device: str, 
+            model_kwargs: Optional[dict] = None, 
+            tokenizer_kwargs: Optional[dict] = None, 
+            faiss_kwargs: Optional[dict] = None,
+        ):
+        for kwargs in (model_kwargs, tokenizer_kwargs, faiss_kwargs):
+            if kwargs is None:
+                kwargs = {}
+        self.faiss = FaissWrapper(device=device, **faiss_kwargs)
+        self.llm = LLMHandler(
+            device=device, 
+            model_name=model_name, 
+            model_kwargs=model_kwargs, 
+            tokenizer_kwargs=tokenizer_kwargs
+        )
 
     def inference(self, history, query, use_rag=True, **kwargs) -> str:
 
