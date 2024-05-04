@@ -12,4 +12,5 @@ python wikidump_processing/scripts/subsample_pages.py --dump_path $DUMP_PATH --d
 python wikidump_processing/scripts/clean_dump.py --delete_old_files $DELETE_OLD_FILES
 python wikidump_processing/scripts/remove_xml_tags.py --delete_old_files $DELETE_OLD_FILES
 python wikidump_processing/scripts/chunk_data.py --delete_old_files $DELETE_OLD_FILES
+python -m spacy download en_core_web_sm
 python wikidump_processing/scripts/split_long_chunks.py --delete_old_files $DELETE_OLD_FILES

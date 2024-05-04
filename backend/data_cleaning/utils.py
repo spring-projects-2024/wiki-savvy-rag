@@ -305,7 +305,7 @@ def extract_tag(page, tag, add_tag=True):
     page = page[page.find(INITIAL_TAG) :]
     page = page[page.find(">") + 1 :]
 
-    if tag == "text":
+    if tag == "text" or tag == "page":
         page = page[: page.rfind(FINAL_TAG)]
     elif tag == "title":
         page = page[: page.find(FINAL_TAG)]

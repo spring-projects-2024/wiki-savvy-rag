@@ -1,7 +1,11 @@
-from backend.data_cleaning.utils import scroll_pages, get_extracted_page_chunks, construct_text_from_chunk, prepare_for_disk
+from backend.data_cleaning.utils import (
+    scroll_pages,
+    get_extracted_page_chunks,
+    construct_text_from_chunk,
+    prepare_for_disk,
+)
 from tqdm import tqdm
 import spacy
-
 
 input_file = "wikidump_processing/data/subsample_chunked.xml"
 output_file = "wikidump_processing/data/subsample_chunkeder.xml"
@@ -10,7 +14,7 @@ target_length = 512
 max_length = 1024
 
 
-def split_into_sentences(text: str):
+def split_into_sentences(text: str, nlp):
     # return sent_tokenize(text)
     doc = nlp(text)
     return [sent.text for sent in doc.sents]
@@ -23,11 +27,11 @@ def split_into_sentences_artigianale(text: str):
     return [t + "," for t in text.split(",") if len(t) > 0]
 
 
-def recursive_split_and_format(text: str, titles: list, max_length: int):
+def recursive_split_and_format(text: str, titles: list, max_length: int, nlp):
     if len(text) <= max_length:
         return [{"titles": titles, "text": construct_text_from_chunk(titles, text)}]
     chunks = []
-    sentences = split_into_sentences(text)
+    sentences = split_into_sentences(text, nlp)
     if len(sentences) == 1:
         sentences = split_into_sentences_artigianale(text)
     if len(sentences) == 1:
@@ -38,8 +42,8 @@ def recursive_split_and_format(text: str, titles: list, max_length: int):
     idx2 = max(int(num_sentences * 0.4), 1)
     first_half = "".join(sentences[:idx1])
     second_half = "".join(sentences[idx2:])
-    chunks.extend(recursive_split_and_format(first_half, titles, max_length))
-    chunks.extend(recursive_split_and_format(second_half, titles, max_length))
+    chunks.extend(recursive_split_and_format(first_half, titles, max_length, nlp))
+    chunks.extend(recursive_split_and_format(second_half, titles, max_length, nlp))
     return chunks
 
 
@@ -80,12 +84,12 @@ def main(input_file, output_file):
                         s += paragraph + "\n"
                         if len(s) > target_length:
                             new_chunks.extend(
-                                recursive_split_and_format(s, titles, max_length)
+                                recursive_split_and_format(s, titles, max_length, nlp)
                             )
                             s = ""
                     if len(s) > 0:
                         new_chunks.extend(
-                            recursive_split_and_format(s, titles, max_length)
+                            recursive_split_and_format(s, titles, max_length, nlp)
                         )
                 p = prepare_for_disk(new_chunks)
                 out.write(p)
@@ -94,12 +98,19 @@ def main(input_file, output_file):
 if __name__ == "__main__":
 
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--delete_old_files", type=bool, default=False, help="Delete old files after creating new ones, to save storage")
+    parser.add_argument(
+        "--delete_old_files",
+        type=bool,
+        default=False,
+        help="Delete old files after creating new ones, to save storage",
+    )
     args = parser.parse_args()
 
     main(input_file=input_file, output_file=output_file)
 
     if args.delete_old_files:
         import os
+
         os.remove(input_file)
