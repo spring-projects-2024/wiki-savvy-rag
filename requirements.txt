@@ -2,3 +2,7 @@ pytest
 tqdm
 pandas
 spacy
+torch
+transformers
+matplotlib
+faiss-cpu
