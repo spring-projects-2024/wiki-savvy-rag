@@ -6,22 +6,30 @@ import datasets
 from backend.model.rag_handler import RagHandler
 
 
-def evaluate(rag_handler: RagHandler, dataset: datasets.Dataset, k_shot: int = 0):
+def evaluate(
+        rag_handler: RagHandler, 
+        dataset: datasets.Dataset, 
+        k_shot: int = 0, 
+        batch_size: int = 1
+    ):
     metrics = {}
     examples = [dataset[i] for i in range(k_shot)]  # k-shot evaluation
 
-    for question in dataset:
-        query = craft_query(question, chat=True, examples=examples)
-        response = rag_handler.inference([], query)
-        response = response[0]["generated_text"]
-        response = response.split("\n")[-1].strip()
-        if response == chr(65 + question["answer"]):
-            metrics["correct"] += 1
-        metrics["total"] += 1
+    i = 0
+    while i < len(dataset):
+        batch = [dataset[i + j] for j in range(batch_size)]
+        queries = [craft_query(question, chat=True, examples=examples) for question in batch]
+        responses = rag_handler.inference([], queries)
+        for question, response in zip(batch, responses):
+            assert type(response) == str and len(response) == 1
+            target = chr(65 + question["answer"])
+            if response == target:
+                metrics["correct"] += 1
+            metrics["total"] += 1
+        i += batch_size
 
     metrics["accuracy"] = metrics["correct"] / metrics["total"]
     return metrics
-
 
 
 def main():
@@ -29,6 +37,8 @@ def main():
     parser.add_argument("--split", type=str, default="test")
     parser.add_argument("--subset", type=str, default="stem")
     parser.add_argument("--output", type=str, default="mmlu.json")
+    parser.add_argument("--k_shot", type=int, default=0)
+    parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--config_path", type=str, default="configs/llm.yaml")
     args = parser.parse_args()
 
@@ -58,7 +68,7 @@ def main():
     )
 
     print("Starting evaluation...")
-    metrics = evaluate(rag_handler, dataset)
+    metrics = evaluate(rag_handler, dataset, k_shot=args.k_shot, batch_size=args.batch_size)
     print("Evaluation done.")
 
     with open(args.output, "w") as f:
