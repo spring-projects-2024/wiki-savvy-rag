@@ -1,30 +1,41 @@
-import json
-from backend.data_cleaning import utils
-from backend.vector_database.faiss_wrapper import FaissWrapper
+import faiss
+from faiss.contrib import datasets
+import time
 
-wiki_path = "wikidump_processing/data/subsample_chunked.xml"
+from faiss.contrib.evaluation import knn_intersection_measure
 
-dataset = []
+D = 768
+M = 128
 
-with open(wiki_path, "r") as f:
-    for page in utils.scroll_pages(f):
-        page = utils.extract_tag(page, tag="page", add_tag=False)
-        page = json.loads(page)
-        for chunk in page:
-            dataset.append(chunk["text"])
-        if len(dataset) > 10000:
-            break
+index = faiss.index_factory(D, f"IVF64,PQ{M}x4fsr", faiss.METRIC_INNER_PRODUCT)
+index.nprobe = 16
 
-fw = FaissWrapper(dim=8 * 16, index_str="IVF50,PQ8np", dataset=dataset, n_neighbors=1)
-fw.train_and_add_index_from_text(dataset, dataset)
+N = 10**4
+# Load the dataset
+dataset = datasets.SyntheticDataset(D, 1, N, 100)
 
-fw.save_to_disk("wikipedia_dummy.index")
+# Train the index
+print("Training the index...")
+t = time.time()
+index.train(dataset.xb)
+print(f"Elapsed time: {time.time() - t:.2f}s")
 
-res = fw.search_text("ciao")
-print(res)
+index.add(dataset.xb)
+print(f"Elapsed time: {time.time() - t:.2f}s")
 
-del fw
+# benchmark performance
+t = time.time()
+D, Iref = index.search(dataset.xq, 100)
 
-fw = FaissWrapper(index_path="wikipedia_dummy.index", dataset=dataset, n_neighbors=1)
-res = fw.search_text("ciao")
+print(f"Elapsed time: {time.time() - t:.2f}s")
+
+faiss.write_index(index, "temp.index")
+
+D, Inew = faiss.knn(dataset.xq, dataset.xb, 100, metric=faiss.METRIC_INNER_PRODUCT)
+
+res = {
+    rank: knn_intersection_measure(Inew[:, :rank], Iref[:, :rank])
+    for rank in [1, 10, 100]
+}
+
 print(res)
