@@ -1,9 +1,10 @@
+import datasets
 from datasets import load_dataset
 from typing import Union, Optional
 from constants import stem_subcategories
 
 
-def load_mmlu(split: str = "test", subset: Union[list, str, None] = "stem"):
+def load_mmlu(split: str = "test", subset: Union[list, str, None] = "stem") -> datasets.Dataset:
     """
     :param split: one of test, validation, dev, auxiliary_train
     :param subset: one of None, 'stem', or a list of strings. If None,

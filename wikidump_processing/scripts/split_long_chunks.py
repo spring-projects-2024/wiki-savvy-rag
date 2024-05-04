@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("delete_old_files", type=bool, default=False, help="Delete old files after creating new ones, to save storage")
+    parser.add_argument("--delete_old_files", type=bool, default=False, help="Delete old files after creating new ones, to save storage")
     args = parser.parse_args()
 
     main(input_file=input_file, output_file=output_file)
