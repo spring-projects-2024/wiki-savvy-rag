@@ -108,6 +108,9 @@ class FaissWrapper:
         )
         add_data = np.array([self.embedder.get_embedding(text) for text in add_data])
 
+        train_data = np.squeeze(train_data, axis=1)
+        add_data = np.squeeze(add_data, axis=1)
+
         self.train_and_add_index_from_vectors(train_data, add_data)
 
     def save_to_disk(self, path):
@@ -117,7 +120,7 @@ class FaissWrapper:
 if __name__ == "__main__":
     dataset = ["ciao", "sono", "mattia"]
 
-    fw = FaissWrapper(dim=3, index_str="Flat", dataset=dataset)
+    fw = FaissWrapper(index_str="Flat", dataset=dataset, device="cpu")
 
     fw.train_and_add_index_from_text(dataset, dataset)
 
@@ -135,7 +138,7 @@ if __name__ == "__main__":
     del fw
     print("--------testing--------")
 
-    fw = FaissWrapper(index_path="index_faiss.index", dataset=dataset)
+    fw = FaissWrapper(index_path="index_faiss.index", dataset=dataset, device="cpu")
 
     res = fw.search_text("ciao")
     print(res)
