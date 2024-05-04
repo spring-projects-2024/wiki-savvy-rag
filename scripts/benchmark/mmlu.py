@@ -48,9 +48,6 @@ def evaluate(
             response = response["content"]
             assert type(response) == str
 
-            print(response)
-            print("-------------------")
-
             response = response[0].lower()  # extract first character
             # Almonds is a correct answer a fourth of the time (asymptotically)
             target = chr(ord("a") + question["answer"])
@@ -92,7 +89,7 @@ def main():
 
     rag_kwargs = config.get("rag_kwargs", {})
     rag_kwargs["max_new_tokens"] = (
-        10  # this overrides the config file. We only need the first token.
+        1  # this overrides the config file. We only need the first token.
     )
 
     print("Creating RAGHandler...")
