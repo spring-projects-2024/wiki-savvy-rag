@@ -93,11 +93,11 @@ def remove_square_brackets_around_links(s):
     while i < LEN - 1:
         nxt = i + 1
         if s[i] == "<":
-            if s[nxt: i + 5] == "math":
+            if s[nxt : i + 5] == "math":
                 is_latex = True
                 i += 5
                 continue
-            elif s[nxt: i + 6] == "/math":
+            elif s[nxt : i + 6] == "/math":
                 # assumes latex is not nested
                 is_latex = False
                 i += 6
@@ -115,14 +115,14 @@ def remove_square_brackets_around_links(s):
             i += 2
             continue
         elif s[i] == "|" and open_counter > 0 and title is None:
-            title = s[first_open + 2: i]  # skip the [[
+            title = s[first_open + 2 : i]  # skip the [[
         elif s[i] == "]" and s[nxt] == "]":
             if open_counter <= 0:
                 i += 2
                 continue
             open_counter -= 1
             if title is None:
-                title = s[first_open + 2: i]
+                title = s[first_open + 2 : i]
             new_s += s[last_start:first_open] + title
             last_start = i + 2  # skip the ]]
         i += 1
@@ -143,11 +143,11 @@ def remove_template_tags(s):
     while i < LEN - 1:
         nxt = i + 1
         if s[i] == "<":
-            if s[nxt: i + 5] == "math":
+            if s[nxt : i + 5] == "math":
                 is_latex = True
                 i += 5
                 continue
-            elif s[nxt: i + 6] == "/math":
+            elif s[nxt : i + 6] == "/math":
                 is_latex = False
                 i += 6
                 continue
@@ -199,7 +199,7 @@ def remove_wiki_tags(s):
                 while s[i].isspace():  # skip spaces
                     i += 1
                 while ord("a") <= ord(s[i]) <= ord("z") or ord("A") <= ord(s[i]) <= ord(
-                        "Z"
+                    "Z"
                 ):
                     i += 1
                 while s[i].isspace():  # skip spaces
@@ -242,11 +242,11 @@ def remove_table_tags(s):
     while i < LEN - 1:
         nxt = i + 1
         if s[i] == "<":
-            if s[nxt: i + 5] == "math":
+            if s[nxt : i + 5] == "math":
                 is_latex = True
                 i += 5
                 continue
-            elif s[nxt: i + 6] == "/math":
+            elif s[nxt : i + 6] == "/math":
                 is_latex = False
                 i += 6
                 continue
@@ -295,8 +295,8 @@ def extract_tag(page, tag, add_tag=True):
     INITIAL_TAG = f"<{tag}"
     FINAL_TAG = f"</{tag}>"
 
-    page = page[page.find(INITIAL_TAG):]
-    page = page[page.find(">") + 1:]
+    page = page[page.find(INITIAL_TAG) :]
+    page = page[page.find(">") + 1 :]
 
     if tag == "text":
         page = page[: page.rfind(FINAL_TAG)]

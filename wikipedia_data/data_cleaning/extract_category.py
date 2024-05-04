@@ -3,7 +3,8 @@ import json
 
 # this files extracts the categories from the html of the wikipedia page
 
-raw_html = ["""
+raw_html = [
+    """
 <b><a href="/wiki/Category:Formal_sciences" title="Category:Formal sciences">Formal sciences</a></b>
 <link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r1129693374"><div class="hlist" style="margin-left:0em; padding: 0.5em 0">
 <ul><li><b><a href="/wiki/Category:Mathematics" title="Category:Mathematics">Mathematics</a></b></li>
@@ -61,7 +62,7 @@ raw_html = ["""
 <li><a href="/wiki/Category:Time_series" title="Category:Time series">Time series</a></li></ul>
 </div>
 """,
-            """<link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r1033289096"><div role="note" class="hatnote navigation-not-searchable">Main categories: <a href="/wiki/Category:Science" title="Category:Science">Science</a>, <a href="/wiki/Category:Natural_sciences" title="Category:Natural sciences">Natural sciences</a> and <a href="/wiki/Category:Nature" title="Category:Nature">Nature</a></div>
+    """<link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r1033289096"><div role="note" class="hatnote navigation-not-searchable">Main categories: <a href="/wiki/Category:Science" title="Category:Science">Science</a>, <a href="/wiki/Category:Natural_sciences" title="Category:Natural sciences">Natural sciences</a> and <a href="/wiki/Category:Nature" title="Category:Nature">Nature</a></div>
 <link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r1129693374"><div class="hlist" style="padding: 0.5em 0">
 <ul><li><b><a href="/wiki/Category:Biology" title="Category:Biology">Biology</a></b></li>
 <li><a href="/wiki/Category:Botany" title="Category:Botany">Botany</a></li>
@@ -103,7 +104,7 @@ raw_html = ["""
 <ul><li><b><a href="/wiki/Category:Scientific_method" title="Category:Scientific method">Scientific method</a></b></li>
 <li><a href="/wiki/Category:Scientists" title="Category:Scientists">Scientists</a></li></ul>
 </div>""",
-            """<figure class="mw-halign-right" typeof="mw:File"><a href="/wiki/File:C_Puzzle.png" class="mw-file-description"><img src="//upload.wikimedia.org/wikipedia/commons/thumb/d/da/C_Puzzle.png/42px-C_Puzzle.png" decoding="async" width="42" height="42" class="mw-file-element" srcset="//upload.wikimedia.org/wikipedia/commons/thumb/d/da/C_Puzzle.png/63px-C_Puzzle.png 1.5x, //upload.wikimedia.org/wikipedia/commons/thumb/d/da/C_Puzzle.png/84px-C_Puzzle.png 2x" data-file-width="150" data-file-height="150"></a><figcaption></figcaption></figure>
+    """<figure class="mw-halign-right" typeof="mw:File"><a href="/wiki/File:C_Puzzle.png" class="mw-file-description"><img src="//upload.wikimedia.org/wikipedia/commons/thumb/d/da/C_Puzzle.png/42px-C_Puzzle.png" decoding="async" width="42" height="42" class="mw-file-element" srcset="//upload.wikimedia.org/wikipedia/commons/thumb/d/da/C_Puzzle.png/63px-C_Puzzle.png 1.5x, //upload.wikimedia.org/wikipedia/commons/thumb/d/da/C_Puzzle.png/84px-C_Puzzle.png 2x" data-file-width="150" data-file-height="150"></a><figcaption></figcaption></figure>
 <dl><dd><i>Main categories: <a href="/wiki/Category:Technology" title="Category:Technology">Technology</a> and <a href="/wiki/Category:Applied_sciences" title="Category:Applied sciences">Applied sciences</a></i></dd></dl>
 <link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r1129693374"><div class="hlist" style="padding: 0.5em 0">
 <ul><li><a href="/wiki/Category:Agriculture" title="Category:Agriculture">Agriculture</a></li>
@@ -237,8 +238,8 @@ raw_html = ["""
 </div>
 <link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r1129693374"><div class="hlist" style="padding-bottom:0.5em;">
 <ul><li><i>See also: <a href="/wiki/Category:Technology_timelines" title="Category:Technology timelines">Technology timelines</a></i></li></ul>
-</div>"""
-            ]
+</div>""",
+]
 
 
 def find_cats(a):

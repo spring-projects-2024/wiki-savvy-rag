@@ -12,4 +12,3 @@ class Rag:
 
     def add_arxiv_paper(self, paper):
         raise NotImplementedError
-

@@ -19,12 +19,19 @@ stem_subcategories = [
     "high_school_mathematics",
     "high_school_physics",
     "high_school_statistics",
-    "machine_learning"
+    "machine_learning",
 ]
 
 
 categories = {
-    "STEM": ["physics", "chemistry", "biology", "computer science", "math", "engineering"],
+    "STEM": [
+        "physics",
+        "chemistry",
+        "biology",
+        "computer science",
+        "math",
+        "engineering",
+    ],
     "humanities": ["history", "philosophy", "law"],
     "social sciences": ["politics", "culture", "economics", "geography", "psychology"],
     "other (business, health, misc.)": ["other", "business", "health"],

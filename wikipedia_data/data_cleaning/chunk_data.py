@@ -11,7 +11,7 @@ output_file = "subsample_chunked.xml"
 N_PAGES = 2357969
 SHORT_TEXT_LENGTH = 50
 
-# md5 of output: 8b602ef6d2a6f356e70c4a15d9e49382
+# md5 of output: 8b602ef6d2a6f356e70c4a15d9e49382
 
 
 def get_list_of_titles(stack):
@@ -20,8 +20,8 @@ def get_list_of_titles(stack):
 
 def extract_tree(page):
     title = extract_tag(page, "title", False).strip()
-    
-    # remove meta Wikipedia pages (e.g. https://en.wikipedia.org/wiki/Wikipedia:Help_desk/Archive_44) 
+
+    # remove meta Wikipedia pages (e.g. https://en.wikipedia.org/wiki/Wikipedia:Help_desk/Archive_44)
     if title[:10] == "Wikipedia:" or title[:9] == "Template:":
         return None
 
@@ -42,15 +42,12 @@ def extract_tree(page):
         level = match.group().count("=") // 2
         title = match.group().strip()[level:-level].strip()
         text = page[last_end : match.start()].strip()
-        
+
         if text.lower().find("#redirect") != -1:
             raise 1
 
         if len(text) > SHORT_TEXT_LENGTH:
-            chunks.append({
-                "titles": get_list_of_titles(stack), 
-                "text": text
-            })
+            chunks.append({"titles": get_list_of_titles(stack), "text": text})
 
         last_end = match.end()
 
@@ -61,14 +58,11 @@ def extract_tree(page):
     text = page[last_end:].strip()
 
     if len(text) > SHORT_TEXT_LENGTH:
-        chunks.append({
-            "titles": get_list_of_titles(stack), 
-            "text": text
-        })
-    
+        chunks.append({"titles": get_list_of_titles(stack), "text": text})
+
     if text.lower().find("#redirect") != -1:
         raise 1
-        
+
     if len(chunks) == 0:
         return None
 

@@ -30,7 +30,7 @@ def scroll_pages(condition=lambda x: True, stop_on_hit=False):
                 if stop_on_hit:
                     print(title)
                     print(categories)
-                    input('Press Enter to continue...')
+                    input("Press Enter to continue...")
     return titles
 
 
@@ -75,4 +75,4 @@ if __name__ == "__main__":
 
     titles = save_subsample_of_pages(selected_categories, dump_path)
     with open(titles_path, "w") as f:
-        f.write('\n'.join(sorted(titles)))
+        f.write("\n".join(sorted(titles)))

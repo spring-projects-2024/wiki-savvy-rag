@@ -10,7 +10,7 @@ def get_references(id):
     return reference
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     paper_id = "1706.03762"  # the paper is "Attention is All You Need"
     rs = get_references(paper_id)
 

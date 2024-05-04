@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer
 
-model_path = 'Alibaba-NLP/gte-base-en-v1.5'
+model_path = "Alibaba-NLP/gte-base-en-v1.5"
 revision = "269b9ac"
 
 
@@ -13,12 +13,15 @@ class EmbedderWrapper:
         # todo: device for embedding
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.embedder = AutoModel.from_pretrained(model_path, trust_remote_code=True, revision=revision,
-                                                  device_map=device)
+        self.embedder = AutoModel.from_pretrained(
+            model_path, trust_remote_code=True, revision=revision, device_map=device
+        )
 
     @torch.no_grad()
     def get_embedding(self, text) -> torch.Tensor:
-        batch_dict = self.tokenizer(text, max_length=8192, padding=True, truncation=True, return_tensors='pt')
+        batch_dict = self.tokenizer(
+            text, max_length=8192, padding=True, truncation=True, return_tensors="pt"
+        )
         outputs = self.embedder(**batch_dict)
         embeddings = outputs.last_hidden_state[:, 0]
 
@@ -33,7 +36,7 @@ class EmbedderWrapper:
         return self.embedder.config.hidden_size
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     embedder = EmbedderWrapper("cpu")
     text = "The quick brown fox jumps over the lazy dog."
     embedding = embedder.get_embedding(text)

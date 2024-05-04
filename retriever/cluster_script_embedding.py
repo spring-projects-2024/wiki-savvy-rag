@@ -10,7 +10,7 @@ from wikipedia_data import utils
 input_file = "../wikipedia_data/subsample_chunkeder.xml"
 output_file = "../wikipedia_data/embeddings"
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     embedder = EmbedderWrapper("cpu")
 

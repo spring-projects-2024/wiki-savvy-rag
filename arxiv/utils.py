@@ -11,7 +11,7 @@ import arxiv
 import tqdm
 from refextract import extract_references_from_url
 
-arx_client = arxiv.Client(delay_seconds=.0)
+arx_client = arxiv.Client(delay_seconds=0.0)
 
 
 def get_info_from_title(title: str, client: arxiv.Client = arx_client) -> arxiv.Result:
@@ -121,7 +121,10 @@ def parse_single_ref(ref) -> str | None:
         for p in pieces:
 
             # if only contains spaces and numbers continue
-            if all(ch == "," or ch.isdigit() or ch.isspace() for ch in p) or len(p) < 10:
+            if (
+                all(ch == "," or ch.isdigit() or ch.isspace() for ch in p)
+                or len(p) < 10
+            ):
                 continue
 
             p = p.strip()
@@ -153,7 +156,7 @@ def parse_references(references):
     return id_list
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     title = "Supersymmetric Quantum Mechanics, multiphoton algebras and coherent states"
 
     id = get_info_from_title(title, arx_client).get_short_id()

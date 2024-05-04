@@ -18,17 +18,10 @@ else:
     N_PAGES = 2357969
 
 # probably we should make it negative
-REMOVE_WIKI_TEMPLATE_TAGS = [
-    "cite",
-    "sfn",
-    "see also",
-    "lang",
-    "ref",
-    "main"
-]
+REMOVE_WIKI_TEMPLATE_TAGS = ["cite", "sfn", "see also", "lang", "ref", "main"]
 
 tags_string = "|".join(REMOVE_WIKI_TEMPLATE_TAGS)
-base = r'{{(' + tags_string + ')[^}\\\]*}}'
+base = r"{{(" + tags_string + ")[^}\\\]*}}"
 pattern = re.compile(base, flags=re.IGNORECASE)
 
 
@@ -37,8 +30,9 @@ pattern = re.compile(base, flags=re.IGNORECASE)
 # print(re.sub(pattern, 'AAAA', prova))
 # exit()
 
+
 def remove_cite(text):
-    text_no_cite = re.sub(pattern, '', text)
+    text_no_cite = re.sub(pattern, "", text)
 
     text_no_file, res = greedy_replace(text_no_cite, "[[File:", "[", "]")
     while res:

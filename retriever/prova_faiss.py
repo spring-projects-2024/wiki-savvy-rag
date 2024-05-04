@@ -16,7 +16,7 @@ with open(wiki_path, "r") as f:
         if len(dataset) > 10000:
             break
 
-fw = FaissWrapper(dim=8*16, index_str="IVF50,PQ8np", dataset=dataset, n_neighbors=1)
+fw = FaissWrapper(dim=8 * 16, index_str="IVF50,PQ8np", dataset=dataset, n_neighbors=1)
 fw.train_and_add_index_from_text(dataset, dataset)
 
 fw.save_to_disk("wikipedia_dummy.index")

@@ -20,8 +20,11 @@ from embeddings import EmbedderWrapper
 # index_fs = faiss.index_factory(DIM, "OPQ16_64,IVF1000(IVF100,PQ32x4fs,RFlat),PQ16x4fsr,Refine(OPQ56_112,PQ56)",
 #                                faiss.METRIC_INNER_PRODUCT)
 
+
 class FaissWrapper:
-    def __init__(self, *, device, index_path=None, index_str=None, n_neighbors=10, dataset=None):
+    def __init__(
+        self, *, device, index_path=None, index_str=None, n_neighbors=10, dataset=None
+    ):
         """
         Instantiate a FaissWrapper object.
         :param index_path: path to a saved index, optional and exclusive with index_str
@@ -39,7 +42,9 @@ class FaissWrapper:
             self._index = faiss.read_index(index_path)
             assert self.dim == self._index.d
         elif index_str:
-            self._index = faiss.index_factory(self.dim, index_str, faiss.METRIC_INNER_PRODUCT)
+            self._index = faiss.index_factory(
+                self.dim, index_str, faiss.METRIC_INNER_PRODUCT
+            )
 
         self.n_neighbors = n_neighbors
         self.dataset = dataset
@@ -90,13 +95,17 @@ class FaissWrapper:
         # this todo propagates to train_and_add_index_from_text
         self._index.add(add_data)
 
-    def train_and_add_index_from_text(self, train_data: Iterable[str], add_data: Iterable[str]):
+    def train_and_add_index_from_text(
+        self, train_data: Iterable[str], add_data: Iterable[str]
+    ):
         """
         Wrapper around _train_and_add_index_from_vectors that takes text as input.
         :param train_data:
         :param add_data:
         """
-        train_data = np.array([self.embedder.get_embedding(text) for text in train_data])
+        train_data = np.array(
+            [self.embedder.get_embedding(text) for text in train_data]
+        )
         add_data = np.array([self.embedder.get_embedding(text) for text in add_data])
 
         self.train_and_add_index_from_vectors(train_data, add_data)
@@ -105,7 +114,7 @@ class FaissWrapper:
         faiss.write_index(self._index, path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     dataset = ["ciao", "sono", "mattia"]
 
     fw = FaissWrapper(dim=3, index_str="Flat", dataset=dataset)

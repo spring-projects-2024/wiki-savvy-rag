@@ -14,7 +14,7 @@ TAGS = [
     "comment",
     "model",
     "format",
-    "sha1"
+    "sha1",
 ]
 
 from lxml import etree

@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append("../")
 import re
 from utils import scroll_pages, get_extracted_page_chunks, construct_text_from_chunk
@@ -6,12 +7,26 @@ from chunk_data import prepare_for_disk
 import json
 from tqdm import tqdm
 import nltk
+
 # from nltk.tokenize import sent_tokenize
 
 
 import spacy
+
 print("Loading spacy model")
-nlp = spacy.load("en_core_web_sm", disable=["parser", "ner", "tagger", "textcat", "lemmatizer", "attribute_ruler", "tok2vec", "morphologizer"])
+nlp = spacy.load(
+    "en_core_web_sm",
+    disable=[
+        "parser",
+        "ner",
+        "tagger",
+        "textcat",
+        "lemmatizer",
+        "attribute_ruler",
+        "tok2vec",
+        "morphologizer",
+    ],
+)
 nlp.add_pipe("sentencizer")
 print("Loaded spacy model")
 
@@ -46,7 +61,7 @@ def recursive_split_and_format(text: str, titles: list, max_length: int):
         sentences = split_into_sentences_artigianale(text)
     if len(sentences) == 1:
         print("Rubbish chunk")
-        return []  # it's rubbish, discard it
+        return []  # it's rubbish, discard it
     num_sentences = len(sentences)
     idx1 = min(int(num_sentences * 0.6), num_sentences - 2)
     idx2 = max(int(num_sentences * 0.4), 1)
@@ -67,16 +82,22 @@ if __name__ == "__main__":
                     last_paragraph = ""
                     text, titles = chunk["text"], chunk["titles"]
                     if len("".join(titles)) > 300:
-                        print("Rubbish chunk")  # TODO: understand why this happens (HTML page has tags in it)
+                        print(
+                            "Rubbish chunk"
+                        )  # TODO: understand why this happens (HTML page has tags in it)
                         continue
                     paragraphs = text.split("\n")
                     s = ""
                     for paragraph in paragraphs:
                         s += paragraph + "\n"
                         if len(s) > target_length:
-                            new_chunks.extend(recursive_split_and_format(s, titles, max_length))
+                            new_chunks.extend(
+                                recursive_split_and_format(s, titles, max_length)
+                            )
                             s = ""
                     if len(s) > 0:
-                        new_chunks.extend(recursive_split_and_format(s, titles, max_length))
+                        new_chunks.extend(
+                            recursive_split_and_format(s, titles, max_length)
+                        )
                 p = prepare_for_disk(new_chunks)
                 out.write(p)

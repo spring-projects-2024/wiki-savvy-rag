@@ -3,7 +3,7 @@ from typing import Union, Optional
 from constants import stem_subcategories
 
 
-def load_mmlu(split: str = 'test', subset: Union[list, str, None] = "stem"):
+def load_mmlu(split: str = "test", subset: Union[list, str, None] = "stem"):
     """
     :param split: one of test, validation, dev, auxiliary_train
     :param subset: one of None, 'stem', or a list of strings. If None,
@@ -18,13 +18,13 @@ def load_mmlu(split: str = 'test', subset: Union[list, str, None] = "stem"):
         if subset != "stem":
             raise ValueError("subset must be a list of strings, None, or 'stem'")
         subset = stem_subcategories
-    dataset = dataset.filter(lambda x: x['subject'] in subset)
+    dataset = dataset.filter(lambda x: x["subject"] in subset)
     return dataset
 
 
 def format_question(question: dict, include_answer: bool = False) -> str:
     prompt = f"Question: {question['question']}\n"
-    for i, choice in enumerate(question['choices']):
+    for i, choice in enumerate(question["choices"]):
         prompt += f"{chr(65 + i)}. {choice}\n"
     prompt += "Answer:"
     if include_answer:
@@ -32,7 +32,9 @@ def format_question(question: dict, include_answer: bool = False) -> str:
     return prompt
 
 
-def craft_query(question: dict, chat=False, examples: Optional[list[dict]] = None) -> str:
+def craft_query(
+    question: dict, chat=False, examples: Optional[list[dict]] = None
+) -> str:
     """
     :param question: a dictionary with the following keys
     - question: a string with a question
@@ -63,4 +65,3 @@ if __name__ == "__main__":
     examples = [dataset[i] for i in range(5)]
     prompt = craft_query(question, chat=True, examples=examples)
     print(prompt)
-    
