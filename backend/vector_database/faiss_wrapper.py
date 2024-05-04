@@ -1,11 +1,9 @@
 from typing import Tuple, List, Iterable
 
+# keep in this specific order, otherwise it gives Segmentation Fault on Federico's pc
+from backend.vector_database.embedder_wrapper import EmbedderWrapper
 import faiss
 import numpy as np
-from faiss.contrib import datasets
-import time
-
-from backend.vector_database.embedder_wrapper import EmbedderWrapper
 
 
 # TODO: allow processing queries in batches

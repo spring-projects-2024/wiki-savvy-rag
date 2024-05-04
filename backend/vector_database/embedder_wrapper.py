@@ -1,7 +1,5 @@
-import numpy as np
 import torch
 
-import torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer
 
 model_path = "Alibaba-NLP/gte-base-en-v1.5"
