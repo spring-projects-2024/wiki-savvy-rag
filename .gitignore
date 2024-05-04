@@ -169,3 +169,5 @@ cython_debug/
 #.idea/
 wikipedia_data/exploration/short_chunks.json
 .vscode/*
+scripts/embeddings/data/embeddings0.pt
+scripts/embeddings/data/embeddings1.pt
