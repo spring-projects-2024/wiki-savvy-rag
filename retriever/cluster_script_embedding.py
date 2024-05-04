@@ -12,7 +12,7 @@ output_file = "../wikipedia_data/embeddings"
 
 if __name__ == '__main__':
 
-    embedder = EmbedderWrapper()
+    embedder = EmbedderWrapper("cpu")
 
     MAX_ACCUMULATION = 300_000
     file_counter = 0

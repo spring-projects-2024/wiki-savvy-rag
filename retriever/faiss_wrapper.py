@@ -8,7 +8,7 @@ import time
 from embeddings import EmbedderWrapper
 
 
-#TODO: allow processing queries in batches
+# TODO: allow processing queries in batches
 
 
 # order of arguments: dimension, train set size, database (?) size, query set size
@@ -21,7 +21,7 @@ from embeddings import EmbedderWrapper
 #                                faiss.METRIC_INNER_PRODUCT)
 
 class FaissWrapper:
-    def __init__(self, *, index_path=None, index_str=None, n_neighbors=10, dataset=None, dim=None):
+    def __init__(self, *, device, index_path=None, index_str=None, n_neighbors=10, dataset=None):
         """
         Instantiate a FaissWrapper object.
         :param index_path: path to a saved index, optional and exclusive with index_str
@@ -30,15 +30,17 @@ class FaissWrapper:
         :param dataset:
         :param dim: dimensionality of the vectors (required if index_str is passed, ignored otherwise)
         """
+
+        self.device = device
+        self.embedder = EmbedderWrapper(device)
+        self.dim = self.embedder.get_dimensionality()
+
         if index_path:
-            self.index = faiss.read_index(index_path)
-            self.dim = self.index.d
-
+            self._index = faiss.read_index(index_path)
+            assert self.dim == self._index.d
         elif index_str:
-            self.index = faiss.index_factory(dim, index_str, faiss.METRIC_INNER_PRODUCT)
-            self.dim = dim
+            self._index = faiss.index_factory(self.dim, index_str, faiss.METRIC_INNER_PRODUCT)
 
-        self.embedder = EmbedderWrapper(self.dim)
         self.n_neighbors = n_neighbors
         self.dataset = dataset
 
@@ -48,14 +50,14 @@ class FaissWrapper:
         :param vector: np.ndarray of shape (dim)
         :return: Index matrix I and distance matrix D
         """
-        return self.index.search(vector.reshape(1, -1), self.n_neighbors)
+        return self._index.search(vector.reshape(1, -1), self.n_neighbors)
 
     def _search_text_get_I_D(self, text: str) -> Tuple[np.ndarray, np.ndarray]:
         """
         Get the I and D matrices from a text. Wraps around _search_vector
         :return: Index matrix I and distance matrix D
         """
-        vector = self.embedder.get_embedding(text)
+        vector = self.embedder.get_embedding(text).numpy()
         return self._search_vector(vector)
 
     def _index_to_text(self, index: int) -> str:
@@ -81,12 +83,12 @@ class FaissWrapper:
 
         return [(self._index_to_text(i), j) for i, j in zip(D[0], I[0]) if i != -1]
 
-    def _train_and_add_index_from_vectors(self, train_data, add_data):
-        self.index.train(train_data)
+    def train_and_add_index_from_vectors(self, train_data, add_data):
+        self._index.train(train_data)
 
         # todo: check if it makes sense to make add_data iterable to avoid loading everything in ram
         # this todo propagates to train_and_add_index_from_text
-        self.index.add(add_data)
+        self._index.add(add_data)
 
     def train_and_add_index_from_text(self, train_data: Iterable[str], add_data: Iterable[str]):
         """
@@ -97,10 +99,10 @@ class FaissWrapper:
         train_data = np.array([self.embedder.get_embedding(text) for text in train_data])
         add_data = np.array([self.embedder.get_embedding(text) for text in add_data])
 
-        self._train_and_add_index_from_vectors(train_data, add_data)
+        self.train_and_add_index_from_vectors(train_data, add_data)
 
     def save_to_disk(self, path):
-        faiss.write_index(self.index, path)
+        faiss.write_index(self._index, path)
 
 
 if __name__ == '__main__':
