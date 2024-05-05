@@ -50,7 +50,7 @@ def craft_query(
     """
     prompt = f"The following are multiple choice questions (with answers) about {question['subject']}.\n"
     if chat:
-        prompt += "Only provide the letter of the answer.\n"
+        prompt += "Only provide the letter of the answer. Do not write anything else!\n"
     prompt += "\n"
     if examples:
         for example in examples:
