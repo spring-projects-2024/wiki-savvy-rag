@@ -16,3 +16,33 @@ From the root directory:
 pip install -r requirements.txt
 pip install -e .
 ```
+
+## Create SQLite dataset
+
+```
+python scripts/dataset/populate_dataset.py 
+    --input "wikidump_processing/data/subsample_chunkeder.xml"
+    --db_dir "scripts/dataset/data" 
+    --db_name="dataset" 
+```
+
+## Calculate embeddings and dump on disk
+
+```
+python scripts/embeddings/cluster_script_embedding.py 
+    --device "cuda:1" 
+    --db_dir "scripts/dataset/data" 
+    --db_name="dataset" 
+    --output_dir "scripts/embeddings/data/" 
+    --max_accumulation 300000 
+```
+
+## Calculate index and dump on disk
+
+```
+python scripts/vector_database/cluster_train_vector_database.py 
+    --device "cuda:1" 
+    --index "Flat" 
+    --input_dir "scripts/embeddings/data" 
+    --output "scripts/vector_database/data/flat.index"
+```
