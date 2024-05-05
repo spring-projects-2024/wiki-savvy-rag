@@ -103,11 +103,39 @@ class Dataset:
         for i in range(0, len(ids), 999):
             id_chunk = ids[i : i + 999]
             placeholders = ", ".join("?" for _ in id_chunk)
-            query = f"SELECT id, titles, text FROM chunks WHERE id IN ({placeholders})"
+            query = """
+                SELECT id, titles, text FROM chunks 
+                WHERE id IN ({placeholders}) ORDER BY id
+            """
             res = cur.execute(query, id_chunk)
             chunks.extend(res.fetchall())
 
         return [self._res_to_chunk(chunk) for chunk in chunks]
+
+    def paginate_chunks(self, count_per_page):
+        offset = 0
+        while True:
+            cur = self.con.cursor()
+            res = cur.execute(
+                """
+                    SELECT id, titles, text FROM chunks ORDER BY id 
+                    LIMIT ? OFFSET ? 
+                """,
+                (count_per_page, offset),
+            )
+
+            chunks = [self._res_to_chunk(chunk) for chunk in res.fetchall()]
+
+            if len(chunks) > 0:
+                offset += len(chunks)
+                yield chunks
+            else:
+                break
+
+    def count_of_chunks(self):
+        cur = self.con.cursor()
+        res = cur.execute("SELECT COUNT(*) FROM chunks")
+        return res.fetchone()[0]
 
     def _res_to_chunk(self, chunk):
         """
