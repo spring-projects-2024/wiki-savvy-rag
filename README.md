@@ -42,7 +42,8 @@ python scripts/embeddings/cluster_script_embedding.py
 ```
 python scripts/vector_database/cluster_train_vector_database.py 
     --device "cuda:1" 
-    --index "Flat" 
+    --index "SQ8" 
+    --training_size 0.1
     --input_dir "scripts/embeddings/data" 
     --output "scripts/vector_database/data/flat.index"
 ```
