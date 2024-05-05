@@ -81,7 +81,9 @@ class Dataset:
             dict: A dictionary representing the found chunk, with the keys 'id', 'titles', and 'text'.
         """
         cur = self.con.cursor()
-        res = cur.execute("SELECT id, titles, text FROM chunks WHERE id = ?", (id,))
+        res = cur.execute(
+            "SELECT id, titles, text FROM chunks WHERE id = ?", (int(id),)
+        )
         chunk = res.fetchone()
 
         return self._res_to_chunk(chunk)
@@ -132,6 +134,14 @@ class Dataset:
             else:
                 break
 
+    def all_chunks(self):
+        res = cur.execute(
+            "SELECT id, titles, text FROM chunks ORDER BY id",
+            (count_per_page, offset),
+        )
+
+        return [self._res_to_chunk(chunk) for chunk in res.fetchall()]
+
     def count_of_chunks(self):
         cur = self.con.cursor()
         res = cur.execute("SELECT COUNT(*) FROM chunks")
@@ -148,6 +158,17 @@ class Dataset:
             dict: A dictionary representing the chunk, with the keys 'id', 'titles', and 'text'.
         """
         return {"id": chunk[0], "titles": chunk[1], "text": chunk[2]}
+
+
+class MockDataset:
+    def __init__(self, chunks):
+        self.chunks = chunks
+
+    def search_chunk(self, id):
+        return self.chunks[id]
+
+    def search_chunks(self, ids: list):
+        return [chunk for index, chunk in enumerate(self.chunks) if index in ids]
 
 
 DB_DIR_PATH = "backend/vector_database/data"

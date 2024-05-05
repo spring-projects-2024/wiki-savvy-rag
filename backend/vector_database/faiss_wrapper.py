@@ -4,7 +4,7 @@ from typing import Tuple, List, Iterable
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
 import faiss
 import numpy as np
-
+from backend.vector_database.dataset import MockDataset
 
 # TODO: allow processing queries in batches
 
@@ -21,7 +21,14 @@ import numpy as np
 
 class FaissWrapper:
     def __init__(
-        self, *, device, index_path=None, index_str=None, n_neighbors=10, dataset=None
+        self,
+        device,
+        dataset,
+        embedder,
+        *,
+        index_path=None,
+        index_str=None,
+        n_neighbors=10,
     ):
         """
         Instantiate a FaissWrapper object.
@@ -33,7 +40,9 @@ class FaissWrapper:
         """
 
         self.device = device
-        self.embedder = EmbedderWrapper(device)
+        self.embedder = embedder
+        self.n_neighbors = n_neighbors
+        self.dataset = dataset
         self.dim = self.embedder.get_dimensionality()
 
         if index_path:
@@ -43,9 +52,6 @@ class FaissWrapper:
             self._index = faiss.index_factory(
                 self.dim, index_str, faiss.METRIC_INNER_PRODUCT
             )
-
-        self.n_neighbors = n_neighbors
-        self.dataset = dataset
 
     def _search_vector(self, vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -69,10 +75,7 @@ class FaissWrapper:
         :param index:
         :return:
         """
-        if isinstance(self.dataset, list):
-            return self.dataset[index]
-        else:
-            raise NotImplementedError
+        return self.dataset.search_chunk(index)
 
     def search_text(self, text: str) -> List[Tuple[str, float]]:
         """
@@ -86,43 +89,50 @@ class FaissWrapper:
 
         return [(self._index_to_text(i), j) for i, j in zip(D[0], I[0]) if i != -1]
 
-    def train_and_add_index_from_vectors(self, train_data, add_data):
-        self._index.train(train_data)
+    def train_from_vectors(self, data):
+        self._index.train(data)
+
+    def add_vectors(self, data):
 
         # todo: check if it makes sense to make add_data iterable to avoid loading everything in ram
         # this todo propagates to train_and_add_index_from_text
-        self._index.add(add_data)
+        self._index.add(data)
 
-    def train_and_add_index_from_text(
-        self, train_data: Iterable[str], add_data: Iterable[str]
-    ):
+    def train_from_text(self, data: Iterable[str]):
         """
-        Wrapper around _train_and_add_index_from_vectors that takes text as input.
-        :param train_data:
-        :param add_data:
+        Wrapper around train_from_vectors that takes text as input.
+        :param data:
         """
-        train_data = np.array(
-            [self.embedder.get_embedding(text) for text in train_data]
-        )
-        add_data = np.array([self.embedder.get_embedding(text) for text in add_data])
 
-        train_data = np.squeeze(train_data, axis=1)
-        add_data = np.squeeze(add_data, axis=1)
+        self.train_from_vectors(self.embedder.get_embedding(data))
 
-        self.train_and_add_index_from_vectors(train_data, add_data)
+    def add_text(self, data: Iterable[str]):
+        """
+        Wrapper around add_vectors that takes text as input.
+        :param data:
+        """
+
+        self.add_vectors(self.embedder.get_embedding(data))
 
     def save_to_disk(self, path):
         faiss.write_index(self._index, path)
 
 
+INDEX_PATH = "backend/vector_database/data/faiss.index"
+
 if __name__ == "__main__":
-    dataset = ["ciao", "sono", "mattia"]
+    chunks = ["ciao", "sono", "mattia"]
+    dataset = MockDataset(chunks)
+    embedder = EmbedderWrapper("cpu")
 
-    fw = FaissWrapper(index_str="Flat", dataset=dataset, device="cpu")
+    fw = FaissWrapper(
+        index_str="Flat", dataset=dataset, device="cpu", embedder=embedder
+    )
 
-    fw.train_and_add_index_from_text(dataset, dataset)
+    fw.train_from_text(chunks)
+    fw.add_text(chunks)
 
-    fw.save_to_disk("index_faiss.index")
+    fw.save_to_disk(INDEX_PATH)
 
     res = fw.search_text("ciao")
     print(res)
@@ -136,7 +146,12 @@ if __name__ == "__main__":
     del fw
     print("--------testing--------")
 
-    fw = FaissWrapper(index_path="index_faiss.index", dataset=dataset, device="cpu")
+    fw = FaissWrapper(
+        index_path="index_faiss.index",
+        dataset=dataset,
+        device="cpu",
+        embedder=embedder,
+    )
 
     res = fw.search_text("ciao")
     print(res)
