@@ -1,4 +1,5 @@
 import sqlite3
+import os
 
 
 class Dataset:
@@ -22,6 +23,16 @@ class Dataset:
     def __init__(self, *, db_path):
         self.con = sqlite3.connect(db_path)
 
+    def drop_tables(self):
+        """
+        Drops the all the tables in the database.
+
+        Returns:
+            None
+        """
+        cur = self.con.cursor()
+        cur.execute("DROP TABLE IF EXISTS chunks")
+
     def create_tables(self):
         """
         Creates the necessary tables in the database.
@@ -30,7 +41,7 @@ class Dataset:
         cur.execute(
             """CREATE TABLE IF NOT EXISTS chunks(
                 id INTEGER NOT NULL PRIMARY KEY, 
-                title STRING NOT NULL, 
+                titles STRING NOT NULL, 
                 text STRING NOT NULL
             )"""
         )
@@ -41,9 +52,9 @@ class Dataset:
 
         Args:
             chunks (list): A list of dictionaries representing the chunks to be inserted.
-                Each dictionary should have the keys 'id', 'title', and 'text'.
+                Each dictionary should have the keys 'id', 'titles', and 'text'.
         """
-        data = [(chunk["id"], chunk["title"], chunk["text"]) for chunk in chunks]
+        data = [(chunk["id"], chunk["titles"], chunk["text"]) for chunk in chunks]
 
         cur = self.con.cursor()
         cur.executemany("INSERT INTO chunks VALUES(?, ?, ?)", data)
@@ -55,7 +66,7 @@ class Dataset:
 
         Args:
             chunk (dict): A dictionary representing the chunk to be inserted.
-                The dictionary should have the keys 'id', 'title', and 'text'.
+                The dictionary should have the keys 'id', 'titles', and 'text'.
         """
         self.insert_chunks([chunk])
 
@@ -67,10 +78,10 @@ class Dataset:
             id (int): The ID of the chunk to search for.
 
         Returns:
-            dict: A dictionary representing the found chunk, with the keys 'id', 'title', and 'text'.
+            dict: A dictionary representing the found chunk, with the keys 'id', 'titles', and 'text'.
         """
         cur = self.con.cursor()
-        res = cur.execute("SELECT id, title, text FROM chunks WHERE id = ?", (id,))
+        res = cur.execute("SELECT id, titles, text FROM chunks WHERE id = ?", (id,))
         chunk = res.fetchone()
 
         return self._res_to_chunk(chunk)
@@ -83,7 +94,7 @@ class Dataset:
             ids (list): A list of IDs of the chunks to search for.
 
         Returns:
-            list: A list of dictionaries representing the found chunks, with the keys 'id', 'title', and 'text'.
+            list: A list of dictionaries representing the found chunks, with the keys 'id', 'titles', and 'text'.
         """
         cur = self.con.cursor()
         chunks = []
@@ -92,7 +103,7 @@ class Dataset:
         for i in range(0, len(ids), 999):
             id_chunk = ids[i : i + 999]
             placeholders = ", ".join("?" for _ in id_chunk)
-            query = f"SELECT id, title, text FROM chunks WHERE id IN ({placeholders})"
+            query = f"SELECT id, titles, text FROM chunks WHERE id IN ({placeholders})"
             res = cur.execute(query, id_chunk)
             chunks.extend(res.fetchall())
 
@@ -103,23 +114,32 @@ class Dataset:
         Converts a result tuple from the database to a dictionary representing a chunk.
 
         Args:
-            chunk (tuple): A tuple representing a chunk, with the elements 'id', 'title', and 'text'.
+            chunk (tuple): A tuple representing a chunk, with the elements 'id', 'titles', and 'text'.
 
         Returns:
-            dict: A dictionary representing the chunk, with the keys 'id', 'title', and 'text'.
+            dict: A dictionary representing the chunk, with the keys 'id', 'titles', and 'text'.
         """
-        return {"id": chunk[0], "title": chunk[1], "text": chunk[2]}
+        return {"id": chunk[0], "titles": chunk[1], "text": chunk[2]}
 
+
+DB_DIR_PATH = "backend/vector_database/data"
 
 if __name__ == "__main__":
-    dataset = Dataset(db_path="test.db")
+    if not os.path.exists(DB_DIR_PATH):
+        os.mkdir(DB_DIR_PATH)
+
+    dataset = Dataset(db_path=DB_DIR_PATH + "/test.db")
 
     dataset.create_tables()
 
     chunks = [
-        {"id": 1, "title": "First Chunk", "text": "This is the first chunk of data."},
-        {"id": 2, "title": "Second Chunk", "text": "This is the second chunk of data."},
-        {"id": 3, "title": "Third Chunk", "text": "This is the third chunk of data."},
+        {"id": 1, "titles": "First Chunk", "text": "This is the first chunk of data."},
+        {
+            "id": 2,
+            "titles": "Second Chunk",
+            "text": "This is the second chunk of data.",
+        },
+        {"id": 3, "titles": "Third Chunk", "text": "This is the third chunk of data."},
         # Add more chunks as needed...
     ]
 
