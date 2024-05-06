@@ -1,5 +1,7 @@
 import itertools
 import os
+from typing import List
+
 import torch
 from tqdm import tqdm
 
@@ -11,7 +13,7 @@ DB_DIR_DEFAULT = "scripts/dataset/data"
 DB_NAME_DEFAULT = "dataset"
 OUTPUT_DIR_DEFAULT = "scripts/embeddings/data/"
 MAX_ACCUMULATION_DEFAULT = 300_000
-
+MAX_CHUNKS_DEFAULT = 100
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
