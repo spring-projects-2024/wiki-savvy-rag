@@ -1,6 +1,7 @@
 import itertools
 import os
 from typing import List
+import gc
 
 import torch
 from tqdm import tqdm
@@ -69,11 +70,14 @@ if __name__ == "__main__":
     iterator = itertools.product(alphabet, repeat=length)
 
     processed_count = 0
+    
+    print(f"MAX ACCUMULATION IS {args.max_accumulation}")
 
     with tqdm(
         total=(min(args.chunks, count_of_chunks) if args.chunks else count_of_chunks)
     ) as pbar:
         for chunks in dataset.paginate_chunks(args.max_accumulation):
+            print(f"N CHUNKS IS {len(chunks)}")
             input_texts = [chunk["text"] for chunk in chunks]
             if args.chunks:
                 input_texts = input_texts[
@@ -81,6 +85,9 @@ if __name__ == "__main__":
                 ]
 
             embeddings: torch.Tensor = embedder.get_embedding(input_texts)
+
+            print(f"Embeddings shape {embeddings.shape}")
+
             filename = os.path.join(
                 args.output_dir, f"embeddings_{''.join(next(iterator))}.pt"
             )
@@ -89,6 +96,8 @@ if __name__ == "__main__":
             processed_count += len(input_texts)
 
             del embeddings, input_texts
+            gc.collect()
+            torch.cuda.empty_cache()
 
             pbar.update(processed_count)
             if args.chunks and processed_count >= args.chunks:
