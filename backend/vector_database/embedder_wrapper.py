@@ -25,7 +25,7 @@ class EmbedderWrapper:
         )
         batch_dict = batch_dict.to(self.device)
         outputs = self.embedder(**batch_dict)
-        embeddings = outputs.last_hidden_state[:, 0]
+        embeddings = outputs.last_hidden_state[:, 0].clone()
 
         # np.random.seed(hash(text) % 1000)
         # w = np.random.standard_normal(self.d)
