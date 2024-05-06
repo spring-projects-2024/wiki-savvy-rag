@@ -70,7 +70,7 @@ if __name__ == "__main__":
     iterator = itertools.product(alphabet, repeat=length)
 
     processed_count = 0
-    
+
     print(f"MAX ACCUMULATION IS {args.max_accumulation}")
 
     with tqdm(
@@ -84,7 +84,12 @@ if __name__ == "__main__":
                     : min(len(input_texts), args.chunks - processed_count)
                 ]
 
-            embeddings: torch.Tensor = embedder.get_embedding(input_texts)
+            embs_list = []
+            for inp_tex in input_texts:
+                embedding_single: torch.Tensor = embedder.get_embedding(inp_tex)
+                embs_list.append(embedding_single)
+
+            embeddings = torch.stack(embs_list)
 
             print(f"Embeddings shape {embeddings.shape}")
 
@@ -95,7 +100,7 @@ if __name__ == "__main__":
             torch.save(embeddings, filename)
             processed_count += len(input_texts)
 
-            del embeddings, input_texts
+            del embeddings, input_texts, embs_list
             gc.collect()
             torch.cuda.empty_cache()
 
