@@ -94,8 +94,6 @@ class FaissWrapper:
 
     def add_vectors(self, data):
 
-        # todo: check if it makes sense to make add_data iterable to avoid loading everything in ram
-        # this todo propagates to train_and_add_index_from_text
         self._index.add(data)
 
     def train_from_text(self, data: Iterable[str]):

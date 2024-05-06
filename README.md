@@ -37,7 +37,7 @@ python scripts/embeddings/cluster_script_embedding.py
     --max_accumulation 300000 
 ```
 
-## Calculate index and dump on disk
+## Calculate index and dump on disk
 
 ```
 python scripts/vector_database/cluster_train_vector_database.py 

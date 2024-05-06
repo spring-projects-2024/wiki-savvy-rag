@@ -7,8 +7,10 @@ from backend.vector_database.faiss_wrapper import FaissWrapper
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
 
 INPUT_DIR_DEFAULT = "scripts/embeddings/data/"
-OUTPUT_FILE_DEFAULT = "scripts/vector_database/data/flat.index"
-INDEX_DEFAULT = "SQ8"
+OUTPUT_FILE_DEFAULT = "scripts/vector_database/data/default.index"
+M = 128
+CENTROIDS = 10_000
+INDEX_DEFAULT = f"IVF{CENTROIDS},PQ{M}x4fsr"
 TRAINING_SIZE_DEFAULT = 0.1
 
 INPUT_FILE_REGEX = "embeddings_[a-z]+.pt"
@@ -86,4 +88,3 @@ if __name__ == "__main__":
     for embeddings in embeddings_iterator():
         vector_db.add_vectors(embeddings)
 
-    vector_db.save_to_disk(args.output)

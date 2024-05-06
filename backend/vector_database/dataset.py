@@ -1,5 +1,6 @@
 import sqlite3
 import os
+from typing import Iterable
 
 
 class Dataset:
@@ -46,7 +47,7 @@ class Dataset:
             )"""
         )
 
-    def insert_chunks(self, chunks):
+    def insert_chunks(self, chunks: Iterable[dict]):
         """
         Inserts multiple chunks into the database.
 
@@ -90,6 +91,7 @@ class Dataset:
 
     def search_chunks(self, ids):
         """
+        todo: test
         Searches for multiple chunks with the given IDs in the database.
 
         Args:
@@ -105,7 +107,7 @@ class Dataset:
         for i in range(0, len(ids), 999):
             id_chunk = ids[i : i + 999]
             placeholders = ", ".join("?" for _ in id_chunk)
-            query = """
+            query = f"""
                 SELECT id, titles, text FROM chunks 
                 WHERE id IN ({placeholders}) ORDER BY id
             """
@@ -133,14 +135,6 @@ class Dataset:
                 yield chunks
             else:
                 break
-
-    def all_chunks(self):
-        res = cur.execute(
-            "SELECT id, titles, text FROM chunks ORDER BY id",
-            (count_per_page, offset),
-        )
-
-        return [self._res_to_chunk(chunk) for chunk in res.fetchall()]
 
     def count_of_chunks(self):
         cur = self.con.cursor()

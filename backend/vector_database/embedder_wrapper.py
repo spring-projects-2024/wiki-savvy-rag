@@ -1,3 +1,5 @@
+from typing import List
+
 import torch
 
 from transformers import AutoModel, AutoTokenizer
@@ -14,12 +16,14 @@ class EmbedderWrapper:
         self.embedder = AutoModel.from_pretrained(
             model_path, trust_remote_code=True, revision=revision, device_map=device
         )
+        self.device = device
 
     @torch.no_grad()
-    def get_embedding(self, text) -> torch.Tensor:
+    def get_embedding(self, text: List[str] | str) -> torch.Tensor:
         batch_dict = self.tokenizer(
             text, max_length=8192, padding=True, truncation=True, return_tensors="pt"
         )
+        batch_dict = batch_dict.to(self.device)
         outputs = self.embedder(**batch_dict)
         embeddings = outputs.last_hidden_state[:, 0]
 

@@ -7,12 +7,16 @@ from faiss.contrib.evaluation import knn_intersection_measure
 D = 768
 M = 128
 
-index = faiss.index_factory(D, f"IVF64,PQ{M}x4fsr", faiss.METRIC_INNER_PRODUCT)
+# best quantization is PQ{M}x4fsr but requires clustering
+
+# HNSW is pretty good for accuracy
+
+index = faiss.index_factory(D, f"IVF16000,PQ{M}x4fsr", faiss.METRIC_INNER_PRODUCT)
 index.nprobe = 16
 
-N = 10**4
+N = 2*10**4
 # Load the dataset
-dataset = datasets.SyntheticDataset(D, 1, N, 100)
+dataset = datasets.SyntheticDataset(D, 1, N, 1000)
 
 # Train the index
 print("Training the index...")
