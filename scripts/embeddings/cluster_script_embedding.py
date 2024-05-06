@@ -86,8 +86,10 @@ if __name__ == "__main__":
             )
             print("Dump embeddings file: ", filename)
             torch.save(embeddings, filename)
-
             processed_count += len(input_texts)
+
+            del embeddings, input_texts
+
             pbar.update(processed_count)
             if args.chunks and processed_count >= args.chunks:
                 break
