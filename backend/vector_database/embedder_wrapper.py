@@ -4,7 +4,7 @@ import torch
 
 from transformers import AutoModel, AutoTokenizer
 
-model_path = "Snowflake/snowflake-arctic-embed-s"
+model_path = "BAAI/bge-small-en-v1.5"
 
 
 class EmbedderWrapper:
