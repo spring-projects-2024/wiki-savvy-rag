@@ -116,11 +116,19 @@ def main():
     if args.output:
         output = args.output
     else:
-        output = f"scripts/benchmark/mmlu_{time.strftime("%Y-%m-%d-%H-%M-%S")}.json"
+        output = f"scripts/benchmark/mmlu_{time.strftime('%Y-%m-%d-%H-%M-%S')}.json"
 
     with open(output, "w") as f:
         print(f"Saving metrics to {output}")
+        f.write("== Metrics ==\n")
         json.dump(metrics, f)
+        f.write("\n")
+        f.write("== Config ==\n")
+        json.dump(config, f)
+        f.write("\n")
+        f.write("== Args ==\n")
+        json.dump(vars(args), f)
+        f.write("\n")
 
 
 if __name__ == "__main__":
