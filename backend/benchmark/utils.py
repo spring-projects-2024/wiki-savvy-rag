@@ -66,3 +66,5 @@ if __name__ == "__main__":
     examples = [dataset[i] for i in range(5)]
     prompt = craft_query(question, chat=True, examples=examples)
     print(prompt)
+    a = {}
+    a.update({"a": 1})

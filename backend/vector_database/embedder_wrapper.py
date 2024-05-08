@@ -4,7 +4,7 @@ import torch
 
 from transformers import AutoModel, AutoTokenizer
 
-model_path = "Alibaba-NLP/gte-base-en-v1.5"
+model_path = "Snowflake/snowflake-arctic-embed-s"
 revision = "269b9ac"
 
 
