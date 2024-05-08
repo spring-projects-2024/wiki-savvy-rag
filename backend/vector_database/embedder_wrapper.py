@@ -5,7 +5,6 @@ import torch
 from transformers import AutoModel, AutoTokenizer
 
 model_path = "Snowflake/snowflake-arctic-embed-s"
-revision = "269b9ac"
 
 
 class EmbedderWrapper:
@@ -14,7 +13,7 @@ class EmbedderWrapper:
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.embedder = AutoModel.from_pretrained(
-            model_path, trust_remote_code=True, revision=revision, device_map=device
+            model_path, trust_remote_code=True, device_map=device
         )
         self.device = device
 
