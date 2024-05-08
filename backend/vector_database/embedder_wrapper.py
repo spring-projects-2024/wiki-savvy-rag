@@ -9,7 +9,6 @@ model_path = "BAAI/bge-small-en-v1.5"
 
 class EmbedderWrapper:
     def __init__(self, device):
-        # todo: device for embedding
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.embedder = AutoModel.from_pretrained(
