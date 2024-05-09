@@ -10,6 +10,7 @@ from backend.model.rag_handler import RagHandler
 def evaluate(
     rag_handler: RagHandler,
     dataset: datasets.Dataset,
+    log_answers: bool = False,
     k_shot: int = 0,
     batch_size: int = 1,
     n_samples: int = None,
@@ -18,6 +19,10 @@ def evaluate(
         "correct": 0,
         "total": 0,
     }
+
+    if log_answers:
+        metrics["answers"] = []
+
     examples = [dataset[i] for i in range(k_shot)]  # k-shot evaluation
 
     if n_samples is None:
@@ -48,12 +53,18 @@ def evaluate(
             response = response["content"]
             assert type(response) == str
 
+            complete_response = response
+
             response = response[0].lower()  # extract first character
             # Almonds is a correct answer a fourth of the time (asymptotically)
             target = chr(ord("a") + question["answer"])
             if response == target:
                 metrics["correct"] += 1
             metrics["total"] += 1
+
+            if log_answers:
+                metrics["answers"].append(complete_response)
+
         i += batch_size
 
     metrics["accuracy"] = metrics["correct"] / metrics["total"]
@@ -70,6 +81,8 @@ def main():
     parser.add_argument("--config_path", type=str, default="configs/llm.yaml")
     parser.add_argument("--n_samples", type=int, default=None)
     parser.add_argument("--use_rag", type=bool, default=False)
+    parser.add_argument("--log_answers", type=bool, default=False)
+    parser.add_argument("--max_tokens", type=int, default=1)
 
     args = parser.parse_args()
 
@@ -89,7 +102,7 @@ def main():
 
     rag_kwargs = config.get("rag_kwargs", {})
     rag_kwargs["max_new_tokens"] = (
-        1  # this overrides the config file. We only need the first token.
+        args.max_tokens  # this overrides the config file. We only need the first token.
     )
 
     print("Creating RAGHandler...")
@@ -107,6 +120,7 @@ def main():
     metrics = evaluate(
         rag_handler,
         dataset,
+        args.log_answers,
         k_shot=args.k_shot,
         batch_size=args.batch_size,
         n_samples=args.n_samples,
