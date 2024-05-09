@@ -9,16 +9,6 @@ from backend.vector_database.dataset import MockDataset
 # TODO: allow processing queries in batches
 
 
-# order of arguments: dimension, train set size, database (?) size, query set size
-# df = datasets.SyntheticDataset(64, 4000, 10_000, 50, metric=faiss.METRIC_INNER_PRODUCT)
-#
-# print(faiss.MatrixStats(df.xb).comments)
-#
-#
-# index_fs = faiss.index_factory(DIM, "OPQ16_64,IVF1000(IVF100,PQ32x4fs,RFlat),PQ16x4fsr,Refine(OPQ56_112,PQ56)",
-#                                faiss.METRIC_INNER_PRODUCT)
-
-
 class FaissWrapper:
     def __init__(
         self,
@@ -92,7 +82,14 @@ class FaissWrapper:
 
         return [(self._index_to_text(i), j) for i, j in zip(D[0], I[0]) if i != -1]
 
-    def train_from_vectors(self, data):
+    def train_from_vectors(self, data, train_on_gpu=False):
+        if train_on_gpu:
+            index_ivf = faiss.extract_index_ivf(self._index)
+            clustering_index = faiss.index_cpu_to_all_gpus(
+                faiss.IndexFlatL2(index_ivf.d)
+            )
+            index_ivf.clustering_index = clustering_index
+
         self._index.train(data)
 
     def add_vectors(self, data):
