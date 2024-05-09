@@ -40,7 +40,7 @@ python scripts/embeddings/cluster_script_embedding.py
 ## Calculate index and dump on disk
 
 ```
-python scripts/vector_database/cluster_train_vector_database.py 
+python scripts/vector_database/train_vector_database.py 
     --device "cuda:1" 
     --index "SQ8" 
     --training_size 0.1

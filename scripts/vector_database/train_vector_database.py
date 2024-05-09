@@ -87,4 +87,3 @@ if __name__ == "__main__":
 
     for embeddings in embeddings_iterator():
         vector_db.add_vectors(embeddings)
-
