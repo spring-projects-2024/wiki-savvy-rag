@@ -21,7 +21,10 @@ class RagHandler:
     ):
         model_kwargs = model_kwargs if model_kwargs is not None else {}
         tokenizer_kwargs = tokenizer_kwargs if tokenizer_kwargs is not None else {}
-        faiss_kwargs = faiss_kwargs if faiss_kwargs is not None else {}
+        faiss_kwargs = faiss_kwargs if faiss_kwargs is not None else {
+            "dataset": None,
+            "embedder": None,
+        }
 
         if llm_config is None:
             llm_config = self.get_default_llm_config()

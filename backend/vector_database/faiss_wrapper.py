@@ -39,6 +39,9 @@ class FaissWrapper:
         :param dim: dimensionality of the vectors (required if index_str is passed, ignored otherwise)
         """
 
+        if embedder is None:
+            embedder = EmbedderWrapper(device)
+
         self.device = device
         self.embedder = embedder
         self.n_neighbors = n_neighbors
