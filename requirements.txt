@@ -6,3 +6,4 @@ torch
 transformers
 matplotlib
 faiss-cpu
+datasets
