@@ -54,11 +54,11 @@ with tqdm(total=total_chunks) as pbar:
 
         if total_processed >= curr_d:
             with open("scripts/embeddings/report_length_chunks.json", "w") as f:
-                json.dump(report, f)
+                json.dump(report, f, indent=4)
 
             curr_d += DUMP
 
         pbar.update(len(chunks))
 
 with open("scripts/embeddings/report_length_chunks.json", "w") as f:
-    json.dump(report, f)
+    json.dump(report, f, indent=4)

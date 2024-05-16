@@ -19,7 +19,7 @@ class EmbedderWrapper:
     @torch.no_grad()
     def get_embedding(self, text: List[str] | str) -> torch.Tensor:
         batch_dict = self.tokenizer(
-            text, max_length=8192, padding=True, truncation=True, return_tensors="pt"
+            text, max_length=512, padding=True, truncation=True, return_tensors="pt"
         )
         batch_dict = batch_dict.to(self.device)
         outputs = self.embedder(**batch_dict)
