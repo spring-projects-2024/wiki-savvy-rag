@@ -85,11 +85,15 @@ if __name__ == "__main__":
                 ]
 
             embs_list = []
-            for inp_tex in input_texts:
-                embedding_single: torch.Tensor = embedder.get_embedding(inp_tex)
-                embs_list.append(embedding_single)
+            # for inp_tex in input_texts:
+            #     embedding_single: torch.Tensor = embedder.get_embedding(inp_tex)
+            #     embs_list.append(embedding_single)
+            #
+            # embeddings = torch.stack(embs_list)
 
-            embeddings = torch.stack(embs_list)
+            embeddings = embedder.get_embedding(input_texts)
+
+
 
             print(f"Embeddings shape {embeddings.shape}")
 
