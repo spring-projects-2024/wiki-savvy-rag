@@ -13,8 +13,8 @@ import argparse
 DB_DIR_DEFAULT = "scripts/dataset/data"
 DB_NAME_DEFAULT = "dataset"
 OUTPUT_DIR_DEFAULT = "scripts/embeddings/data/"
-MAX_ACCUMULATION_DEFAULT = 300_000
-MAX_CHUNKS_DEFAULT = 100
+MAX_ACCUMULATION_DEFAULT = 250
+MAX_CHUNKS_DEFAULT = 50_000
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -57,6 +57,12 @@ if __name__ == "__main__":
         help="Maximum number of chunks to keep on memory before dumping the embeddings on file",
     )
     parser.add_argument(
+        "--chunks_per_file",
+        type=int,
+        default=MAX_CHUNKS_DEFAULT,
+        help="Number of chunks to store in each file",
+    )
+    parser.add_argument(
         "--device", type=str, default="cpu", help="Device where to run the embedder"
     )
 
@@ -87,9 +93,7 @@ if __name__ == "__main__":
     with tqdm(
         total=(min(args.chunks, count_of_chunks) if args.chunks else count_of_chunks)
     ) as pbar:
-        for chunks in dataset.paginate_chunks(
-            args.max_accumulation, offset=args.offset
-        ):
+        for chunks in dataset.paginate_chunks(args.chunks_per_file, offset=args.offset):
 
             print(f"N CHUNKS IS {len(chunks)}")
             input_texts = [chunk["text"] for chunk in chunks]
@@ -99,13 +103,15 @@ if __name__ == "__main__":
                 ]
 
             embs_list = []
-            # for inp_tex in input_texts:
-            #     embedding_single: torch.Tensor = embedder.get_embedding(inp_tex)
-            #     embs_list.append(embedding_single)
-            #
-            # embeddings = torch.stack(embs_list)
 
-            embeddings = embedder.get_embedding(input_texts)
+            for i in range(0, len(input_texts), args.max_accumulation):
+                inp_tex = input_texts[i : i + args.max_accumulation]
+                embedding_single: torch.Tensor = embedder.get_embedding(inp_tex)
+                embs_list.append(embedding_single)
+
+            embeddings = torch.cat(embs_list)
+
+            # embeddings = embedder.get_embedding(input_texts)
 
             print(f"Embeddings shape {embeddings.shape}")
 
