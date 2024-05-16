@@ -7,3 +7,4 @@ transformers
 datasets
 matplotlib
 faiss-cpu
+accelerate
