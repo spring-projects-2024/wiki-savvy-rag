@@ -11,9 +11,8 @@ def get_default_gen_args():
     return {
         "max_new_tokens": 500,
         "return_full_text": False,
-        "temperature": 0.0,
+        # "temperature": 0.0,
         "do_sample": False,
-
     }
 
 

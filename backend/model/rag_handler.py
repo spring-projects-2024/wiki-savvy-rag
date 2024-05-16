@@ -65,22 +65,26 @@ class RagHandler:
         # is a list of dictionaries containing the chat history
         # if queries is a list of strings then histories is a list of lists of dictionaries containing the chat history
         if isinstance(queries, list):
-            messages = []
+            updated_histories = []
             for history, query in zip(histories, queries):
                 if self.use_rag is False:
-                    messages.append(join_messages_query_no_rag(history, query))
+                    updated_histories.append(join_messages_query_no_rag(history, query))
                 else:
                     retrieved = self.faiss.search_text(query)
                     # here we would do some preprocessing on the retrieved documents
-                    messages.append(join_messages_query_rag(history, query, retrieved))
+                    updated_histories.append(
+                        join_messages_query_rag(history, query, retrieved)
+                    )
 
         elif isinstance(queries, str):
             if self.use_rag is False:
-                messages = join_messages_query_no_rag(histories, queries)
+                updated_histories = join_messages_query_no_rag(histories, queries)
             else:
                 retrieved = self.faiss.search_text(queries)
                 # here we would do some preprocessing on the retrieved documents
-                messages = join_messages_query_rag(histories, queries, retrieved)
+                updated_histories = join_messages_query_rag(
+                    histories, queries, retrieved
+                )
         else:
             raise TypeError(
                 "histories and queries must be either both strings or both lists of strings"
@@ -89,7 +93,7 @@ class RagHandler:
         rag_config = deepcopy(self.llm_config)
         if kwargs:
             rag_config.update(kwargs)
-        response = self.llm.inference(messages, rag_config)
+        response = self.llm.inference(updated_histories, rag_config)
         return response
 
     def add_arxiv_paper(self, paper):
