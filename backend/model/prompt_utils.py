@@ -9,5 +9,7 @@ def join_messages_query_no_rag(history: List[Dict[str, str]], query):
     return new_history
 
 
-def join_messages_query_rag(history, query, retrieved_docs: List[Tuple[str, float]]):
-    raise NotImplementedError
+def join_messages_query_rag(
+    history: List[Dict[str, str]], query: str, retrieved_docs: List[Tuple[str, float]]
+):
+    pass
