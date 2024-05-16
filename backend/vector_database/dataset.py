@@ -116,8 +116,12 @@ class Dataset:
 
         return [self._res_to_chunk(chunk) for chunk in chunks]
 
-    def paginate_chunks(self, count_per_page):
-        offset = 0
+    def paginate_chunks(self, count_per_page, offset=0) -> Iterable[list]:
+        """
+        Iterate over the chunks in the database, paginating them.
+        :param count_per_page: Page size
+        :param offset: Offset
+        """
         while True:
             cur = self.con.cursor()
             res = cur.execute(
