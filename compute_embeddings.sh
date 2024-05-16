@@ -24,6 +24,6 @@ conda activate py3-12
 
 conda info --envs
 
-python3 scripts/embeddings/cluster_script_embedding.py --device "cuda" --max_accumulation 1000
+python3 scripts/embeddings/cluster_script_embedding.py --device "cuda" --max_accumulation 250 --offset %1 --chunks %2
 
 conda deactivate

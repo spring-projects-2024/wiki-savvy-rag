@@ -44,6 +44,13 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument(
+        "--offset",
+        type=int,
+        default=0,
+        help="Offset from the beginning of the dataset",
+        required=False,
+    )
+    parser.add_argument(
         "--max_accumulation",
         type=int,
         default=MAX_ACCUMULATION_DEFAULT,
@@ -69,6 +76,10 @@ if __name__ == "__main__":
     length = 10
     iterator = itertools.product(alphabet, repeat=length)
 
+    n_file_skipped = args.offset // args.max_accumulation
+    for _ in range(n_file_skipped):
+        next(iterator)
+
     processed_count = 0
 
     print(f"MAX ACCUMULATION IS {args.max_accumulation}")
@@ -76,7 +87,10 @@ if __name__ == "__main__":
     with tqdm(
         total=(min(args.chunks, count_of_chunks) if args.chunks else count_of_chunks)
     ) as pbar:
-        for chunks in dataset.paginate_chunks(args.max_accumulation):
+        for chunks in dataset.paginate_chunks(
+            args.max_accumulation, offset=args.offset
+        ):
+
             print(f"N CHUNKS IS {len(chunks)}")
             input_texts = [chunk["text"] for chunk in chunks]
             if args.chunks:
@@ -93,8 +107,6 @@ if __name__ == "__main__":
 
             embeddings = embedder.get_embedding(input_texts)
 
-
-
             print(f"Embeddings shape {embeddings.shape}")
 
             filename = os.path.join(
@@ -108,7 +120,6 @@ if __name__ == "__main__":
             del embeddings, input_texts, embs_list
             gc.collect()
             torch.cuda.empty_cache()
-
 
             if args.chunks and processed_count >= args.chunks:
                 break
