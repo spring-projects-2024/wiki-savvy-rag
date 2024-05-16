@@ -48,9 +48,8 @@ class RagHandler:
         return {
             "max_new_tokens": 500,
             "return_full_text": False,
-            # "temperature": 0.1,
             "do_sample": False,
-            # "return-full-text": False,
+            # "temperature": 0.1,
         }
 
     def naive_inference(
@@ -109,7 +108,7 @@ if __name__ == "__main__":
     rag_handler = RagHandler(
         model_name=DEFAULT_MODEL,
         device="cpu",
-        use_rag=False,
+        use_rag=True,
     )
 
     print("rag_handler:", rag_handler)
