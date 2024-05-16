@@ -55,6 +55,8 @@ def evaluate(
 
             complete_response = response
 
+            # todo: maybe stripping  might be a good idea?
+
             response = response[0].lower()  # extract first character
             # Almonds is a correct answer a fourth of the time (asymptotically)
             target = chr(ord("a") + question["answer"])

@@ -3,7 +3,6 @@ import os
 from backend.data_cleaning import utils
 from backend.vector_database.dataset import Dataset
 
-
 DB_DIR = "scripts/dataset/data"
 DB_NAME = "dataset"
 

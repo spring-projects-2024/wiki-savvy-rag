@@ -1,3 +1,9 @@
+# remote
+err
+out
+test_slurm
+
+
 wikidump_processing/data/*
 .DS_Store
 pypyenv

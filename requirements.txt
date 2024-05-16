@@ -4,5 +4,7 @@ pandas
 spacy
 torch
 transformers
+datasets
 matplotlib
 faiss-cpu
+accelerate
