@@ -1,6 +1,6 @@
 {
   device: "cuda",
-  model_name: "microsoft/Phi-3-mini-128k-instruct",
+  model_name: "microsoft/phi-3-mini-128k-instruct",
   model_kwargs: {
     torch_dtype: "auto",
   }
