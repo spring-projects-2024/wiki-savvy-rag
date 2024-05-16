@@ -46,13 +46,21 @@ class FaissWrapper:
                 self.dim, index_str, faiss.METRIC_INNER_PRODUCT
             )
 
+    def search_vectors(self, vectors: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Search for the nearest neighbors of n vectors.
+        :param vector: np.ndarray of shape (n, dim)
+        :return: Index matrix I and distance matrix D
+        """
+        return self._index.search(vectors, self.n_neighbors)
+
     def _search_vector(self, vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Search for the nearest neighbors of a vector.
         :param vector: np.ndarray of shape (dim)
         :return: Index matrix I and distance matrix D
         """
-        return self._index.search(vector.reshape(1, -1), self.n_neighbors)
+        return self.search_vectors(vector.reshape(1, -1))
 
     def _search_text_get_I_D(self, text: str) -> Tuple[np.ndarray, np.ndarray]:
         """
