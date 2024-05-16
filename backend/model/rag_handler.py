@@ -48,9 +48,9 @@ class RagHandler:
         return {
             "max_new_tokens": 500,
             "return_full_text": False,
-            "temperature": 0.0,
+            # "temperature": 0.1,
             "do_sample": False,
-            "return-full-text": False,
+            # "return-full-text": False,
         }
 
     def naive_inference(
