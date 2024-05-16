@@ -1,8 +1,10 @@
 #!/bin/bash
 
-sbatch compute_embeddings.sh 0 1000
-sbatch compute_embeddings.sh 1000 1000
-sbatch compute_embeddings.sh 2000 1000
-sbatch compute_embeddings.sh 3000 1000
-sbatch compute_embeddings.sh 4000 1000
-sbatch compute_embeddings.sh 5000 1000
+# write a for cycle to submit multiple jobs
+
+n=100
+
+for (( i = 0; i < 14*n; i+=n )); do
+    sbatch compute_embeddings.sh $((i)) $((n))
+done
+
