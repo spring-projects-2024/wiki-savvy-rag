@@ -82,7 +82,7 @@ if __name__ == "__main__":
     length = 10
     iterator = itertools.product(alphabet, repeat=length)
 
-    n_file_skipped = args.offset // args.max_accumulation
+    n_file_skipped = args.offset // args.chunks_per_file
     for _ in range(n_file_skipped):
         next(iterator)
 
