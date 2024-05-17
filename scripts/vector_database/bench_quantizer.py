@@ -171,9 +171,10 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
 
     print("Building mmlu embeddings")
-    # mmlu_embds = build_mmlu_embds(args.mmlu_sample_size)
+    mmlu_embds = build_mmlu_embds(args.mmlu_sample_size)
+
     # random embeddings
-    mmlu_embds = np.random.rand(args.mmlu_sample_size, 384).astype(np.float32)
+    # mmlu_embds = np.random.rand(args.mmlu_sample_size, 384).astype(np.float32)
 
     print("Building mmlu baselines")
     D_base, I_base = build_baselines(mmlu_embds, args.knn_neighbors)
