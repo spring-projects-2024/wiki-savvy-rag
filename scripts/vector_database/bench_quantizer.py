@@ -185,7 +185,7 @@ def main():
 
     # benchmark with product quantizers
     for M in [32, 64, 128]:
-        index_str = f"OPQ{M}_{M // 4},IVF{centroids}_HNSW32,PQ{M}"
+        index_str = f"OPQ{M}_{M * 4},IVF{centroids}_HNSW32,PQ{M}"
         benchmark(
             index_str,
             mmlu_embds,
@@ -198,7 +198,7 @@ def main():
 
     # benchmark with product quantizers (fast scan)
     for M in [64, 128, 256]:
-        index_str = f"OPQ{M}_{M // 4},IVF{centroids}_HNSW32,PQ{M}x4fsr"
+        index_str = f"OPQ{M}_{M * 4},IVF{centroids}_HNSW32,PQ{M}x4fsr"
         benchmark(
             index_str,
             mmlu_embds,
