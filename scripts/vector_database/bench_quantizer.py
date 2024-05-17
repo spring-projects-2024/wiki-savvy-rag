@@ -70,18 +70,14 @@ def benchmark(
 ):
     results[index_str] = {}
 
-    # catch all stdout and redirect to file
-    with open(os.path.join(output_dir, "bench_quantizer_stdout.txt"), "w") as f:
-        sys.stdout = f
-
-        vector_db = train_vector_db(
-            index_str=index_str,
-            input_dir="scripts/embeddings/data/",
-            training_size=training_size,
-            train_on_gpu=train_on_gpu,
-            nprobe=nprobe,
-            device=DEVICE,
-        )
+    vector_db = train_vector_db(
+        index_str=index_str,
+        input_dir="scripts/embeddings/data/",
+        training_size=training_size,
+        train_on_gpu=train_on_gpu,
+        nprobe=nprobe,
+        device=DEVICE,
+    )
 
     # measure the size of the index on disk
     dump_path = os.path.join(output_dir, index_str.replace(",", "_") + ".index")

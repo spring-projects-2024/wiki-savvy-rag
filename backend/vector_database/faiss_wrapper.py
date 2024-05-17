@@ -39,7 +39,6 @@ class FaissWrapper:
         self.dataset = dataset
         self.dim = self.embedder.get_dimensionality()
 
-
         if index_path:
             self._index = faiss.read_index(index_path)
             assert self.dim == self._index.d
@@ -48,10 +47,6 @@ class FaissWrapper:
                 self.dim, index_str, faiss.METRIC_INNER_PRODUCT
             )
             self._index.nprobe = nprobe
-
-
-
-
 
     def search_vectors(
         self, vectors: np.ndarray, n_neighbors: int = 10
@@ -98,6 +93,27 @@ class FaissWrapper:
         I, D = self._search_text_get_I_D(text)
 
         return [(self._index_to_text(i), j) for i, j in zip(D[0], I[0]) if i != -1]
+
+    def search_multiple_texts(self, texts: List[str]) -> List[List[Tuple[str, float]]]:
+        """
+        Search for the nearest neighbors of multiple texts.
+        :param texts:
+        :return: List of lists of tuples of (text, distance)
+        """
+        MAX_BATCH_SIZE = 250
+
+        embeddings = []
+        for i in range(0, len(texts), MAX_BATCH_SIZE):
+            embeddings.append(
+                self.embedder.get_embedding(texts[i : i + MAX_BATCH_SIZE]).numpy()
+            )
+
+        I, D = self.search_vectors(np.concatenate(embeddings))
+
+        return [
+            [(self._index_to_text(i), j) for i, j in zip(D_i, I_i) if i != -1]
+            for D_i, I_i in zip(D, I)
+        ]
 
     def train_from_vectors(self, data, train_on_gpu=False):
         if train_on_gpu:
