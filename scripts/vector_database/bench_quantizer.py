@@ -24,7 +24,6 @@ TRAIN_ON_GPU_DEFAULT = False
 TRAINING_SIZE_DEFAULT = 0.2
 NPROBE_DEFAULT = 10
 
-results = {}
 
 
 def build_mmlu_embds(mmlu_sample_size):
@@ -69,7 +68,7 @@ def benchmark(
     nprobe: int,
     n_neighbors: int,
 ):
-    results[index_str] = {}
+    results = {}
 
     vector_db = train_vector_db(
         index_str=index_str,
@@ -93,7 +92,7 @@ def benchmark(
     end = time.time()
 
     # measure the knn intersection measure
-    results[index_str] = {
+    results["index_str"] = {
         f"rank_{rank}": knn_intersection_measure(I[:, :rank], I_base[:, :rank])
         for rank in [1, 10, 50, 100]
     }
@@ -102,22 +101,23 @@ def benchmark(
     elapsed_time = end - start
     hours, rem = divmod(elapsed_time, 3600)
     minutes, seconds = divmod(rem, 60)
-    results[index_str][
+    results[
         "elapsed_time"
     ] = f"{int(hours):0>2}:{int(minutes):0>2}:{seconds:05.2f}"
 
     # save the size of the index on disk
-    results[index_str]["size_on_disk"] = size_on_disk
+    results["size_on_disk"] = size_on_disk
 
-    results[index_str]["nprobe"] = nprobe
-    results[index_str]["training_size"] = training_size
-    results[index_str]["train_on_gpu"] = train_on_gpu
-    results[index_str]["mmul_sample_size"] = mmlu_embds.shape[0]
+    results["nprobe"] = nprobe
+    results["training_size"] = training_size
+    results["train_on_gpu"] = train_on_gpu
+    results["mmul_sample_size"] = mmlu_embds.shape[0]
     # save checkpoint of results
     with open(
-        os.path.join(output_dir, "bench_quantizer.json"), "w", encoding="utf-8"
+        os.path.join(output_dir, "bench_quantizer.json"), "a", encoding="utf-8"
     ) as f:
         json.dump(results, f, indent=4)
+        f.write(",\n")
 
     del vector_db
 
