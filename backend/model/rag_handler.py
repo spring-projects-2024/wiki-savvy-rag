@@ -67,6 +67,11 @@ class RagHandler:
         self,
         queries: List[str],
     ) -> List[torch.Tensor]:
+        """
+        Probably not useful. This function takes a batch of queries. For each of them, it retrieves
+        documents with faiss, feeds the query with each document to the model, and computes the average
+        of the logits weighted by the scores of the retrieved documents.
+        """
         retrieved_for_every_query = self.faiss.search_multiple_texts(queries)
         avg_logits_for_every_query = []
         for query, retrieved in zip(queries, retrieved_for_every_query):
