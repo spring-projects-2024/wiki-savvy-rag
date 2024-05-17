@@ -98,7 +98,7 @@ class FaissWrapper:
         """
         Search for the nearest neighbors of multiple texts.
         :param texts:
-        :return: List of lists of tuples of (text, distance)
+        :return: List of lists of tuples of (text, similarity)
         """
         MAX_BATCH_SIZE = 250
 
@@ -108,7 +108,7 @@ class FaissWrapper:
                 self.embedder.get_embedding(texts[i : i + MAX_BATCH_SIZE]).numpy()
             )
 
-        I, D = self.search_vectors(np.concatenate(embeddings))
+        I, D = self.search_vectors(np.concatenate(embeddings))  # check axis
 
         return [
             [(self._index_to_text(i), j) for i, j in zip(D_i, I_i) if i != -1]
