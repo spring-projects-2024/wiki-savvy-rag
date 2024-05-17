@@ -49,7 +49,7 @@ def build_baselines(mmlu_embds: np.ndarray, knn_neighbors: int):
         D, I = faiss.knn(
             mmlu_embds,
             embeddings.numpy(),
-            min(mmlu_embds.shape[0], knn_neighbors),
+            min(embeddings.shape[0], knn_neighbors),
             metric=faiss.METRIC_INNER_PRODUCT,
         )
 
@@ -67,6 +67,7 @@ def benchmark(
     train_on_gpu: bool,
     output_dir: str,
     nprobe: int,
+    n_neighbors: int,
 ):
     results[index_str] = {}
 
@@ -88,7 +89,7 @@ def benchmark(
     vector_db._index.nprobe = NPROBE_DEFAULT
 
     start = time.time()
-    _, I = vector_db.search_vectors(mmlu_embds)
+    _, I = vector_db.search_vectors(mmlu_embds, n_neighbors=n_neighbors)
     end = time.time()
 
     # measure the knn intersection measure
@@ -169,8 +170,14 @@ def main():
 
     os.makedirs(args.output_dir, exist_ok=True)
 
-    mmlu_embds = build_mmlu_embds(args.mmlu_sample_size)
-    I_base = build_baselines(mmlu_embds, args.knn_neighbors)
+    print("Building mmlu embeddings")
+    # mmlu_embds = build_mmlu_embds(args.mmlu_sample_size)
+    # random embeddings
+    mmlu_embds = np.random.rand(args.mmlu_sample_size, 384).astype(np.float32)
+
+    print("Building mmlu baselines")
+    D_base, I_base = build_baselines(mmlu_embds, args.knn_neighbors)
+
 
     # benchmark with scalar quantizers
     # for sq_type in ["SQ4"]:
@@ -186,7 +193,7 @@ def main():
     #     )
 
     # benchmark with product quantizers
-    for M in [32, 64, 128]:
+    for M in [16, 32, 64, 128]:
         index_str = f"OPQ{M}_{M * 4},IVF{centroids}_HNSW32,PQ{M}"
         benchmark(
             index_str,
@@ -196,6 +203,7 @@ def main():
             args.train_on_gpu,
             args.output_dir,
             args.nprobe,
+            args.knn_neighbors,
         )
 
     # benchmark with product quantizers (fast scan)
@@ -209,6 +217,7 @@ def main():
             args.train_on_gpu,
             args.output_dir,
             args.nprobe,
+            args.knn_neighbors,
         )
 
     return
