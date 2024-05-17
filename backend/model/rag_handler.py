@@ -1,5 +1,7 @@
 from copy import deepcopy
 from typing import Optional, List, Dict
+
+import torch
 from backend.model.llm_handler import LLMHandler
 from backend.vector_database.faiss_wrapper import FaissWrapper
 from backend.model.prompt_utils import (
@@ -51,6 +53,40 @@ class RagHandler:
             "do_sample": False,
             # "temperature": 0.1,
         }
+
+    def craft_replug_query(self, query: str, doc: str) -> str:
+        out = ""
+        out += "Context:\n"
+        out += doc
+        out += "\n\n"
+        out += "Query:\n"
+        out += query
+        return out
+
+    def get_logits_replug(
+        self,
+        queries: List[str],
+    ) -> List[torch.Tensor]:
+        retrieved_for_every_query = self.faiss.search_multiple_texts(queries)
+        avg_logits_for_every_query = []
+        for query, retrieved in zip(queries, retrieved_for_every_query):
+            queries_with_context = []
+            scores = []
+            for tup in retrieved:
+                doc, score = tup
+                scores.append(score)
+                query_with_context = self.craft_replug_query(query, doc)
+                queries_with_context.append(query_with_context)
+            logits = self.llm.get_logits(
+                queries_with_context
+            )  # (num_docs, seq_len, vocab_size)
+            scores = torch.tensor(scores)
+            scores /= scores.sum()
+            avg_logits = (logits * scores[:, None, None]).sum(
+                dim=0
+            )  # (seq_len, vocab_size)
+            avg_logits_for_every_query.append(avg_logits)
+        return avg_logits_for_every_query  # (num_queries, seq_len, vocab_size)
 
     def naive_inference(
         self,
