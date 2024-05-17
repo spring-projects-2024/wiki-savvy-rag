@@ -25,7 +25,7 @@ NPROBE_DEFAULT = 10
 results = {}
 
 
-def build_mmlu_embds(mmll_sample_size):
+def build_mmlu_embds(mmlu_sample_size):
     """Builds the embeddings for the MMLU dataset."""
     dataset = load_mmlu(split="test", subset="stem")
     embedder = EmbedderWrapper(DEVICE)
@@ -33,7 +33,7 @@ def build_mmlu_embds(mmll_sample_size):
     questions = [x["question"] for x in dataset]
 
     embd_list = []
-    for i in range(min(mmll_sample_size, len(questions))):
+    for i in range(min(mmlu_sample_size, len(questions))):
         embd_list.append(embedder.get_embedding(questions[i]))
 
     return torch.cat(embd_list).numpy()
@@ -166,7 +166,7 @@ def main():
 
     os.makedirs(args.output_dir, exist_ok=True)
 
-    mmlu_embds = build_mmlu_embds(args.mmll_sample_size)
+    mmlu_embds = build_mmlu_embds(args.mmlu_sample_size)
     I_base = build_baselines(mmlu_embds, args.knn_neighbors)
 
     # benchmark with scalar quantizers
