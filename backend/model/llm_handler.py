@@ -1,7 +1,12 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    pipeline,
+)
+from transformers.utils import ModelOutput
 
 
 # TODO: does pipe handle eval mode?
@@ -43,6 +48,45 @@ class LLMHandler:
             model=self.model,
             tokenizer=self.tokenizer,
         )
+
+    def prepare_input(self, prompts: list[str], **kwargs) -> dict[str, torch.Tensor]:
+        """
+        Tokenize prompts and return a dictionary with keys "input_ids", "attention_mask".
+        "input_ids" is a tensor of shape (batch_size, seq_len), where seq_len is the
+        maximum sequence length in the batch (padding=True).
+        "attention_mask" is a tensor of shape (batch_size, seq_len) with 1s in positions
+        corresponding to tokens and 0s in positions corresponding to padding tokens.
+        """
+        return self.tokenizer(
+            prompts,
+            return_tensors="pt",
+            padding=True,
+            **kwargs,
+        )
+
+    def forward(self, input_ids: dict[str, torch.Tensor]) -> ModelOutput:
+        """
+        The output is an instance of a subclass of ModelOutput.
+        Its attributes can be accessed with the dot notation.
+        With phi-3-mini-128k-instruct, the output has the attributes
+        'logits' and 'past_key_values' (for caching hidden states when
+        decoding autoregressively).
+        """
+        return self.model(**input_ids)
+
+    def get_logits(self, x: Union[dict[str, torch.Tensor], list[str]]) -> torch.Tensor:
+        """
+        Get the logits of the model output.
+        Input can be a list of strings, which will be tokenized and padded,
+        or a dictionary with keys "input_ids" and "attention_mask" ready for
+        the model forward pass (like the output of prepare_input()).
+        """
+        if isinstance(x, dict):
+            return self.forward(x).logits
+        elif isinstance(x, list):
+            return self.forward(self.prepare_input(x)).logits
+        else:
+            raise ValueError(f"Invalid input type: {type(x)}")
 
     @torch.inference_mode()
     def inference(self, messages, generation_args: Dict):
