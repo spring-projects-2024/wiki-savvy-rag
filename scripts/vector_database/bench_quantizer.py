@@ -109,6 +109,10 @@ def benchmark(
     # save the size of the index on disk
     results[index_str]["size_on_disk"] = size_on_disk
 
+    results[index_str]["nprobe"] = nprobe
+    results[index_str]["training_size"] = training_size
+    results[index_str]["train_on_gpu"] = train_on_gpu
+    results[index_str]["mmul_sample_size"] = mmlu_embds.shape[0]
     # save checkpoint of results
     with open(
         os.path.join(output_dir, "bench_quantizer.json"), "w", encoding="utf-8"
@@ -178,7 +182,6 @@ def main():
 
     print("Building mmlu baselines")
     D_base, I_base = build_baselines(mmlu_embds, args.knn_neighbors)
-
 
     # benchmark with scalar quantizers
     # for sq_type in ["SQ4"]:
