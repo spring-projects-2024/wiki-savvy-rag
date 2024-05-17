@@ -1,5 +1,7 @@
 import json
 import os
+import sys
+
 import torch
 import time
 import argparse
@@ -64,18 +66,22 @@ def benchmark(
     training_size: float,
     train_on_gpu: bool,
     output_dir: str,
-        nprobe: int,
+    nprobe: int,
 ):
     results[index_str] = {}
 
-    vector_db = train_vector_db(
-        index_str=index_str,
-        input_dir="scripts/embeddings/data/",
-        training_size=training_size,
-        train_on_gpu=train_on_gpu,
-        nprobe=nprobe,
-        device=DEVICE,
-    )
+    # catch all stdout and redirect to file
+    with open(os.path.join(output_dir, "bench_quantizer_stdout.txt"), "w") as f:
+        sys.stdout = f
+
+        vector_db = train_vector_db(
+            index_str=index_str,
+            input_dir="scripts/embeddings/data/",
+            training_size=training_size,
+            train_on_gpu=train_on_gpu,
+            nprobe=nprobe,
+            device=DEVICE,
+        )
 
     # measure the size of the index on disk
     dump_path = os.path.join(output_dir, index_str.replace(",", "_") + ".index")
@@ -193,7 +199,7 @@ def main():
             args.training_size,
             args.train_on_gpu,
             args.output_dir,
-            args.nprobe
+            args.nprobe,
         )
 
     # benchmark with product quantizers (fast scan)
@@ -206,7 +212,7 @@ def main():
             args.training_size,
             args.train_on_gpu,
             args.output_dir,
-            args.nprobe
+            args.nprobe,
         )
 
     return
