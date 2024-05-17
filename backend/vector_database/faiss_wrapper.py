@@ -6,6 +6,7 @@ import faiss
 import numpy as np
 from backend.vector_database.dataset import MockDataset
 
+
 # TODO: allow processing queries in batches
 
 
@@ -18,7 +19,7 @@ class FaissWrapper:
         *,
         index_path=None,
         index_str=None,
-        n_neighbors=10,
+        nprobe=1,
     ):
         """
         Instantiate a FaissWrapper object.
@@ -27,6 +28,7 @@ class FaissWrapper:
         :param n_neighbors: parameter k for knn, default 10
         :param dataset:
         :param dim: dimensionality of the vectors (required if index_str is passed, ignored otherwise)
+        :param nprobe: number of probes for search, ignored if index is loaded from file
         """
 
         if embedder is None:
@@ -34,9 +36,9 @@ class FaissWrapper:
 
         self.device = device
         self.embedder = embedder
-        self.n_neighbors = n_neighbors
         self.dataset = dataset
         self.dim = self.embedder.get_dimensionality()
+
 
         if index_path:
             self._index = faiss.read_index(index_path)
@@ -45,14 +47,21 @@ class FaissWrapper:
             self._index = faiss.index_factory(
                 self.dim, index_str, faiss.METRIC_INNER_PRODUCT
             )
+            self._index.nprobe = nprobe
 
-    def search_vectors(self, vectors: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+
+
+
+
+    def search_vectors(
+        self, vectors: np.ndarray, n_neighbors: int = 10
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Search for the nearest neighbors of n vectors.
         :param vector: np.ndarray of shape (n, dim)
         :return: Index matrix I and distance matrix D
         """
-        return self._index.search(vectors, self.n_neighbors)
+        return self._index.search(vectors, n_neighbors)
 
     def _search_vector(self, vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """

@@ -29,6 +29,7 @@ def embeddings_iterator(input_dir: str) -> Generator[torch.Tensor, None, None]:
 def train_vector_db(
     index_str: str,
     input_dir: str,
+    nprobe: int,
     training_size: float,
     train_on_gpu: bool = True,
 ):
@@ -43,6 +44,7 @@ def train_vector_db(
         dataset=None,
         index_str=index_str,
         embedder=None,
+        nprobe=nprobe,
     )
 
     print("Initiated training of vector database with the following configuration:")

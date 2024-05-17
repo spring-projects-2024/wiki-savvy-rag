@@ -2,6 +2,7 @@ import json
 import os
 import torch
 import time
+import argparse
 
 import faiss
 import numpy as np
@@ -13,17 +14,18 @@ from scripts.vector_database.utils import embeddings_iterator, train_vector_db
 
 INPUT_DIR_DEFAULT = "scripts/embeddings/data/"
 OUTPUT_DIR_DEFAULT = "scripts/vector_database/data/"
-CENTROIDS = 5  # 131072
+CENTROIDS_DEFAULT = 5  # 131072
 DEVICE = "cpu"
-KNN_NEIGHBORS = 100
-MMLU_SAMPLE_SIZE = 10
-TRAIN_ON_GPU = False
-TRAINING_SIZE = 0.2
+KNN_NEIGHBORS_DEFAULT = 100
+MMLU_SAMPLE_SIZE_DEFAULT = 10
+TRAIN_ON_GPU_DEFAULT = False
+TRAINING_SIZE_DEFAULT = 0.2
+NPROBE_DEFAULT = 10
 
 results = {}
 
 
-def build_mmlu_embds():
+def build_mmlu_embds(mmll_sample_size):
     """Builds the embeddings for the MMLU dataset."""
     dataset = load_mmlu(split="test", subset="stem")
     embedder = EmbedderWrapper(DEVICE)
@@ -31,13 +33,13 @@ def build_mmlu_embds():
     questions = [x["question"] for x in dataset]
 
     embd_list = []
-    for i in range(min(MMLU_SAMPLE_SIZE, len(questions))):
+    for i in range(min(mmll_sample_size, len(questions))):
         embd_list.append(embedder.get_embedding(questions[i]))
 
     return torch.cat(embd_list).numpy()
 
 
-def build_baselines(mmlu_embds: np.ndarray):
+def build_baselines(mmlu_embds: np.ndarray, knn_neighbors: int):
     """Builds the KNN baselines for the MMLU dataset."""
     Ds = []
     Is = []
@@ -45,7 +47,7 @@ def build_baselines(mmlu_embds: np.ndarray):
         D, I = faiss.knn(
             mmlu_embds,
             embeddings.numpy(),
-            min(mmlu_embds.shape[0], KNN_NEIGHBORS),
+            min(mmlu_embds.shape[0], knn_neighbors),
             metric=faiss.METRIC_INNER_PRODUCT,
         )
 
@@ -59,21 +61,28 @@ def benchmark(
     index_str: str,
     mmlu_embds: np.ndarray,
     I_base: np.ndarray,
+    training_size: float,
+    train_on_gpu: bool,
+    output_dir: str,
+        nprobe: int,
 ):
     results[index_str] = {}
 
     vector_db = train_vector_db(
         index_str=index_str,
         input_dir="scripts/embeddings/data/",
-        training_size=TRAINING_SIZE,
-        train_on_gpu=TRAIN_ON_GPU,
+        training_size=training_size,
+        train_on_gpu=train_on_gpu,
+        nprobe=nprobe
     )
 
     # measure the size of the index on disk
-    dump_path = os.path.join(OUTPUT_DIR_DEFAULT, index_str.replace(",", "_") + ".index")
+    dump_path = os.path.join(output_dir, index_str.replace(",", "_") + ".index")
     vector_db.save_to_disk(dump_path)
     size_on_disk = os.path.getsize(dump_path)
     os.remove(dump_path)
+
+    vector_db._index.nprobe = NPROBE_DEFAULT
 
     start = time.time()
     _, I = vector_db.search_vectors(mmlu_embds)
@@ -98,7 +107,7 @@ def benchmark(
 
     # save checkpoint of results
     with open(
-        os.path.join(OUTPUT_DIR_DEFAULT, "bench_quantizer.json"), "w", encoding="utf-8"
+        os.path.join(output_dir, "bench_quantizer.json"), "w", encoding="utf-8"
     ) as f:
         json.dump(results, f, indent=4)
 
@@ -106,29 +115,98 @@ def benchmark(
 
 
 def main():
-    os.makedirs(OUTPUT_DIR_DEFAULT, exist_ok=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--centroids",
+        type=int,
+        default=CENTROIDS_DEFAULT,
+        help="Number of centroids for the IVF quantizer",
+    )
+    parser.add_argument(
+        "--knn_neighbors",
+        type=int,
+        default=KNN_NEIGHBORS_DEFAULT,
+        help="Max number of neighbors for computing recall",
+    )
+    parser.add_argument(
+        "--nprobe",
+        type=int,
+        default=NPROBE_DEFAULT,
+        help="Number of probes for the IVF quantizer",
+    )
 
-    mmlu_embds = build_mmlu_embds()
-    D_base, I_base = build_baselines(mmlu_embds)
+    parser.add_argument(
+        "--training_size",
+        type=float,
+        default=TRAINING_SIZE_DEFAULT,
+        help="Fraction of the dataset to use for training",
+    )
+    parser.add_argument(
+        "--mmlu_sample_size",
+        type=int,
+        default=MMLU_SAMPLE_SIZE_DEFAULT,
+        help="Number of samples to use from the MMLU dataset",
+    )
+    parser.add_argument(
+        "--train_on_gpu",
+        type=bool,
+        default=TRAIN_ON_GPU_DEFAULT,
+        help="Whether to train on GPU",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default=OUTPUT_DIR_DEFAULT,
+        help="Location of the directory where to store the output files",
+    )
 
-    # # benchmark with flat
-    # index_str = "Flat"
-    # benchmark(index_str, mmlu_embds, I_base)
+    args = parser.parse_args()
+
+    centroids = args.centroids
+
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    mmlu_embds = build_mmlu_embds(args.mmll_sample_size)
+    I_base = build_baselines(mmlu_embds, args.knn_neighbors)
 
     # benchmark with scalar quantizers
     for sq_type in ["SQ8", "SQ4"]:
-        index_str = f"IVF{CENTROIDS}_HNSW32,{sq_type}"
-        benchmark(index_str, mmlu_embds, I_base)
+        index_str = f"IVF{centroids}_HNSW32,{sq_type}"
+        benchmark(
+            index_str,
+            mmlu_embds,
+            I_base,
+            args.training_size,
+            args.train_on_gpu,
+            args.output_dir,
+            args.nprobe
+        )
 
     # benchmark with product quantizers
     for M in [32, 64, 128]:
-        index_str = f"OPQ{M}_{M / 4},IVF{CENTROIDS}_HNSW32,PQ{M}"
-        benchmark(index_str, mmlu_embds, I_base)
+        index_str = f"OPQ{M}_{M / 4},IVF{centroids}_HNSW32,PQ{M}"
+        benchmark(
+            index_str,
+            mmlu_embds,
+            I_base,
+            args.training_size,
+            args.train_on_gpu,
+            args.output_dir,
+            args.nprobe
+        )
 
     # benchmark with product quantizers (fast scan)
     for M in [64, 128, 256]:
-        index_str = f"OPQ{M}_{M / 4},IVF{CENTROIDS}_HNSW32,PQ{M}x4fsr"
-        benchmark(index_str, mmlu_embds, I_base)
+        index_str = f"OPQ{M}_{M / 4},IVF{centroids}_HNSW32,PQ{M}x4fsr"
+        benchmark(
+            index_str,
+            mmlu_embds,
+            I_base,
+            args.training_size,
+            args.train_on_gpu,
+            args.output_dir,
+            args.nprobe
+        )
 
     return
 
