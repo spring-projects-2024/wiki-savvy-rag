@@ -2,9 +2,9 @@
 
 # write a for cycle to submit multiple jobs
 
-n=100
+n=100000
 
-for (( i = 0; i < 14*n; i+=n )); do
+for (( i = 0; i < 140*n; i+=n )); do
     sbatch compute_embeddings.sh $((i)) $((n))
 done
 

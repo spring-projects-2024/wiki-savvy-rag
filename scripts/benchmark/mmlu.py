@@ -4,6 +4,7 @@ from backend.benchmark.utils import format_question, craft_query, load_mmlu
 import argparse
 import yaml
 import datasets
+import os
 from backend.model.rag_handler import RagHandler
 
 
@@ -37,7 +38,7 @@ def evaluate(
             craft_query(question, chat=True, examples=examples) for question in batch
         ]
         histories = [[] for _ in range(batch_size)]
-        responses = rag_handler.inference(
+        responses = rag_handler.naive_inference(
             histories,
             queries,
         )
@@ -132,7 +133,8 @@ def main():
     if args.output:
         output = args.output
     else:
-        output = f"scripts/benchmark/mmlu_{time.strftime('%Y-%m-%d-%H-%M-%S')}.json"
+        os.makedirs("scripts/benchmark/out", exist_ok=True)
+        output = f"scripts/benchmark/out/mmlu_{time.strftime('%Y-%m-%d-%H-%M-%S')}.json"
 
     result = {
         "metrics": metrics,
