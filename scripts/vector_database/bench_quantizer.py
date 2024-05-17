@@ -43,7 +43,7 @@ def build_baselines(mmlu_embds: np.ndarray, knn_neighbors: int):
     """Builds the KNN baselines for the MMLU dataset."""
     Ds = []
     Is = []
-    for offset, embeddings in enumerate(embeddings_iterator(INPUT_DIR_DEFAULT)):
+    for offset, embeddings in enumerate(embeddings_iterator(INPUT_DIR_DEFAULT, DEVICE)):
         D, I = faiss.knn(
             mmlu_embds,
             embeddings.numpy(),
@@ -73,7 +73,8 @@ def benchmark(
         input_dir="scripts/embeddings/data/",
         training_size=training_size,
         train_on_gpu=train_on_gpu,
-        nprobe=nprobe
+        nprobe=nprobe,
+        device=DEVICE,
     )
 
     # measure the size of the index on disk

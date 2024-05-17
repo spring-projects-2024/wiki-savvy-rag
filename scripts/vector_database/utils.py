@@ -11,7 +11,7 @@ from backend.vector_database.faiss_wrapper import FaissWrapper
 INPUT_FILE_REGEX = "embeddings_[a-z]+.pt"
 
 
-def embeddings_iterator(input_dir: str) -> Generator[torch.Tensor, None, None]:
+def embeddings_iterator(input_dir: str, device:str) -> Generator[torch.Tensor, None, None]:
     """Iterates over the embeddings files in the input directory.
     :param input_dir: the directory containing the embeddings files
     :return: a generator of embeddings"""
@@ -22,7 +22,9 @@ def embeddings_iterator(input_dir: str) -> Generator[torch.Tensor, None, None]:
     files.sort()
     for file in files:
         if file_regex.match(file):
-            embeddings = torch.load(os.path.join(input_dir, file))
+            # pass device to load
+            embeddings = torch.load(os.path.join(input_dir, file), map_location=device)
+            # embeddings = torch.load(os.path.join(input_dir, file))
             yield embeddings
 
 
@@ -30,8 +32,10 @@ def train_vector_db(
     index_str: str,
     input_dir: str,
     nprobe: int,
+        device: str,
     training_size: float,
     train_on_gpu: bool = True,
+
 ):
     """Trains a vector database with the given configuration.
     :param index_str: the index factory string
@@ -40,7 +44,7 @@ def train_vector_db(
     :param train_on_gpu: whether to train on GPU"""
 
     vector_db = FaissWrapper(
-        device="cpu",
+        device=device,
         dataset=None,
         index_str=index_str,
         embedder=None,
@@ -54,7 +58,7 @@ def train_vector_db(
     print("\n")
 
     training_set = []
-    for embeddings in embeddings_iterator(input_dir):
+    for embeddings in embeddings_iterator(input_dir, device):
         indices = torch.randperm(embeddings.size(dim=0))[
             : int(embeddings.size(dim=0) * training_size)
         ]
@@ -81,7 +85,7 @@ def train_vector_db(
     start = time.time()
     print("Start: ", start)
 
-    for embeddings in embeddings_iterator(input_dir):
+    for embeddings in embeddings_iterator(input_dir, device):
         vector_db.add_vectors(embeddings)
 
     end = time.time()
