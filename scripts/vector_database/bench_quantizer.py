@@ -111,9 +111,9 @@ def main():
     mmlu_embds = build_mmlu_embds()
     D_base, I_base = build_baselines(mmlu_embds)
 
-    # benchmark with flat
-    index_str = "Flat"
-    benchmark(index_str, mmlu_embds, I_base)
+    # # benchmark with flat
+    # index_str = "Flat"
+    # benchmark(index_str, mmlu_embds, I_base)
 
     # benchmark with scalar quantizers
     for sq_type in ["SQ8", "SQ4"]:
