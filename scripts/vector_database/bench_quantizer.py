@@ -171,17 +171,17 @@ def main():
     I_base = build_baselines(mmlu_embds, args.knn_neighbors)
 
     # benchmark with scalar quantizers
-    for sq_type in ["SQ4"]:
-        index_str = f"IVF{centroids}_HNSW32,{sq_type}"
-        benchmark(
-            index_str,
-            mmlu_embds,
-            I_base,
-            args.training_size,
-            args.train_on_gpu,
-            args.output_dir,
-            args.nprobe
-        )
+    # for sq_type in ["SQ4"]:
+    #     index_str = f"IVF{centroids}_HNSW32,{sq_type}"
+    #     benchmark(
+    #         index_str,
+    #         mmlu_embds,
+    #         I_base,
+    #         args.training_size,
+    #         args.train_on_gpu,
+    #         args.output_dir,
+    #         args.nprobe
+    #     )
 
     # benchmark with product quantizers
     for M in [32, 64, 128]:
