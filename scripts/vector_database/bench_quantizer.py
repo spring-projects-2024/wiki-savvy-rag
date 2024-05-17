@@ -171,7 +171,7 @@ def main():
     I_base = build_baselines(mmlu_embds, args.knn_neighbors)
 
     # benchmark with scalar quantizers
-    for sq_type in ["SQ8", "SQ4"]:
+    for sq_type in ["SQ4"]:
         index_str = f"IVF{centroids}_HNSW32,{sq_type}"
         benchmark(
             index_str,
