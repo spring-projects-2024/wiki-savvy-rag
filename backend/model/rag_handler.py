@@ -11,6 +11,14 @@ from backend.model.prompt_utils import (
 )
 
 
+# TODO: write inference averaging probabilities over the retrieved documents:
+# need to do it autoregressively, so we need to get from llm both logits and key value caches
+# for the next token generation. The forward pass of the llm already returns the key value caches in
+# the output in addition to the logits. We need to pass those around.
+# good if we decouple getting probabilities from decoding, so that we can choose between greedy, beam search,
+# having a temperature, etc.
+
+
 class RagHandler:
     def __init__(
         self,
@@ -94,7 +102,33 @@ class RagHandler:
             "attention_mask": attention_mask,
         }, query_plus_context_length
 
-    def replug_inference(
+    def compute_probabilities_for_training(
+        self,
+        forward_output: Dict[str, torch.Tensor],
+    ) -> dict[str, torch.Tensor]:
+        """
+        This method takes the output of replug_forward, computes the probabilities of the tokens
+        by aggregating the probabilities of the retrieved documents, and returns the probabilities
+        together with a mask indicating which tokens correspond to the answer part of the prompt.
+        """
+        logits = forward_output["logits"]  # (num_docs, seq_len, vocab_size)
+        scores = forward_output["scores"]
+        context_lengths = forward_output["context_lengths"]
+        # we want to keep only the logits corresponding to the answer part of the prompt
+        answer_lengths = logits.shape[1] - context_lengths
+        mask = (
+            torch.arange(logits.shape[1])[None, :] < answer_lengths[:, None]
+        )  # (num_docs, seq_len)
+        probas = torch.nn.functional.softmax(
+            logits, dim=-1
+        )  # (num_docs, seq_len, vocab_size)
+        probas = (probas * scores[:, None, None]).sum(dim=0)  # (seq_len, vocab_size)
+        return {
+            "probas": probas,
+            "answer_mask": mask,
+        }
+
+    def replug_forward(
         self,
         query: str,
         answer: str,
@@ -102,7 +136,8 @@ class RagHandler:
         """
         logits: (num_docs, seq_len, vocab_size). The logits for each retrieved document, with
         the given query and answer.
-        scores: (num_docs,). The scores of the retrieved documents. Used to average probabilities later.
+        scores: (num_docs,). The scores of the retrieved documents, normalized.
+        Used to average probabilities later.
         context_lengths: (num_docs,). The length of the query and context part of the prompt. These will
         be used to look only at the logits corresponding to the answer part of the prompt.
         """
