@@ -39,7 +39,7 @@ if prompt := st.chat_input("What do you want to know?"):
 
     #fake generator on llm answer (string)
     def string_generator(strlist):
-    """Takes a string to make a generator out of this, allowing to have a nice live token generation effect"""
+        """Takes a string to make a generator out of this, allowing to have a nice live token generation effect"""
         for s in strlist:
             yield s
             time.sleep(0.008)
