@@ -57,6 +57,8 @@ def craft_query(
             prompt += format_question(example, include_answer=True)
             prompt += "\n\n"
     prompt += format_question(question, include_answer=False)
+
+    prompt += "\n\nAnswer (only the letter):\n"
     return prompt
 
 
