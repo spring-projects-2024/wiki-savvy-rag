@@ -7,23 +7,22 @@ import tarfile
 import time
 from typing import List
 from urllib.request import urlretrieve
-import backend.arxiv.utils as utils
-import tqdm
+import arxiv
 from refextract import extract_references_from_url
 
 
-arx_client = utils.Client(delay_seconds=0.0)
+arx_client = arxiv.Client(delay_seconds=0.0)
 
 
-def get_info_from_title(title: str, client: utils.Client = arx_client) -> utils.Result:
+def get_info_from_title(title: str, client: arxiv.Client = arx_client) -> arxiv.Result:
     """
     Get info from a paper given its title.
     :raises Exception if no paper is found
     """
-    search = utils.Search(
+    search = arxiv.Search(
         query=title,
         max_results=20,
-        sort_by=utils.SortCriterion.Relevance,
+        sort_by=arxiv.SortCriterion.Relevance,
     )
 
     results = client.results(search)
@@ -37,12 +36,12 @@ def get_info_from_title(title: str, client: utils.Client = arx_client) -> utils.
     raise Exception(f"No papers with title {title} found")
 
 
-def get_title_from_id(id: str, client: utils.Client) -> str:
+def get_title_from_id(id: str, client: arxiv.Client) -> str:
     """
     Get the title from the id.
     :raises exception if no paper is found
     """
-    search = utils.Search(
+    search = arxiv.Search(
         query=id,
         max_results=1,
     )
