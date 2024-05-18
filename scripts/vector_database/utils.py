@@ -5,6 +5,7 @@ from typing import Generator
 
 import torch
 import numpy as np
+from tqdm import tqdm
 
 from backend.vector_database.faiss_wrapper import FaissWrapper
 
@@ -88,7 +89,7 @@ def train_vector_db(
     start = time.time()
     print("Start: ", start)
 
-    for embeddings in embeddings_iterator(input_dir, device):
+    for embeddings in tqdm(embeddings_iterator(input_dir, device), total=272):
         vector_db.add_vectors(embeddings)
 
     end = time.time()
