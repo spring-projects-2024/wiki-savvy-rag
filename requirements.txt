@@ -9,3 +9,6 @@ matplotlib
 faiss-cpu
 accelerate
 streamlit
+refextract
+libmagic
+arxiv
