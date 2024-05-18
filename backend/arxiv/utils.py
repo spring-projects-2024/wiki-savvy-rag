@@ -8,10 +8,24 @@ import time
 from typing import List
 from urllib.request import urlretrieve
 import arxiv
-from refextract import extract_references_from_url
 
+# from refextract import extract_references_from_url
+import re
 
 arx_client = arxiv.Client(delay_seconds=0.0)
+
+
+def get_id_from_link_prompt(query: str) -> List[str]:
+    """
+    Takes the query for the LLM, from the user and checks if it contains a link to archive paper.
+    If that is the case, returns paper ids from the link, otherwise returns None
+    """
+
+    pattern = r"https:\/\/arxiv\.org\/abs\/([0-9]{4}\.[0-9]{5})"
+    ids = re.findall(pattern, query)
+    if len(ids) != 0:
+        return ids
+    return None
 
 
 def get_info_from_title(title: str, client: arxiv.Client = arx_client) -> arxiv.Result:
@@ -158,6 +172,10 @@ def parse_references(references):
 
 if __name__ == "__main__":
     title = "Supersymmetric Quantum Mechanics, multiphoton algebras and coherent states"
+    x = get_id_from_link_prompt(
+        "i have two papers here https://arxiv.org/abs/2005.11401  and also https://arxiv.org/abs/2405.10302 https://arxiv.org/abs/12345678 https://arxiv.org/src/87654321/supplementary.zip"
+    )
+    print(x)
 
     id = get_info_from_title(title, arx_client).get_short_id()
     print(f"{id=}")

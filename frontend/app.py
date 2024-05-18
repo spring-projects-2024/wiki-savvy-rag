@@ -37,7 +37,7 @@ def load_rag_handler():
             "dataset": dataset,
             "embedder": embedder,
         },
-        use_rag=True,
+        use_rag=False,
     )
 
 
