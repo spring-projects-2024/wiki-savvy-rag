@@ -98,6 +98,17 @@ subcategories = {
 }
 
 
+yahoo_stem_categories = [
+    "Business & Finance",
+    "Cars & Transportation",
+    "Computers & Internet",
+    "Consumer Electronics",
+    "Health",
+    "Science & Mathematics",
+    "Social Science",
+]
+
+
 if __name__ == "__main__":
     root = "STEM"
     for subcat in subcategories:
