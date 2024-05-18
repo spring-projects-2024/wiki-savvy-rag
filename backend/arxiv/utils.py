@@ -8,8 +8,7 @@ import time
 from typing import List
 from urllib.request import urlretrieve
 import arxiv
-
-# from refextract import extract_references_from_url
+from refextract import extract_references_from_url
 import re
 
 arx_client = arxiv.Client(delay_seconds=0.0)
