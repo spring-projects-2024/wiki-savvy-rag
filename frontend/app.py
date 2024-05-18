@@ -49,6 +49,7 @@ if prompt := st.chat_input("What do you want to know?"):
 
     st.session_state.messages.append({"role": "user", "content": prompt})
 
+
     with st.chat_message("assistant"):
         st.write_stream(stream)
         #st.markdown(response)   #writes in the chat the llm answer
