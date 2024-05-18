@@ -1,10 +1,12 @@
 import datasets
 from datasets import load_dataset
 from typing import Union, Optional
-from backend.benchmark.constants import stem_subcategories
+from backend.benchmark.constants import stem_subcategories, yahoo_stem_categories
 
 
-def load_mmlu(split: str = "test", subset: Union[list, str, None] = "stem") -> datasets.Dataset:
+def load_mmlu(
+    split: str = "test", subset: Union[list, str, None] = "stem"
+) -> datasets.Dataset:
     """
     :param split: one of test, validation, dev, auxiliary_train
     :param subset: one of None, 'stem', or a list of strings. If None,
@@ -20,6 +22,19 @@ def load_mmlu(split: str = "test", subset: Union[list, str, None] = "stem") -> d
             raise ValueError("subset must be a list of strings, None, or 'stem'")
         subset = stem_subcategories
     dataset = dataset.filter(lambda x: x["subject"] in subset)
+    return dataset
+
+
+def load_yahoo_answers(subset: Union[list, str, None] = "stem") -> datasets.Dataset:
+    dataset = load_dataset("yahoo_answers_qa")
+    dataset = dataset["train"]
+    if subset is None:
+        return dataset
+    if isinstance(subset, str):
+        if subset != "stem":
+            raise ValueError("subset must be a list of strings, None, or 'stem'")
+        subset = yahoo_stem_categories
+    dataset = dataset.filter(lambda x: x["category"] in subset)
     return dataset
 
 
@@ -57,6 +72,8 @@ def craft_query(
             prompt += format_question(example, include_answer=True)
             prompt += "\n\n"
     prompt += format_question(question, include_answer=False)
+
+    prompt += "\n\nAnswer (only the letter):\n"
     return prompt
 
 

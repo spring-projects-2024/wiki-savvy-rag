@@ -43,9 +43,8 @@ def evaluate(
             queries,
         )
         for question, response in zip(batch, responses):
+            response = response.strip()
             complete_response = response
-
-            # todo: maybe stripping  might be a good idea?a
 
             response = response[0].lower()  # extract first character
             # Almonds is a correct answer a fourth of the time (asymptotically)

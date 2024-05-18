@@ -1,6 +1,7 @@
 from copy import deepcopy
 from typing import Optional, List, Dict, Tuple
 
+import numpy as np
 import torch
 from backend.model.llm_handler import LLMHandler
 from backend.vector_database.faiss_wrapper import FaissWrapper
@@ -8,6 +9,14 @@ from backend.model.prompt_utils import (
     join_messages_query_no_rag,
     join_messages_query_rag,
 )
+
+
+# TODO: write inference averaging probabilities over the retrieved documents:
+# need to do it autoregressively, so we need to get from llm both logits and key value caches
+# for the next token generation. The forward pass of the llm already returns the key value caches in
+# the output in addition to the logits. We need to pass those around.
+# good if we decouple getting probabilities from decoding, so that we can choose between greedy, beam search,
+# having a temperature, etc.
 
 
 class RagHandler:
@@ -58,6 +67,10 @@ class RagHandler:
     # def craft_replug_query(self, query: str, doc: str) -> str:
     #     return f"Context:\n{doc}\n\nQuery:\n{query}"
 
+    def craft_autoregressive_query(self, query: str, doc: str) -> str:
+        # return f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:"
+        return f"Context:\n{doc}\n\nQuery:\n{query}\n"
+
     def craft_training_prompt(self, query: str, doc: str, answer: str) -> str:
         return f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:\n{answer}"
 
@@ -90,7 +103,33 @@ class RagHandler:
             "attention_mask": attention_mask,
         }, query_plus_context_length
 
-    def replug_inference(
+    def compute_probabilities_for_training(
+        self,
+        forward_output: Dict[str, torch.Tensor],
+    ) -> dict[str, torch.Tensor]:
+        """
+        This method takes the output of replug_forward, computes the probabilities of the tokens
+        by aggregating the probabilities of the retrieved documents, and returns the probabilities
+        together with a mask indicating which tokens correspond to the answer part of the prompt.
+        """
+        logits = forward_output["logits"]  # (num_docs, seq_len, vocab_size)
+        scores = forward_output["scores"]
+        context_lengths = forward_output["context_lengths"]
+        # we want to keep only the logits corresponding to the answer part of the prompt
+        answer_lengths = logits.shape[1] - context_lengths
+        mask = (
+            torch.arange(logits.shape[1])[None, :] < answer_lengths[:, None]
+        )  # (num_docs, seq_len)
+        probas = torch.nn.functional.softmax(
+            logits, dim=-1
+        )  # (num_docs, seq_len, vocab_size)
+        probas = (probas * scores[:, None, None]).sum(dim=0)  # (seq_len, vocab_size)
+        return {
+            "probas": probas,
+            "answer_mask": mask,
+        }
+
+    def replug_forward(
         self,
         query: str,
         answer: str,
@@ -98,7 +137,8 @@ class RagHandler:
         """
         logits: (num_docs, seq_len, vocab_size). The logits for each retrieved document, with
         the given query and answer.
-        scores: (num_docs,). The scores of the retrieved documents. Used to average probabilities later.
+        scores: (num_docs,). The scores of the retrieved documents, normalized.
+        Used to average probabilities later.
         context_lengths: (num_docs,). The length of the query and context part of the prompt. These will
         be used to look only at the logits corresponding to the answer part of the prompt.
         """
@@ -163,6 +203,82 @@ class RagHandler:
     #         avg_logits_for_every_query.append(avg_logits)
     #     return avg_logits_for_every_query  # (num_queries, seq_len, vocab_size)
 
+    @torch.no_grad()
+    def autoregressive_generation(self, query: str) -> str:
+        """
+        method that does autoregressive generation. It accepts a query. First it retrieves passages.
+        For each passage it maintains its past key values. For each token, it calls k times the previous
+         method and the previous method to get probas for next token. Then does greedy generation.
+        :param query:
+        :return:
+        """
+        # retrieved_docs = self.faiss.search_text(query)
+
+        retrieved_docs = [
+            ("Mattia is a very smart person", 1),
+            # ("Mattia is a very stupid person", 1)
+        ]
+
+        answer = ""
+        autoregressive_state = [
+            {
+                "past_key_values": None,
+                "doc": doc,
+                "similarity": similarity,
+                "query": self.craft_autoregressive_query(query, doc),
+                "tokenized_query": self.llm.tokenizer(
+                    self.craft_autoregressive_query(query, doc), return_tensors="pt", padding=False
+                )["input_ids"],
+            }
+            for doc, similarity in retrieved_docs
+        ]
+
+        similarities = np.array([state["similarity"] for state in autoregressive_state])
+
+        while len(answer) < 100:
+            all_logits = []
+
+            for state in autoregressive_state:
+                result = self.llm.model(
+                    state["tokenized_query"], past_key_values=state["past_key_values"]
+                )
+
+                logits: torch.Tensor = result.logits
+                # logits is [x, y, z] where x is the batch size, y is the sequence length and z is the vocab size
+                # we are only interested in the last token
+                print("Logits shape: ", logits.shape)
+                logits = logits[:, -1, :]
+                print("Logits shape: ", logits.shape)
+                print("---------------------")
+
+                state["past_key_values"] = result.past_key_values
+
+                all_logits.append(logits.numpy())
+
+            # compute the average of the logits weighted by the scores of the retrieved documents
+            weighted_logits = np.average(all_logits, axis=0, weights=similarities)
+
+            print(weighted_logits.shape)
+
+            # get the token with the highest probability
+            next_token = np.argmax(weighted_logits[-1, :])
+
+            # get the token from the tokenizer
+            next_token_str = self.llm.tokenizer.decode(next_token)
+            answer += next_token_str
+
+            for state in autoregressive_state:
+                state["query"] += next_token_str
+                state["tokenized_query"] = torch.cat(  # type: ignore
+                    [
+                        state["tokenized_query"],
+                        torch.tensor([[next_token]]),
+                    ],
+                    dim=1,
+                )
+
+        return answer
+
     def naive_inference(
         self,
         histories: List[List[Dict]] | List[Dict],
@@ -213,39 +329,17 @@ class RagHandler:
 
 if __name__ == "__main__":
     print("i'm alive")
-    from backend.model.llm_handler import DEFAULT_MODEL
-
-    print("DEFAULT_MODEL:", DEFAULT_MODEL)
 
     rag_handler = RagHandler(
-        model_name=DEFAULT_MODEL,
+        model_name="Minami-su/Qwen1.5-0.5B-Chat_llamafy",
         device="cpu",
         use_rag=True,
     )
 
-    print("rag_handler:", rag_handler)
+    query = "What is a characteristic of Mattia?"
 
-    histories = [
-        [
-            {
-                "role": "user",
-                "content": "Can you provide ways to eat combinations of bananas and dragonfruits?",
-            },
-            {
-                "role": "assistant",
-                "content": "Sure! Here are some ways to eat bananas and dragonfruits together: 1. Banana and dragonfruit smoothie: Blend bananas and dragonfruits together with some milk and honey. 2. Banana and dragonfruit salad: Mix sliced bananas and dragonfruits together with some lemon juice and honey.",
-            },
-            {"role": "user", "content": "What about solving an 2x + 3 = 7 equation?"},
-        ]
-    ]
+    a = rag_handler.autoregressive_generation(query)
 
-    print("histories:", histories)
 
-    queries = [
-        "What about solving an 2x + 3 = 7 equation?",
-    ]
 
-    print("queries:", queries)
-
-    responses = rag_handler.naive_inference(histories, queries)
-    print(responses)
+    print(a)
