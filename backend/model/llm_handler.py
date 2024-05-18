@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import torch
 from transformers import (
@@ -89,7 +89,7 @@ class LLMHandler:
             raise ValueError(f"Invalid input type: {type(x)}")
 
     @torch.inference_mode()
-    def inference(self, messages, generation_args: Dict):
+    def inference(self, messages, generation_args: Dict) -> List[str]:
         """
         Example of messages structure:
             messages = [
@@ -99,7 +99,9 @@ class LLMHandler:
                 {"role": "user", "content": "What about solving an 2x + 3 = 7 equation?"},
             ]
         """
-        return self.pipe(messages, **generation_args)  # TODO: get structure of output
+
+        outputs = self.pipe(messages, **generation_args)
+        return [output["generated_text"] for output in outputs]
 
     def load_weights(self, path):
         print(f"Loading weights from {path}")

@@ -203,7 +203,11 @@ class RagHandler:
         if kwargs:
             rag_config.update(kwargs)
         response = self.llm.inference(updated_histories, rag_config)
-        return response
+
+        if isinstance(queries, list):
+            return response
+        else:
+            return response[0]
 
     def add_arxiv_paper(self, paper):
         raise NotImplementedError
