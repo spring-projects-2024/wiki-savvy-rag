@@ -64,7 +64,7 @@ def benchmark(
     training_size: float,
     train_on_gpu: bool,
     output_dir: str,
-        nprobe: int,
+    nprobe: int,
 ):
     results[index_str] = {}
 
@@ -82,8 +82,6 @@ def benchmark(
     vector_db.save_to_disk(dump_path)
     size_on_disk = os.path.getsize(dump_path)
     os.remove(dump_path)
-
-    vector_db._index.nprobe = NPROBE_DEFAULT
 
     start = time.time()
     _, I = vector_db.search_vectors(mmlu_embds)
@@ -135,7 +133,6 @@ def main():
         default=NPROBE_DEFAULT,
         help="Number of probes for the IVF quantizer",
     )
-
     parser.add_argument(
         "--training_size",
         type=float,
@@ -193,7 +190,7 @@ def main():
             args.training_size,
             args.train_on_gpu,
             args.output_dir,
-            args.nprobe
+            args.nprobe,
         )
 
     # benchmark with product quantizers (fast scan)
@@ -206,7 +203,7 @@ def main():
             args.training_size,
             args.train_on_gpu,
             args.output_dir,
-            args.nprobe
+            args.nprobe,
         )
 
     return

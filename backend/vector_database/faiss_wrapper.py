@@ -19,7 +19,7 @@ class FaissWrapper:
         *,
         index_path=None,
         index_str=None,
-        nprobe=1,
+        nprobe=None,
     ):
         """
         Instantiate a FaissWrapper object.
@@ -39,19 +39,18 @@ class FaissWrapper:
         self.dataset = dataset
         self.dim = self.embedder.get_dimensionality()
 
-
         if index_path:
             self._index = faiss.read_index(index_path)
             assert self.dim == self._index.d
+
+            if nprobe:
+                self._index.nprobe = nprobe
         elif index_str:
             self._index = faiss.index_factory(
                 self.dim, index_str, faiss.METRIC_INNER_PRODUCT
             )
-            self._index.nprobe = nprobe
 
-
-
-
+            self._index.nprobe = nprobe if nprobe else 10
 
     def search_vectors(
         self, vectors: np.ndarray, n_neighbors: int = 10
