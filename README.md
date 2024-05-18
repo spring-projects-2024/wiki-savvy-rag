@@ -15,35 +15,39 @@ From the root directory:
 ```
 pip install -r requirements.txt
 pip install -e .
+git clone https://github.com/MattiaSC01/JEPA.git
+cd JEPA
+pip install -r requirements.txt
+pip install -e .
 ```
 
 ## Create SQLite dataset
 
 ```
-python scripts/dataset/populate_dataset.py 
+python scripts/dataset/populate_dataset.py
     --input "wikidump_processing/data/subsample_chunkeder.xml"
-    --db_dir "scripts/dataset/data" 
-    --db_name="dataset" 
+    --db_dir "scripts/dataset/data"
+    --db_name="dataset"
 ```
 
 ## Calculate embeddings and dump on disk
 
 ```
-python scripts/embeddings/cluster_script_embedding.py 
-    --device "cuda:1" 
-    --db_dir "scripts/dataset/data" 
-    --db_name="dataset" 
-    --output_dir "scripts/embeddings/data/" 
-    --max_accumulation 300000 
+python scripts/embeddings/cluster_script_embedding.py
+    --device "cuda:1"
+    --db_dir "scripts/dataset/data"
+    --db_name="dataset"
+    --output_dir "scripts/embeddings/data/"
+    --max_accumulation 300000
 ```
 
 ## Calculate index and dump on disk
 
 ```
-python scripts/vector_database/train_vector_database.py 
-    --device "cuda:1" 
-    --index "SQ8" 
+python scripts/vector_database/train_vector_database.py
+    --device "cuda:1"
+    --index "SQ8"
     --training_size 0.1
-    --input_dir "scripts/embeddings/data" 
+    --input_dir "scripts/embeddings/data"
     --output "scripts/vector_database/data/flat.index"
 ```

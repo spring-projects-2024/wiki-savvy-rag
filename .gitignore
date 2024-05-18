@@ -3,7 +3,7 @@ err
 out
 test_slurm
 
-
+JEPA
 wikidump_processing/data/*
 .DS_Store
 pypyenv
