@@ -5,13 +5,16 @@ from typing import Generator
 
 import torch
 import numpy as np
+from tqdm import tqdm
 
 from backend.vector_database.faiss_wrapper import FaissWrapper
 
 INPUT_FILE_REGEX = "embeddings_[a-z]+.pt"
 
 
-def embeddings_iterator(input_dir: str, device:str) -> Generator[torch.Tensor, None, None]:
+def embeddings_iterator(
+    input_dir: str, device: str
+) -> Generator[torch.Tensor, None, None]:
     """Iterates over the embeddings files in the input directory.
     :param input_dir: the directory containing the embeddings files
     :return: a generator of embeddings"""
@@ -32,10 +35,9 @@ def train_vector_db(
     index_str: str,
     input_dir: str,
     nprobe: int,
-        device: str,
+    device: str,
     training_size: float,
     train_on_gpu: bool = True,
-
 ):
     """Trains a vector database with the given configuration.
     :param index_str: the index factory string
@@ -87,7 +89,7 @@ def train_vector_db(
     start = time.time()
     print("Start: ", start)
 
-    for embeddings in embeddings_iterator(input_dir, device):
+    for embeddings in tqdm(embeddings_iterator(input_dir, device), total=272):
         vector_db.add_vectors(embeddings)
 
     end = time.time()

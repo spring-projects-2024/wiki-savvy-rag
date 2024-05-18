@@ -190,23 +190,22 @@ def main():
     #         args.nprobe
     #     )
 
-    for M in [16, 32, 64, 128]:
-        index_str = f"IVF{centroids},PQ{M}x4fsr"
-        benchmark(
-            index_str,
-            mmlu_embds,
-            I_base,
-            args.training_size,
-            args.train_on_gpu,
-            args.output_dir,
-            args.nprobe,
-            args.knn_neighbors,
-        )
+    # for M in [128]:
+    #     index_str = f"IVF{centroids},PQ{M}x4fsr"
+    #     benchmark(
+    #         index_str,
+    #         mmlu_embds,
+    #         I_base,
+    #         args.training_size,
+    #         args.train_on_gpu,
+    #         args.output_dir,
+    #         args.nprobe,
+    #         args.knn_neighbors,
+    #     )
 
-    exit()
     # benchmark with product quantizers
-    for M in [16, 32, 64, 128]:
-        index_str = f"OPQ{M}_{M * 4},IVF{centroids}_HNSW32,PQ{M}"
+    for M in [128]:
+        index_str = f"OPQ{M}_{M * 4},IVF{centroids},PQ{M}"
         benchmark(
             index_str,
             mmlu_embds,
