@@ -6,6 +6,8 @@ import numpy as np
 import torch
 from backend.model.llm_handler import LLMHandler
 from backend.vector_database.faiss_wrapper import FaissWrapper
+from backend.vector_database.dataset import Dataset
+from backend.vector_database.embedder_wrapper import EmbedderWrapper
 from backend.model.prompt_utils import (
     join_messages_query_no_rag,
     join_messages_query_rag,
@@ -217,9 +219,9 @@ class RagHandler:
     #     return avg_logits_for_every_query  # (num_queries, seq_len, vocab_size)
 
     @torch.no_grad()
-    def autoregressive_generation_iterator(
+    def autoregressive_generation_iterator_with_retrieved_docs(
         self, query: str, max_length=50
-    ) -> Iterable[str]:
+    ) -> Tuple[Iterable[str], List[Tuple[str, float]]]:
         """
         method that does autoregressive generation. It accepts a query. First it retrieves passages.
         For each passage it maintains its past key values. For each token, it calls k times the previous
@@ -229,92 +231,109 @@ class RagHandler:
         """
         retrieved_docs = self.faiss.search_text(query)
 
-        answer = ""
-        autoregressive_state = [
-            {
-                "past_key_values": None,
-                "doc": doc,
-                "similarity": similarity,
-                "query": self.craft_autoregressive_query(query, doc),
-                "tokenized_query": self.llm.tokenizer(
-                    self.craft_autoregressive_query(query, doc),
-                    return_tensors="pt",
-                    padding=False,
-                )["input_ids"],
-            }
-            for doc, similarity in retrieved_docs
-        ]
+        def generator():
+            answer = ""
+            autoregressive_state = [
+                {
+                    "past_key_values": None,
+                    "doc": doc,
+                    "similarity": similarity,
+                    "query": self.craft_autoregressive_query(query, doc),
+                    "tokenized_query": self.llm.tokenizer(
+                        self.craft_autoregressive_query(query, doc),
+                        return_tensors="pt",
+                        padding=False,
+                    )["input_ids"],
+                }
+                for doc, similarity in retrieved_docs
+            ]
 
-        similarities = torch.tensor(
-            [state["similarity"] for state in autoregressive_state]
+            similarities = torch.tensor(
+                [state["similarity"] for state in autoregressive_state]
+            )
+
+            similarities /= similarities.sum()
+
+            while len(answer) < max_length:
+                all_logits = []
+
+                for state in autoregressive_state:
+                    result = self.llm.model(
+                        state["tokenized_query"],
+                        past_key_values=state["past_key_values"],
+                        use_cache=True,
+                    )
+
+                    logits: torch.Tensor = result.logits
+                    logits = logits[:, -1, :]
+
+                    state["past_key_values"] = result.past_key_values
+
+                    all_logits.append(logits)
+
+                # compute the average of the logits weighted by the scores of the retrieved documents
+                torch_logits = torch.stack(all_logits)
+
+                probs = self.logits_to_weighted_probas(torch_logits, similarities)
+
+                # get the token with the highest probability
+                next_token = torch.argmax(probs)
+
+                # get the token from the tokenizer
+                next_token_str = self.llm.tokenizer.decode(next_token)
+                answer += next_token_str
+
+                for state in autoregressive_state:
+                    state["query"] += next_token_str
+                    state["tokenized_query"] = torch.tensor([[next_token]])  # type: ignore
+
+                yield next_token_str
+
+        return generator(), retrieved_docs
+
+    @torch.no_grad()
+    def autoregressive_generation_iterator(
+        self, query: str, max_length=50
+    ) -> Iterable[str]:
+        generator, _ = self.autoregressive_generation_iterator_with_retrieved_docs(
+            query, max_length=max_length
         )
-
-        similarities /= similarities.sum()
-
-        while len(answer) < max_length:
-            all_logits = []
-
-            for state in autoregressive_state:
-                result = self.llm.model(
-                    state["tokenized_query"],
-                    past_key_values=state["past_key_values"],
-                    use_cache=True,
-                )
-
-                logits: torch.Tensor = result.logits
-                logits = logits[:, -1, :]
-
-                state["past_key_values"] = result.past_key_values
-
-                all_logits.append(logits)
-
-            # compute the average of the logits weighted by the scores of the retrieved documents
-            torch_logits = torch.stack(all_logits)
-
-            probs = self.logits_to_weighted_probas(torch_logits, similarities)
-
-            # get the token with the highest probability
-            next_token = np.argmax(probs)
-
-            # get the token from the tokenizer
-            next_token_str = self.llm.tokenizer.decode(next_token)
-            answer += next_token_str
-
-            for state in autoregressive_state:
-                state["query"] += next_token_str
-                state["tokenized_query"] = torch.tensor([[next_token]])  # type: ignore
-
-            yield next_token_str
+        return generator
 
     def auto_regressive_generation(self, query: str, max_length=50) -> str:
         return "".join(self.autoregressive_generation_iterator(query, max_length))
 
-    def naive_inference(
+    def naive_inference_with_retrieved_docs(
         self,
         histories: List[List[Dict]] | List[Dict],
         queries: List[str] | str,
         **kwargs,
-    ) -> List[str] | str:
-
+    ) -> Tuple[
+        List[str] | str, List[List[Tuple[str, float]]] | List[Tuple[str, float]]
+    ]:
         # we are assuming that queries and histories are coherent in type
         # we support both batch inference and single queries, but we assume that if queries is a string then histories
         # is a list of dictionaries containing the chat history
         # if queries is a list of strings then histories is a list of lists of dictionaries containing the chat history
+
         if isinstance(queries, list):
             updated_histories = []
+            retrieved = []
             for history, query in zip(histories, queries):
                 if self.use_rag is False:
                     updated_histories.append(join_messages_query_no_rag(history, query))
                 else:
-                    retrieved = self.faiss.search_text(query)
+                    retrieved_now = self.faiss.search_text(query)
                     # here we would do some preprocessing on the retrieved documents
                     updated_histories.append(
-                        join_messages_query_rag(history, query, retrieved)
+                        join_messages_query_rag(history, query, retrieved_now)
                     )
+                    retrieved.append(retrieved_now)
 
         elif isinstance(queries, str):
             if self.use_rag is False:
                 updated_histories = join_messages_query_no_rag(histories, queries)
+                retrieved = []
             else:
                 retrieved = self.faiss.search_text(queries)
                 # here we would do some preprocessing on the retrieved documents
@@ -331,29 +350,50 @@ class RagHandler:
             rag_config.update(kwargs)
         response = self.llm.inference(updated_histories, rag_config)
 
+        return response, retrieved
+
+    def naive_inference(
+        self,
+        histories: List[List[Dict]] | List[Dict],
+        queries: List[str] | str,
+        **kwargs,
+    ) -> List[str] | str:
+        response, _ = self.naive_inference_with_retrieved_docs(
+            histories, queries, **kwargs
+        )
+
         return response
 
     def add_arxiv_paper(self, paper):
         raise NotImplementedError
 
 
+INDEX_PATH = "scripts/vector_database/data/default.index"
+DB_PATH = "scripts/dataset/data/dataset.db"
+
 if __name__ == "__main__":
     print("i'm alive")
-
+    embedder = EmbedderWrapper("cpu")
+    dataset = Dataset(db_path=DB_PATH)
     rag_handler = RagHandler(
         model_name="Minami-su/Qwen1.5-0.5B-Chat_llamafy",
         device="cpu",
         use_rag=True,
+        faiss_kwargs={
+            "index_path": INDEX_PATH,
+            "dataset": dataset,
+            "embedder": embedder,
+        },
     )
 
-    query = "What is mattia"
+    query = "What is Anarchism?"
 
     # t = time.time()
     # a = rag_handler.autoregressive_generation(query, 20)
     # print(f"Time taken: {time.time() - t}")
 
     # t = time.time()
-    a = rag_handler.autoregressive_generation_iterator(query, 100)
+    a = rag_handler.auto_regressive_generation(query, 100)
     # print(f"Time taken: {time.time() - t}")
 
     print(a)

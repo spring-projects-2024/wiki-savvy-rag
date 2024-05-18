@@ -22,7 +22,7 @@ class Dataset:
     """
 
     def __init__(self, *, db_path):
-        self.con = sqlite3.connect(db_path)
+        self.db_path = db_path
 
     def drop_tables(self):
         """
@@ -31,14 +31,17 @@ class Dataset:
         Returns:
             None
         """
-        cur = self.con.cursor()
+        con = sqlite3.connect(self.db_path)
+        cur = con.cursor()
         cur.execute("DROP TABLE IF EXISTS chunks")
+        con.close()
 
     def create_tables(self):
         """
         Creates the necessary tables in the database.
         """
-        cur = self.con.cursor()
+        con = sqlite3.connect(self.db_path)
+        cur = con.cursor()
         cur.execute(
             """CREATE TABLE IF NOT EXISTS chunks(
                 id INTEGER NOT NULL PRIMARY KEY, 
@@ -46,6 +49,7 @@ class Dataset:
                 text STRING NOT NULL
             )"""
         )
+        con.close()
 
     def insert_chunks(self, chunks: Iterable[dict]):
         """
@@ -57,9 +61,11 @@ class Dataset:
         """
         data = [(chunk["id"], chunk["titles"], chunk["text"]) for chunk in chunks]
 
-        cur = self.con.cursor()
+        con = sqlite3.connect(self.db_path)
+        cur = con.cursor()
         cur.executemany("INSERT INTO chunks VALUES(?, ?, ?)", data)
-        self.con.commit()
+        con.commit()
+        con.close()
 
     def insert_chunk(self, chunk):
         """
@@ -81,11 +87,13 @@ class Dataset:
         Returns:
             dict: A dictionary representing the found chunk, with the keys 'id', 'titles', and 'text'.
         """
-        cur = self.con.cursor()
+        con = sqlite3.connect(self.db_path)
+        cur = con.cursor()
         res = cur.execute(
             "SELECT id, titles, text FROM chunks WHERE id = ?", (int(id),)
         )
         chunk = res.fetchone()
+        con.close()
 
         return self._res_to_chunk(chunk)
 
@@ -100,7 +108,8 @@ class Dataset:
         Returns:
             list: A list of dictionaries representing the found chunks, with the keys 'id', 'titles', and 'text'.
         """
-        cur = self.con.cursor()
+        con = sqlite3.connect(self.db_path)
+        cur = con.cursor()
         chunks = []
 
         # Split ids into chunks of 999
@@ -114,6 +123,8 @@ class Dataset:
             res = cur.execute(query, id_chunk)
             chunks.extend(res.fetchall())
 
+        con.close()
+
         return [self._res_to_chunk(chunk) for chunk in chunks]
 
     def paginate_chunks(self, count_per_page, offset=0) -> Iterable[list]:
@@ -122,8 +133,10 @@ class Dataset:
         :param count_per_page: Page size
         :param offset: Offset
         """
+
+        con = sqlite3.connect(self.db_path)
         while True:
-            cur = self.con.cursor()
+            cur = con.cursor()
             res = cur.execute(
                 """
                     SELECT id, titles, text FROM chunks ORDER BY id 
@@ -140,10 +153,15 @@ class Dataset:
             else:
                 break
 
+        con.close()
+
     def count_of_chunks(self):
-        cur = self.con.cursor()
+        con = sqlite3.connect(self.db_path)
+        cur = con.cursor()
         res = cur.execute("SELECT COUNT(*) FROM chunks")
-        return res.fetchone()[0]
+        count = res.fetchone()[0]
+        con.close()
+        return count
 
     def _res_to_chunk(self, chunk):
         """
