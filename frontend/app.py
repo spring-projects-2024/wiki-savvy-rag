@@ -1,26 +1,49 @@
 import streamlit as st
 from backend.model.rag_handler import RagHandler
+from backend.vector_database.dataset import Dataset
+from backend.vector_database.embedder_wrapper import EmbedderWrapper
 import time
 
+MODEL_NAME = "Minami-su/Qwen1.5-0.5B-Chat_llamafy"
+# "microsoft/phi-3-mini-128k-instruct",
+# "Minami-su/Qwen1.5-0.5B-Chat_llamafy"
+DB_PATH = "scripts/dataset/data/dataset.db"
+INDEX_PATH = "scripts/vector_database/data/default.index"
+DEVICE = "cpu"
 
 st.title("Wikipedia Savvy")
 
 
 @st.cache_resource
-def build_rag_handler():
+def load_dataset():
+    return Dataset(db_path=DB_PATH)
+
+
+@st.cache_resource
+def load_embedder():
+    return EmbedderWrapper(DEVICE)
+
+
+@st.cache_resource
+def load_rag_handler():
     return RagHandler(
-        model_name="Minami-su/Qwen1.5-0.5B-Chat_llamafy",
-        # "microsoft/phi-3-mini-128k-instruct",
-        # "Minami-su/Qwen1.5-0.5B-Chat_llamafy"
-        device="cpu",
+        model_name=MODEL_NAME,
+        device=DEVICE,
         model_kwargs={
             "torch_dtype": "auto",
         },
-        use_rag=False,
+        faiss_kwargs={
+            "index_path": INDEX_PATH,
+            "dataset": dataset,
+            "embedder": embedder,
+        },
+        use_rag=True,
     )
 
 
-rag = build_rag_handler()
+dataset = load_dataset()
+embedder = load_embedder()
+rag = load_rag_handler()
 
 
 if "messages" not in st.session_state:
@@ -51,9 +74,9 @@ if prompt := st.chat_input("What do you want to know?"):
 
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    message = st.chat_message("assistant")
-    message.write_stream(stream)
-    # writes in the chat the llm answer in a fancy way (live token generation effect)
+    with st.chat_message("assistant"):
+        st.write_stream(stream)
+        # st.markdown(response)   #writes in the chat the llm answer
     st.session_state.messages.append(
         {"role": "assistant", "content": response}
     )  # updates the chat history once a new prompt is given

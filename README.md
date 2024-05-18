@@ -51,3 +51,10 @@ python scripts/vector_database/train_vector_database.py
     --input_dir "scripts/embeddings/data"
     --output "scripts/vector_database/data/flat.index"
 ```
+
+## Troubleshooting libmagic dependency
+
+If `refextract` import throws error and can't find libmagic, run the following command:
+```
+brew install libmagic
+```
