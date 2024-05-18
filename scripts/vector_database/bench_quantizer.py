@@ -25,7 +25,6 @@ TRAINING_SIZE_DEFAULT = 0.2
 NPROBE_DEFAULT = 10
 
 
-
 def build_mmlu_embds(mmlu_sample_size):
     """Builds the embeddings for the MMLU dataset."""
     dataset = load_mmlu(split="test", subset="stem")
@@ -85,8 +84,6 @@ def benchmark(
     size_on_disk = os.path.getsize(dump_path)
     os.remove(dump_path)
 
-    vector_db._index.nprobe = NPROBE_DEFAULT
-
     start = time.time()
     _, I = vector_db.search_vectors(mmlu_embds, n_neighbors=n_neighbors)
     end = time.time()
@@ -101,9 +98,7 @@ def benchmark(
     elapsed_time = end - start
     hours, rem = divmod(elapsed_time, 3600)
     minutes, seconds = divmod(rem, 60)
-    results[
-        "elapsed_time"
-    ] = f"{int(hours):0>2}:{int(minutes):0>2}:{seconds:05.2f}"
+    results["elapsed_time"] = f"{int(hours):0>2}:{int(minutes):0>2}:{seconds:05.2f}"
 
     # save the size of the index on disk
     results["size_on_disk"] = size_on_disk
@@ -142,7 +137,6 @@ def main():
         default=NPROBE_DEFAULT,
         help="Number of probes for the IVF quantizer",
     )
-
     parser.add_argument(
         "--training_size",
         type=float,
