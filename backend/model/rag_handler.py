@@ -32,9 +32,11 @@ class RagHandler:
             }
         )
 
-        if llm_config is None:
-            llm_config = self.get_default_llm_config()
-        self.llm_config = llm_config
+        self.llm_config = self.get_default_llm_config()
+
+        if llm_config is not None:
+            self.llm_config.update(llm_config)
+
         self.faiss = FaissWrapper(device=device, **faiss_kwargs)
         self.llm = LLMHandler(
             device=device,
@@ -49,7 +51,6 @@ class RagHandler:
         # TODO: choose default values
         return {
             "max_new_tokens": 500,
-            "return_full_text": False,
             "do_sample": False,
             # "temperature": 0.1,
         }
@@ -204,10 +205,7 @@ class RagHandler:
             rag_config.update(kwargs)
         response = self.llm.inference(updated_histories, rag_config)
 
-        if isinstance(queries, list):
-            return response
-        else:
-            return response[0]
+        return response
 
     def add_arxiv_paper(self, paper):
         raise NotImplementedError

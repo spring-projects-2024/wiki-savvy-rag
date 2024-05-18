@@ -43,20 +43,9 @@ def evaluate(
             queries,
         )
         for question, response in zip(batch, responses):
-            assert type(response) == list
-            response = response[0]  # extract the first mysterious dictionary
-            assert type(response) == dict
-            response = response["generated_text"]
-            assert type(response) == list
-            response = response[-1]  # extract the last message of the conversation
-            assert type(response) == dict
-            assert response["role"] == "assistant"
-            response = response["content"]
-            assert type(response) == str
-
             complete_response = response
 
-            # todo: maybe stripping  might be a good idea?
+            # todo: maybe stripping  might be a good idea?a
 
             response = response[0].lower()  # extract first character
             # Almonds is a correct answer a fourth of the time (asymptotically)
