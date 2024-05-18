@@ -3,7 +3,7 @@ err
 out
 test_slurm
 
-
+JEPA
 wikidump_processing/data/*
 .DS_Store
 pypyenv
@@ -179,3 +179,4 @@ scripts/embeddings/data/*
 backend/vector_database/data/*
 scripts/dataset/data/*
 scripts/vector_database/data/flat.index
+scripts/vector_database/data/default.index
