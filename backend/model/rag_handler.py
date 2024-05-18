@@ -1,5 +1,6 @@
+import time
 from copy import deepcopy
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple, Iterable
 
 import numpy as np
 import torch
@@ -129,6 +130,18 @@ class RagHandler:
             "answer_mask": mask,
         }
 
+    def logits_to_weighted_probas(self, logits: torch.Tensor, scores: torch.Tensor):
+        """
+
+        :param logits:
+        :param scores: Need to be normalized
+        :return:
+        """
+        probas = torch.nn.functional.softmax(
+            logits, dim=-1
+        )  # (num_docs, seq_len, vocab_size)
+        return (probas * scores[:, None, None]).sum(dim=0)  # (seq_len, vocab_size)
+
     def replug_forward(
         self,
         query: str,
@@ -204,7 +217,9 @@ class RagHandler:
     #     return avg_logits_for_every_query  # (num_queries, seq_len, vocab_size)
 
     @torch.no_grad()
-    def autoregressive_generation(self, query: str) -> str:
+    def autoregressive_generation_iterator(
+        self, query: str, max_length=50
+    ) -> Iterable[str]:
         """
         method that does autoregressive generation. It accepts a query. First it retrieves passages.
         For each passage it maintains its past key values. For each token, it calls k times the previous
@@ -212,12 +227,7 @@ class RagHandler:
         :param query:
         :return:
         """
-        # retrieved_docs = self.faiss.search_text(query)
-
-        retrieved_docs = [
-            ("Mattia is a very smart person", 1),
-            # ("Mattia is a very stupid person", 1)
-        ]
+        retrieved_docs = self.faiss.search_text(query)
 
         answer = ""
         autoregressive_state = [
@@ -227,41 +237,44 @@ class RagHandler:
                 "similarity": similarity,
                 "query": self.craft_autoregressive_query(query, doc),
                 "tokenized_query": self.llm.tokenizer(
-                    self.craft_autoregressive_query(query, doc), return_tensors="pt", padding=False
+                    self.craft_autoregressive_query(query, doc),
+                    return_tensors="pt",
+                    padding=False,
                 )["input_ids"],
             }
             for doc, similarity in retrieved_docs
         ]
 
-        similarities = np.array([state["similarity"] for state in autoregressive_state])
+        similarities = torch.tensor(
+            [state["similarity"] for state in autoregressive_state]
+        )
 
-        while len(answer) < 100:
+        similarities /= similarities.sum()
+
+        while len(answer) < max_length:
             all_logits = []
 
             for state in autoregressive_state:
                 result = self.llm.model(
-                    state["tokenized_query"], past_key_values=state["past_key_values"]
+                    state["tokenized_query"],
+                    past_key_values=state["past_key_values"],
+                    use_cache=True,
                 )
 
                 logits: torch.Tensor = result.logits
-                # logits is [x, y, z] where x is the batch size, y is the sequence length and z is the vocab size
-                # we are only interested in the last token
-                print("Logits shape: ", logits.shape)
                 logits = logits[:, -1, :]
-                print("Logits shape: ", logits.shape)
-                print("---------------------")
 
                 state["past_key_values"] = result.past_key_values
 
-                all_logits.append(logits.numpy())
+                all_logits.append(logits)
 
             # compute the average of the logits weighted by the scores of the retrieved documents
-            weighted_logits = np.average(all_logits, axis=0, weights=similarities)
+            torch_logits = torch.stack(all_logits)
 
-            print(weighted_logits.shape)
+            probs = self.logits_to_weighted_probas(torch_logits, similarities)
 
             # get the token with the highest probability
-            next_token = np.argmax(weighted_logits[-1, :])
+            next_token = np.argmax(probs)
 
             # get the token from the tokenizer
             next_token_str = self.llm.tokenizer.decode(next_token)
@@ -269,15 +282,12 @@ class RagHandler:
 
             for state in autoregressive_state:
                 state["query"] += next_token_str
-                state["tokenized_query"] = torch.cat(  # type: ignore
-                    [
-                        state["tokenized_query"],
-                        torch.tensor([[next_token]]),
-                    ],
-                    dim=1,
-                )
+                state["tokenized_query"] = torch.tensor([[next_token]])  # type: ignore
 
-        return answer
+            yield next_token_str
+
+    def auto_regressive_generation(self, query: str, max_length=50) -> str:
+        return "".join(self.autoregressive_generation_iterator(query, max_length))
 
     def naive_inference(
         self,
@@ -336,10 +346,14 @@ if __name__ == "__main__":
         use_rag=True,
     )
 
-    query = "What is a characteristic of Mattia?"
+    query = "What is mattia"
 
-    a = rag_handler.autoregressive_generation(query)
+    # t = time.time()
+    # a = rag_handler.autoregressive_generation(query, 20)
+    # print(f"Time taken: {time.time() - t}")
 
-
+    # t = time.time()
+    a = rag_handler.autoregressive_generation_iterator(query, 100)
+    # print(f"Time taken: {time.time() - t}")
 
     print(a)
