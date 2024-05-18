@@ -15,7 +15,6 @@ from transformers.utils import ModelOutput
 def get_default_gen_args():
     return {
         "max_new_tokens": 500,
-        "return_full_text": False,
         # "temperature": 0.0,
         "do_sample": False,
     }
@@ -89,7 +88,7 @@ class LLMHandler:
             raise ValueError(f"Invalid input type: {type(x)}")
 
     @torch.inference_mode()
-    def inference(self, messages, generation_args: Dict) -> List[str]:
+    def inference(self, messages, generation_args: Dict) -> List[str] | str:
         """
         Example of messages structure:
             messages = [
@@ -100,8 +99,11 @@ class LLMHandler:
             ]
         """
 
-        outputs = self.pipe(messages, **generation_args)
-        return [output["generated_text"] for output in outputs]
+        outputs = self.pipe(messages, return_full_text=False, **generation_args)
+        if type(messages[0]) == list:
+            return [output[0]["generated_text"] for output in outputs]
+        else:
+            return outputs[0]["generated_text"]
 
     def load_weights(self, path):
         print(f"Loading weights from {path}")
