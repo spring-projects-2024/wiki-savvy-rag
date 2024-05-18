@@ -1,5 +1,7 @@
 import json
 import os
+import sys
+
 import torch
 import time
 import argparse
@@ -21,8 +23,6 @@ MMLU_SAMPLE_SIZE_DEFAULT = 10
 TRAIN_ON_GPU_DEFAULT = False
 TRAINING_SIZE_DEFAULT = 0.2
 NPROBE_DEFAULT = 10
-
-results = {}
 
 
 def build_mmlu_embds(mmlu_sample_size):
@@ -47,7 +47,7 @@ def build_baselines(mmlu_embds: np.ndarray, knn_neighbors: int):
         D, I = faiss.knn(
             mmlu_embds,
             embeddings.numpy(),
-            min(mmlu_embds.shape[0], knn_neighbors),
+            min(embeddings.shape[0], knn_neighbors),
             metric=faiss.METRIC_INNER_PRODUCT,
         )
 
@@ -65,8 +65,9 @@ def benchmark(
     train_on_gpu: bool,
     output_dir: str,
     nprobe: int,
+    n_neighbors: int,
 ):
-    results[index_str] = {}
+    results = {}
 
     vector_db = train_vector_db(
         index_str=index_str,
@@ -84,11 +85,11 @@ def benchmark(
     os.remove(dump_path)
 
     start = time.time()
-    _, I = vector_db.search_vectors(mmlu_embds)
+    _, I = vector_db.search_vectors(mmlu_embds, n_neighbors=n_neighbors)
     end = time.time()
 
     # measure the knn intersection measure
-    results[index_str] = {
+    results["index_str"] = {
         f"rank_{rank}": knn_intersection_measure(I[:, :rank], I_base[:, :rank])
         for rank in [1, 10, 50, 100]
     }
@@ -97,18 +98,21 @@ def benchmark(
     elapsed_time = end - start
     hours, rem = divmod(elapsed_time, 3600)
     minutes, seconds = divmod(rem, 60)
-    results[index_str][
-        "elapsed_time"
-    ] = f"{int(hours):0>2}:{int(minutes):0>2}:{seconds:05.2f}"
+    results["elapsed_time"] = f"{int(hours):0>2}:{int(minutes):0>2}:{seconds:05.2f}"
 
     # save the size of the index on disk
-    results[index_str]["size_on_disk"] = size_on_disk
+    results["size_on_disk"] = size_on_disk
 
+    results["nprobe"] = nprobe
+    results["training_size"] = training_size
+    results["train_on_gpu"] = train_on_gpu
+    results["mmul_sample_size"] = mmlu_embds.shape[0]
     # save checkpoint of results
     with open(
-        os.path.join(output_dir, "bench_quantizer.json"), "w", encoding="utf-8"
+        os.path.join(output_dir, "bench_quantizer.json"), "a", encoding="utf-8"
     ) as f:
         json.dump(results, f, indent=4)
+        f.write(",\n")
 
     del vector_db
 
@@ -164,8 +168,14 @@ def main():
 
     os.makedirs(args.output_dir, exist_ok=True)
 
+    print("Building mmlu embeddings")
     mmlu_embds = build_mmlu_embds(args.mmlu_sample_size)
-    I_base = build_baselines(mmlu_embds, args.knn_neighbors)
+
+    # random embeddings
+    # mmlu_embds = np.random.rand(args.mmlu_sample_size, 384).astype(np.float32)
+
+    print("Building mmlu baselines")
+    D_base, I_base = build_baselines(mmlu_embds, args.knn_neighbors)
 
     # benchmark with scalar quantizers
     # for sq_type in ["SQ4"]:
@@ -181,8 +191,8 @@ def main():
     #     )
 
     # benchmark with product quantizers
-    for M in [32, 64, 128]:
-        index_str = f"OPQ{M}_{M // 4},IVF{centroids}_HNSW32,PQ{M}"
+    for M in [16, 32, 64, 128]:
+        index_str = f"OPQ{M}_{M * 4},IVF{centroids}_HNSW32,PQ{M}"
         benchmark(
             index_str,
             mmlu_embds,
@@ -191,11 +201,12 @@ def main():
             args.train_on_gpu,
             args.output_dir,
             args.nprobe,
+            args.knn_neighbors,
         )
 
     # benchmark with product quantizers (fast scan)
     for M in [64, 128, 256]:
-        index_str = f"OPQ{M}_{M // 4},IVF{centroids}_HNSW32,PQ{M}x4fsr"
+        index_str = f"OPQ{M}_{M * 4},IVF{centroids}_HNSW32,PQ{M}x4fsr"
         benchmark(
             index_str,
             mmlu_embds,
@@ -204,6 +215,7 @@ def main():
             args.train_on_gpu,
             args.output_dir,
             args.nprobe,
+            args.knn_neighbors,
         )
 
     return

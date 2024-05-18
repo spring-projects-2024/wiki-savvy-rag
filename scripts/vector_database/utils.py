@@ -43,6 +43,8 @@ def train_vector_db(
     :param training_size: the fraction of the data to use for training
     :param train_on_gpu: whether to train on GPU"""
 
+    print(f"Initializing index {index_str}")
+
     vector_db = FaissWrapper(
         device=device,
         dataset=None,
