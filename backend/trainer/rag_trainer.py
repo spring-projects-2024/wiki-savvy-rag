@@ -2,6 +2,9 @@ from jepa.trainer.trainer import Trainer
 from backend.model.rag_handler import RagHandler
 import torch
 from torch import nn
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from peft import LoraConfig, TaskType, get_peft_model
+from peft.utils import prepare_model_for_kbit_training
 
 
 # TODO:
@@ -9,25 +12,25 @@ from torch import nn
 # 2. quantize model inside __init__ of RagTrainer then call parent
 
 
-class RagCriterionOld(nn.Module):
-    """
-    For use with forward_single_query_multiple_docs and compute_probabilities_for_training.
-    """
+# class RagCriterionOld(nn.Module):
+#     """
+#     For use with forward_single_query_multiple_docs and compute_probabilities_for_training.
+#     """
 
-    def __init__(self):
-        super().__init__()
-        self.cross_entropy_from_log_proba = nn.NLLLoss(reduction="mean")
+#     def __init__(self):
+#         super().__init__()
+#         self.cross_entropy_from_log_proba = nn.NLLLoss(reduction="mean")
 
-    def forward(self, output: dict, batch: dict) -> dict:
-        """
-        :param output: dict with keys "probas", "answer_mask"
-        :param batch: dict with keys "answer_tokens"
-        """
-        probas = output["probas"]
-        log_probas = torch.log(probas)
-        target = batch["answer_tokens"]
-        loss = self.cross_entropy_from_log_proba(log_probas, target)  # TODO: check
-        return {"loss": loss}
+#     def forward(self, output: dict, batch: dict) -> dict:
+#         """
+#         :param output: dict with keys "probas", "answer_mask"
+#         :param batch: dict with keys "answer_tokens"
+#         """
+#         probas = output["probas"]
+#         log_probas = torch.log(probas)
+#         target = batch["answer_tokens"]
+#         loss = self.cross_entropy_from_log_proba(log_probas, target)  # TODO: check
+#         return {"loss": loss}
 
 
 class RagCriterion(nn.Module):
@@ -56,14 +59,30 @@ class RagCriterion(nn.Module):
 
 
 class RagTrainer(Trainer):
-    def __init__(self, **kwargs):
+    def __init__(self, model: RagHandler, use_qlora: bool = True, **kwargs):
+        self.use_qlora = use_qlora
+        if self.use_qlora:
+            assert (
+                model.llm.use_qlora
+            ), "Model must be loaded in 4 bits for QLoRA training. Pass use_qlora=True to LLMHandler."
+        model.llm.model = prepare_model_for_kbit_training(model.llm.model)
+        lora_config = LoraConfig(
+            r=8,
+            target_modules=[
+                "q_proj",
+                "o_proj",
+                "k_proj",
+                "v_proj",
+                "gate_proj",
+                "up_proj",
+                "down_proj",
+            ],
+            bias="none",
+            task_type=TaskType.CAUSAL_LM,
+        )
+        model.llm.model = get_peft_model(model.llm.model, lora_config)
         super().__init__(**kwargs)
-        assert isinstance(
-            self.model, RagHandler
-        ), "RagTrainer expects a RagHandler model."
-        assert isinstance(
-            self.criterion, RagCriterion
-        ), "RagTrainer expects a RagCriterion criterion."
+        torch.compile(model.llm.model)  # artigianale. commentalo per spegnerlo
 
     def train_step(self, batch: dict) -> dict:
         answers = batch["answer"]

@@ -33,6 +33,7 @@ class RagHandler:
         model_kwargs: Optional[dict] = None,
         tokenizer_kwargs: Optional[dict] = None,
         faiss_kwargs: Optional[dict] = None,
+        use_qlora: bool = False,
     ):
         model_kwargs = model_kwargs if model_kwargs is not None else {}
         tokenizer_kwargs = tokenizer_kwargs if tokenizer_kwargs is not None else {}
@@ -53,12 +54,18 @@ class RagHandler:
             model_name=model_name,
             model_kwargs=model_kwargs,
             tokenizer_kwargs=tokenizer_kwargs,
+            use_qlora=use_qlora,
         )
         self.use_rag = use_rag
 
     def __call__(self, batch: dict) -> dict:
         # for use with RagTrainer
         return self.forward_batch_query_single_doc(batch)
+
+    def to(self, device: str):
+        self.llm.model.to(device)
+        self.llm.device = device
+        self.faiss.to(device)
 
     @staticmethod
     def get_default_llm_config():

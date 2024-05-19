@@ -16,7 +16,11 @@ class EmbedderWrapper:
         )
         self.device = device
 
-    @torch.no_grad() # todo: check if iterable is ok
+    def to(self, device: str):
+        self.embedder.to(device)
+        self.device = device
+
+    @torch.no_grad()  # todo: check if iterable is ok
     def get_embedding(self, text: Iterable[str] | str) -> torch.Tensor:
         batch_dict = self.tokenizer(
             text, max_length=512, padding=True, truncation=True, return_tensors="pt"
@@ -24,13 +28,11 @@ class EmbedderWrapper:
         batch_dict = batch_dict.to(self.device)
         outputs = self.embedder(**batch_dict)
         embeddings = outputs.last_hidden_state[:, 0].clone()
-
         # np.random.seed(hash(text) % 1000)
         # w = np.random.standard_normal(self.d)
         # w /= np.linalg.norm(w)
         # return w
-
-        return embeddings
+        return embeddings.cpu()
 
     def get_dimensionality(self):
         return self.embedder.config.hidden_size

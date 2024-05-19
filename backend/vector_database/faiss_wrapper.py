@@ -28,27 +28,26 @@ class FaissWrapper:
         :param dataset:
         :param nprobe: number of probes for search, ignored if index is loaded from file
         """
-
         if embedder is None:
             embedder = EmbedderWrapper(device)
-
         self.device = device
         self.embedder = embedder
         self.dataset = dataset
         self.dim = self.embedder.get_dimensionality()
-
         if index_path:
             self._index = faiss.read_index(index_path)
             assert self.dim == self._index.d
-
             if nprobe:
                 self._index.nprobe = nprobe
         elif index_str:
             self._index = faiss.index_factory(
                 self.dim, index_str, faiss.METRIC_INNER_PRODUCT
             )
-
             self._index.nprobe = nprobe if nprobe else 10
+
+    def to(self, device: str = "cpu"):
+        self.embedder.to(device)
+        self.device = device
 
     def search_vectors(
         self, vectors: np.ndarray, n_neighbors: int = 10
@@ -70,7 +69,9 @@ class FaissWrapper:
         """
         return self.search_vectors(vector.reshape(1, -1), n_neighbors)
 
-    def _search_text_get_I_D(self, text: str, n_neighbors) -> Tuple[np.ndarray, np.ndarray]:
+    def _search_text_get_I_D(
+        self, text: str, n_neighbors
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Get the I and D matrices from a text. Wraps around _search_vector
         :return: Index matrix I and distance matrix D
@@ -98,7 +99,9 @@ class FaissWrapper:
 
         return [(self._index_to_text(i), j) for i, j in zip(D[0], I[0]) if i != -1]
 
-    def search_multiple_texts(self, texts: List[str], n_neighbors: int) -> List[List[Tuple[str, float]]]:
+    def search_multiple_texts(
+        self, texts: List[str], n_neighbors: int
+    ) -> List[List[Tuple[str, float]]]:
         """
         Search for the nearest neighbors of multiple texts.
         :param texts:
@@ -112,7 +115,9 @@ class FaissWrapper:
                 self.embedder.get_embedding(texts[i : i + MAX_BATCH_SIZE]).numpy()
             )
 
-        I, D = self.search_vectors(np.concatenate(embeddings), n_neighbors)  # check axis
+        I, D = self.search_vectors(
+            np.concatenate(embeddings), n_neighbors
+        )  # check axis
 
         return [
             [(self._index_to_text(i), j) for i, j in zip(D_i, I_i) if i != -1]
