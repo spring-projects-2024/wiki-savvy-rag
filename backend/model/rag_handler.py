@@ -120,7 +120,7 @@ class RagHandler:
         scores = forward_output["scores"]  # (num_docs,)
         answer_length = forward_output["answer_length"]  # (1,)
         answer_logits = logits[
-            :, -answer_length:
+            :, -answer_length:, :
         ]  # (num_docs, answer_length, vocab_size)
         answer_probas = torch.nn.functional.softmax(answer_logits, dim=-1)
         aggregated_probas = (answer_probas * scores[:, None, None]).sum(
