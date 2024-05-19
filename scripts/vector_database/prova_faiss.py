@@ -10,11 +10,13 @@ centroids = 1000
 # best quantization is PQ{M}x4fsr but requires clustering
 
 # HNSW is pretty good for accuracy
+for nn in [16, 32, 64]:
+    for pq in [12, 24]:
+        # index_str = f"IVF{centroids}_HNSW32,{sq_type}"
+        index_str = f"HNSW{nn}_PQ{pq}"
+        index = faiss.index_factory(D, index_str, faiss.METRIC_INNER_PRODUCT)
+        index.nprobe = 16
 
-index = faiss.index_factory(D, f"HNSW32_SQ8", faiss.METRIC_INNER_PRODUCT)
-index.nprobe = 16
-
-N = 10**3
 
 exit()
 # Load the dataset

@@ -200,19 +200,20 @@ def main():
         np.save(i_path, I_base)
 
     # benchmark with scalar quantizers
-    # for sq_type in ["SQ4", "SQ8"]:
-    #     # index_str = f"IVF{centroids}_HNSW32,{sq_type}"
-    #     index_str = f"{sq_type}"
-    #     benchmark(
-    #         index_str,
-    #         mmlu_embds,
-    #         I_base,
-    #         args.training_size,
-    #         args.train_on_gpu,
-    #         args.output_dir,
-    #         args.nprobe,
-    #         args.knn_neighbors,
-    #     )
+    for nn in [16, 32, 64]:
+        for pq in [12, 24]:
+        # index_str = f"IVF{centroids}_HNSW32,{sq_type}"
+            index_str = f"HNSW{nn}_PQ{pq}"
+            benchmark(
+                index_str,
+                mmlu_embds,
+                I_base,
+                args.training_size,
+                args.train_on_gpu,
+                args.output_dir,
+                args.nprobe,
+                args.knn_neighbors,
+            )
 
     # exit()
     # for M in [128]:
@@ -229,7 +230,7 @@ def main():
     #     )
 
     for sq in [4, 8]:
-        for sw_size in [16, 32, 64]:
+        for sw_size in [16]:
             index_str = f"HNSW{sw_size}_SQ{sq}"
             benchmark(
                 index_str,
@@ -241,6 +242,8 @@ def main():
                 args.nprobe,
                 args.knn_neighbors,
             )
+
+    # todo: also HNSW32_PQ12
 
     # for M in [128]:
     #     index_str = f"OPQ{M}_{M * 4}"
