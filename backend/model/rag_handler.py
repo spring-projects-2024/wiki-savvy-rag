@@ -2,6 +2,7 @@ import time
 from copy import deepcopy
 from typing import Optional, List, Dict, Tuple, Iterable
 
+from torch.nn.utils.rnn import pad_sequence
 import numpy as np
 import torch
 from backend.model.llm_handler import LLMHandler
@@ -77,34 +78,34 @@ class RagHandler:
     def craft_training_prompt(self, query: str, doc: str, answer: str) -> str:
         return f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:\n{answer}"
 
-    def prepare_prompt(
-        self, query: str, doc: str, answer: str
-    ) -> Tuple[Dict[str, torch.Tensor], int]:
-        """
-        Assemble a prompt with the context, query, and answer.
-        Return a dictionary with keys "input_ids", "attention_mask", "query_plus_context_length".
-        "input_ids" is a tensor of shape (1, seq_len) with the tokenized prompt.
-        "attention_mask" is a tensor of shape (1, seq_len) with 1s in positions corresponding to tokens
-        and 0s in positions corresponding to padding tokens.
-        "query_plus_context_length" is the length of the query and context part of the prompt. To train,
-        look only at the logits corresponding to the answer part of the prompt.
-        """
-        header = f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:\n"
-        header_tokens = self.llm.tokenizer(header, return_tensors="pt", padding=False)
-        query_plus_context_length = header_tokens["input_ids"].shape[1]
-        answer_tokens = self.llm.tokenizer(answer, return_tensors="pt", padding=False)
-        # if the tokenizer adds a <s> token at the beginning, we remove it
-        if answer_tokens["input_ids"][0] == self.llm.tokenizer.encode("<s>"):
-            answer_tokens["input_ids"] = answer_tokens["input_ids"][1:]
-            answer_tokens["attention_mask"] = answer_tokens["attention_mask"][1:]
-        input_ids = torch.cat(header_tokens["input_ids"], answer_tokens["input_ids"])
-        attention_mask = torch.cat(
-            header_tokens["attention_mask"], answer_tokens["attention_mask"]
-        )
-        return {
-            "input_ids": input_ids,
-            "attention_mask": attention_mask,
-        }, query_plus_context_length
+    # def prepare_prompt(
+    #     self, query: str, doc: str, answer: str
+    # ) -> Tuple[Dict[str, torch.Tensor], int]:
+    #     """
+    #     Assemble a prompt with the context, query, and answer.
+    #     Return a dictionary with keys "input_ids", "attention_mask", "query_plus_context_length".
+    #     "input_ids" is a tensor of shape (1, seq_len) with the tokenized prompt.
+    #     "attention_mask" is a tensor of shape (1, seq_len) with 1s in positions corresponding to tokens
+    #     and 0s in positions corresponding to padding tokens.
+    #     "query_plus_context_length" is the length of the query and context part of the prompt. To train,
+    #     look only at the logits corresponding to the answer part of the prompt.
+    #     """
+    #     header = f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:\n"
+    #     header_tokens = self.llm.tokenizer(header, return_tensors="pt", padding=False)
+    #     query_plus_context_length = header_tokens["input_ids"].shape[1]
+    #     answer_tokens = self.llm.tokenizer(answer, return_tensors="pt", padding=False)
+    #     # if the tokenizer adds a <s> token at the beginning, we remove it
+    #     if answer_tokens["input_ids"][0] == self.llm.tokenizer.encode("<s>"):
+    #         answer_tokens["input_ids"] = answer_tokens["input_ids"][1:]
+    #         answer_tokens["attention_mask"] = answer_tokens["attention_mask"][1:]
+    #     input_ids = torch.cat(header_tokens["input_ids"], answer_tokens["input_ids"])
+    #     attention_mask = torch.cat(
+    #         header_tokens["attention_mask"], answer_tokens["attention_mask"]
+    #     )
+    #     return {
+    #         "input_ids": input_ids,
+    #         "attention_mask": attention_mask,
+    #     }, query_plus_context_length
 
     def compute_probabilities_for_training(
         self,
@@ -116,8 +117,8 @@ class RagHandler:
         together with a mask indicating which tokens correspond to the answer part of the prompt.
         """
         logits = forward_output["logits"]  # (num_docs, seq_len, vocab_size)
-        scores = forward_output["scores"]
-        context_lengths = forward_output["context_lengths"]
+        scores = forward_output["scores"]  # (num_docs,)
+        context_lengths = forward_output["context_lengths"]  # (num_docs,)
         # we want to keep only the logits corresponding to the answer part of the prompt
         answer_lengths = logits.shape[1] - context_lengths
         mask = (
@@ -149,28 +150,26 @@ class RagHandler:
         query: str,
         answer: str,
     ) -> Dict[str, torch.Tensor]:
-        """
-        logits: (num_docs, seq_len, vocab_size). The logits for each retrieved document, with
-        the given query and answer.
-        scores: (num_docs,). The scores of the retrieved documents, normalized.
-        Used to average probabilities later.
-        context_lengths: (num_docs,). The length of the query and context part of the prompt. These will
-        be used to look only at the logits corresponding to the answer part of the prompt.
-        """
         retrieved_docs = self.faiss.search_text(query)
-        prompts = []
-        scores = []
-        context_lengths = []
+        headers = []  # strings
+        scores = []  # floats
         for doc, score in retrieved_docs:
-            tokenized_prompt, query_plus_context_length = self.prepare_prompt(
-                query, doc, answer
-            )
-            prompts.append(tokenized_prompt)
+            header = f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:\n"
+            headers.append(header)
             scores.append(score)
-            context_lengths.append(query_plus_context_length)
-        # make a batch of prompts (get_logits expects a single dict with batched tensors as values)
-        input_ids = torch.stack([prompt["input_ids"] for prompt in prompts])
-        attention_mask = torch.stack([prompt["attention_mask"] for prompt in prompts])
+        tokenized_headers = self.llm.tokenizer(
+            headers, return_tensors="pt", padding=True
+        )  # (num_docs, seq_len)
+        tokenized_answer = self.llm.tokenizer(
+            answer, return_tensors="pt"
+        )  # (1, seq_len)
+        input_ids = torch.cat(
+            [tokenized_headers["input_ids"], tokenized_answer["input_ids"]], dim=1
+        )  # (num_docs, seq_len)
+        attention_mask = torch.cat(
+            [tokenized_headers["attention_mask"], tokenized_answer["attention_mask"]],
+            dim=1,
+        )  # (num_docs, seq_len)
         batch = {
             "input_ids": input_ids,
             "attention_mask": attention_mask,
@@ -178,12 +177,57 @@ class RagHandler:
         logits = self.llm.get_logits(batch)  # (num_docs, seq_len, vocab_size)
         scores = torch.tensor(scores)  # (num_docs,)
         scores /= scores.sum()
-        context_lengths = torch.tensor(context_lengths)  # (num_docs,)
+        answer_length = tokenized_answer["input_ids"].shape[1]
         return {
             "logits": logits,
             "scores": scores,
-            "context_lengths": context_lengths,
+            "answer_length": answer_length,
         }
+
+    # def replug_forward(
+    #     self,
+    #     query: str,
+    #     answer: str,
+    # ) -> Dict[str, torch.Tensor]:
+    #     """
+    #     logits: (num_docs, seq_len, vocab_size). The logits for each retrieved document, with
+    #     the given query and answer.
+    #     scores: (num_docs,). The scores of the retrieved documents, normalized.
+    #     Used to average probabilities later.
+    #     context_lengths: (num_docs,). The length of the query and context part of the prompt. These will
+    #     be used to look only at the logits corresponding to the answer part of the prompt.
+    #     """
+    #     retrieved_docs = self.faiss.search_text(query)
+    #     prompts = []
+    #     scores = []
+    #     context_lengths = []
+    #     for doc, score in retrieved_docs:
+    #         tokenized_prompt, query_plus_context_length = self.prepare_prompt(
+    #             query, doc, answer
+    #         )
+    #         prompts.append(tokenized_prompt)
+    #         scores.append(score)
+    #         context_lengths.append(query_plus_context_length)
+    #     # make a batch of prompts (get_logits expects a single dict with batched tensors as values)
+    #     padding_id = self.llm.tokenizer.pad_token_id
+    #     input_ids = [prompt["input_ids"] for prompt in prompts]
+    #     padded_input_ids = pad_sequence(
+    #         input_ids, batch_first=True, padding_value=padding_id
+    #     )
+    #     attention_mask = torch.stack([prompt["attention_mask"] for prompt in prompts])
+    #     batch = {
+    #         "input_ids": padded_input_ids,
+    #         "attention_mask": attention_mask,
+    #     }
+    #     logits = self.llm.get_logits(batch)  # (num_docs, seq_len, vocab_size)
+    #     scores = torch.tensor(scores)  # (num_docs,)
+    #     scores /= scores.sum()
+    #     context_lengths = torch.tensor(context_lengths)  # (num_docs,)
+    #     return {
+    #         "logits": logits,
+    #         "scores": scores,
+    #         "context_lengths": context_lengths,
+    #     }
 
     # def get_logits_replug(
     #     self,
