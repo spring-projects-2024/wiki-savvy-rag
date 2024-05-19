@@ -9,7 +9,6 @@ from peft.utils import prepare_model_for_kbit_training
 
 # TODO:
 # 1. have a dataloader load data with the correct format
-# 2. quantize model inside __init__ of RagTrainer then call parent
 
 
 # class RagCriterionOld(nn.Module):
@@ -59,28 +58,7 @@ class RagCriterion(nn.Module):
 
 
 class RagTrainer(Trainer):
-    def __init__(self, model: RagHandler, use_qlora: bool = True, **kwargs):
-        self.use_qlora = use_qlora
-        if self.use_qlora:
-            assert (
-                model.llm.use_qlora
-            ), "Model must be loaded in 4 bits for QLoRA training. Pass use_qlora=True to LLMHandler."
-        model.llm.model = prepare_model_for_kbit_training(model.llm.model)
-        lora_config = LoraConfig(
-            r=8,
-            target_modules=[
-                "q_proj",
-                "o_proj",
-                "k_proj",
-                "v_proj",
-                "gate_proj",
-                "up_proj",
-                "down_proj",
-            ],
-            bias="none",
-            task_type=TaskType.CAUSAL_LM,
-        )
-        model.llm.model = get_peft_model(model.llm.model, lora_config)
+    def __init__(self, model: RagHandler, **kwargs):
         super().__init__(**kwargs)
         torch.compile(model.llm.model)  # artigianale. commentalo per spegnerlo
 
@@ -91,3 +69,23 @@ class RagTrainer(Trainer):
         )  # BatchEncoding object
         batch["targets"] = tokenized_answers["input_ids"]
         return super().train_step(batch)
+
+
+def prepare_for_qlora(model: AutoModelForCausalLM) -> AutoModelForCausalLM:
+    model = prepare_model_for_kbit_training(model)
+    lora_config = LoraConfig(
+        r=8,
+        target_modules=[
+            "q_proj",
+            "o_proj",
+            "k_proj",
+            "v_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
+        bias="none",
+        task_type=TaskType.CAUSAL_LM,
+    )
+    model = get_peft_model(model, lora_config)
+    return model

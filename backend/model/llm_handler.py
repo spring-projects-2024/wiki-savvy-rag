@@ -30,12 +30,12 @@ class LLMHandler:
         self,
         model_name: str = DEFAULT_MODEL,
         device: str = "cpu",
-        model_kwargs: Optional[dict] = None,  # torch_dtype
+        llm_kwargs: Optional[dict] = None,  # torch_dtype
         tokenizer_kwargs: Optional[dict] = None,
         use_qlora: bool = False,
     ):
-        if model_kwargs is None:
-            model_kwargs = {}
+        if llm_kwargs is None:
+            llm_kwargs = {}
         if tokenizer_kwargs is None:
             tokenizer_kwargs = {}
         self.use_qlora = use_qlora
@@ -52,7 +52,7 @@ class LLMHandler:
             device_map=device,
             trust_remote_code=True,
             quantization_config=quantization_config,
-            **model_kwargs,
+            **llm_kwargs,
         )
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, **tokenizer_kwargs)
         self.pipe = pipeline(

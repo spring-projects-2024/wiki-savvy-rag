@@ -1,11 +1,10 @@
-from typing import Tuple, List, Iterable
+from typing import Tuple, List, Iterable, Optional
 
 # keep in this specific order, otherwise it gives Segmentation Fault on Federico's pc
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
 import faiss
 import numpy as np
-from backend.vector_database.dataset import MockDataset
-
+from backend.vector_database.dataset import DatasetSQL, MockDataset
 
 # TODO: allow processing queries in batches
 
@@ -14,8 +13,8 @@ class FaissWrapper:
     def __init__(
         self,
         device,
-        dataset,
-        embedder,
+        dataset: DatasetSQL | MockDataset | str,
+        embedder: Optional[EmbedderWrapper] = None,
         *,
         index_path=None,
         index_str=None,
@@ -32,7 +31,12 @@ class FaissWrapper:
             embedder = EmbedderWrapper(device)
         self.device = device
         self.embedder = embedder
-        self.dataset = dataset
+
+        if isinstance(dataset, str):
+            self.dataset = DatasetSQL(db_path=dataset)
+        elif isinstance(dataset, (DatasetSQL, MockDataset)):
+            self.dataset = dataset
+
         self.dim = self.embedder.get_dimensionality()
         if index_path:
             self._index = faiss.read_index(index_path)

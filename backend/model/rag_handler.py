@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from backend.model.llm_handler import LLMHandler
 from backend.vector_database.faiss_wrapper import FaissWrapper
-from backend.vector_database.dataset import Dataset
+from backend.vector_database.dataset import DatasetSQL
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
 from backend.model.prompt_utils import (
     join_messages_query_no_rag,
@@ -29,13 +29,13 @@ class RagHandler:
         model_name: str,
         device: str,
         use_rag: bool = True,
-        llm_config: Optional[dict] = None,
-        model_kwargs: Optional[dict] = None,
+        llm_generation_config: Optional[dict] = None,
+        llm_kwargs: Optional[dict] = None,
         tokenizer_kwargs: Optional[dict] = None,
         faiss_kwargs: Optional[dict] = None,
         use_qlora: bool = False,
     ):
-        model_kwargs = model_kwargs if model_kwargs is not None else {}
+        llm_kwargs = llm_kwargs if llm_kwargs is not None else {}
         tokenizer_kwargs = tokenizer_kwargs if tokenizer_kwargs is not None else {}
         faiss_kwargs = (
             faiss_kwargs
@@ -45,14 +45,14 @@ class RagHandler:
                 "embedder": None,
             }
         )
-        self.llm_config = self.get_default_llm_config()
-        if llm_config is not None:
-            self.llm_config.update(llm_config)
+        self.llm_generation_config = self.get_default_llm_config()
+        if llm_generation_config is not None:
+            self.llm_generation_config.update(llm_generation_config)
         self.faiss = FaissWrapper(device=device, **faiss_kwargs)
         self.llm = LLMHandler(
             device=device,
             model_name=model_name,
-            model_kwargs=model_kwargs,
+            llm_kwargs=llm_kwargs,
             tokenizer_kwargs=tokenizer_kwargs,
             use_qlora=use_qlora,
         )
@@ -446,7 +446,7 @@ class RagHandler:
                 "histories and queries must be either both strings or both lists of strings"
             )
 
-        rag_config = deepcopy(self.llm_config)
+        rag_config = deepcopy(self.llm_generation_config)
         if kwargs:
             rag_config.update(kwargs)
         response = self.llm.inference(updated_histories, rag_config)
@@ -475,7 +475,7 @@ DB_PATH = "scripts/dataset/data/dataset.db"
 if __name__ == "__main__":
     print("i'm alive")
     embedder = EmbedderWrapper("cpu")
-    dataset = Dataset(db_path=DB_PATH)
+    dataset = DatasetSQL(db_path=DB_PATH)
     rag_handler = RagHandler(
         model_name="Minami-su/Qwen1.5-0.5B-Chat_llamafy",
         device="cpu",
