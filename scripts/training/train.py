@@ -57,6 +57,9 @@ def main():
     train_loader = DataLoader(train_data, batch_size=batch_size)
     test_data = load_mmlu(split="validation", subset="stem")
     test_loader = DataLoader(test_data, batch_size=batch_size)
+    train_metadata = {
+        "id": "yahoo_answers",
+    }
 
     print("Preparing training...")
 
@@ -75,6 +78,7 @@ def main():
         "optimizer": optimizer,
         "criterion": criterion,
         "train_loader": train_loader,
+        "train_metadata": train_metadata,
         "test_loader": test_loader,
         "max_epochs": max_epochs,
         "device": device,
