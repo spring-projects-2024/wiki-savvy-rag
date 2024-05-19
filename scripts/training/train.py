@@ -54,7 +54,7 @@ def main():
     print("Preparing data...")
 
     train_data = load_yahoo_answers(subset="stem")
-    train_loader = DataLoader(train_data["train"], batch_size=batch_size)
+    train_loader = DataLoader(train_data, batch_size=batch_size)
     test_data = load_mmlu(split="val", subset="stem")
     test_loader = DataLoader(test_data, batch_size=batch_size)
 
