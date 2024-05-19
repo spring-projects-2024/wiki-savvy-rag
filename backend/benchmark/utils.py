@@ -34,7 +34,7 @@ def load_yahoo_answers(subset: Union[list, str, None] = "stem") -> datasets.Data
         if subset != "stem":
             raise ValueError("subset must be a list of strings, None, or 'stem'")
         subset = yahoo_stem_categories
-    dataset = dataset.filter(lambda x: x["category"] in subset)
+    dataset = dataset.filter(lambda x: x["main_category"] in subset)
     dataset = dataset.rename_column("question", "query")
     return dataset
 
