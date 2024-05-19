@@ -5,11 +5,17 @@ from torch import nn
 
 
 # TODO:
+# 1. implement RagCriterion to work with forward_batch_query_single_doc
+# 2. implement train_step for RagTrainer
 # 3. have a dataloader load data with the correct format
 # 4. ensure RagHandler can be used as model in Trainer
 
 
-class RagCriterion(nn.Module):
+class RagCriterionOld(nn.Module):
+    """
+    For use with forward_single_query_multiple_docs and compute_probabilities_for_training.
+    """
+
     def __init__(self):
         super().__init__()
         self.cross_entropy_from_log_proba = nn.NLLLoss(reduction="mean")
@@ -33,7 +39,7 @@ class RagTrainer(Trainer):
             self.model, RagHandler
         ), "RagTrainer expects a RagHandler model."
         assert isinstance(
-            self.criterion, RagCriterion
+            self.criterion, RagCriterionOld
         ), "RagTrainer expects a RagCriterion criterion."
 
     # def train_step(self, batch: dict) -> dict:
