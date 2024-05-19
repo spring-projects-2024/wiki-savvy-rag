@@ -1,3 +1,4 @@
+from jepa.logger import WandbLogger
 from backend.model.rag_handler import RagHandler
 from backend.trainer.rag_trainer import RagCriterion, RagTrainer, prepare_for_qlora
 import argparse
@@ -59,8 +60,13 @@ def main():
     test_loader = DataLoader(test_data, batch_size=batch_size)
     train_metadata = {
         "id": "yahoo_answers",
-        "use_as": "use as train"
+        "use_as": "train",
+        "num_samples": len(train_data),
     }
+
+    WandbLogger.log_dataset(
+        train_data, train_metadata, project="rag", entity="mattia-scardecchia"
+    )
 
     print("Preparing training...")
 
