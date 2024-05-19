@@ -200,21 +200,21 @@ def main():
         np.save(i_path, I_base)
 
     # benchmark with scalar quantizers
-    for sq_type in ["SQ4", "SQ8"]:
-        # index_str = f"IVF{centroids}_HNSW32,{sq_type}"
-        index_str = f"{sq_type}"
-        benchmark(
-            index_str,
-            mmlu_embds,
-            I_base,
-            args.training_size,
-            args.train_on_gpu,
-            args.output_dir,
-            args.nprobe,
-            args.knn_neighbors,
-        )
+    # for sq_type in ["SQ4", "SQ8"]:
+    #     # index_str = f"IVF{centroids}_HNSW32,{sq_type}"
+    #     index_str = f"{sq_type}"
+    #     benchmark(
+    #         index_str,
+    #         mmlu_embds,
+    #         I_base,
+    #         args.training_size,
+    #         args.train_on_gpu,
+    #         args.output_dir,
+    #         args.nprobe,
+    #         args.knn_neighbors,
+    #     )
 
-    exit()
+    # exit()
     # for M in [128]:
     #     index_str = f"IVF{centroids},PQ{M}x4fsr"
     #     benchmark(
@@ -241,45 +241,46 @@ def main():
             args.knn_neighbors,
         )
 
-    for M in [128]:
-        index_str = f"OPQ{M}_{M * 4}"
-        benchmark(
-            index_str,
-            mmlu_embds,
-            I_base,
-            args.training_size,
-            args.train_on_gpu,
-            args.output_dir,
-            args.nprobe,
-            args.knn_neighbors,
-        )
+    # for M in [128]:
+    #     index_str = f"OPQ{M}_{M * 4}"
+    #     benchmark(
+    #         index_str,
+    #         mmlu_embds,
+    #         I_base,
+    #         args.training_size,
+    #         args.train_on_gpu,
+    #         args.output_dir,
+    #         args.nprobe,
+    #         args.knn_neighbors,
+    #     )
     # benchmark with product quantizers
-    for M in [256]:
-        index_str = f"OPQ{M}_{M * 4},IVF{centroids},PQ{M}"
-        benchmark(
-            index_str,
-            mmlu_embds,
-            I_base,
-            args.training_size,
-            args.train_on_gpu,
-            args.output_dir,
-            args.nprobe,
-            args.knn_neighbors,
-        )
+    # for M in [256]:
+    #     index_str = f"OPQ{M}_{M * 4},IVF{args.centroids},PQ{M}"
+    #     benchmark(
+    #         index_str,
+    #         mmlu_embds,
+    #         I_base,
+    #         args.training_size,
+    #         args.train_on_gpu,
+    #         args.output_dir,
+    #         args.nprobe,
+    #         args.knn_neighbors,
+    #     )
 
     # benchmark with product quantizers (fast scan)
     for M in [64, 128, 256]:
-        index_str = f"OPQ{M}_{M * 4},IVF{centroids}_HNSW32,PQ{M}x4fsr"
-        benchmark(
-            index_str,
-            mmlu_embds,
-            I_base,
-            args.training_size,
-            args.train_on_gpu,
-            args.output_dir,
-            args.nprobe,
-            args.knn_neighbors,
-        )
+        for centroids in [1000, 2000, 5000]:
+            index_str = f"OPQ{M}_{M * 4},IVF{centroids}_HNSW32,PQ{M}x4fsr"
+            benchmark(
+                index_str,
+                mmlu_embds,
+                I_base,
+                args.training_size,
+                args.train_on_gpu,
+                args.output_dir,
+                args.nprobe,
+                args.knn_neighbors,
+            )
 
     return
 
