@@ -56,7 +56,7 @@ class RagCriterion(nn.Module):
 class RagTrainer(Trainer):
     def __init__(self, model: RagHandler, **kwargs):
         super().__init__(model, **kwargs)
-        torch.compile(model.llm.model)  # artigianale. commentalo per spegnerlo
+        # torch.compile(model.llm.model)  # artigianale. commentalo per spegnerlo
 
     def train_step(self, batch: dict) -> dict:
         answers = batch["answer"]
