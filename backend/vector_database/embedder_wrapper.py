@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Iterable
 
 import torch
 
@@ -16,8 +16,8 @@ class EmbedderWrapper:
         )
         self.device = device
 
-    @torch.no_grad()
-    def get_embedding(self, text: List[str] | str) -> torch.Tensor:
+    @torch.no_grad() # todo: check if iterable is ok
+    def get_embedding(self, text: Iterable[str] | str) -> torch.Tensor:
         batch_dict = self.tokenizer(
             text, max_length=512, padding=True, truncation=True, return_tensors="pt"
         )

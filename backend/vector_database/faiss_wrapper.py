@@ -25,9 +25,7 @@ class FaissWrapper:
         Instantiate a FaissWrapper object.
         :param index_path: path to a saved index, optional and exclusive with index_str
         :param index_str: Faiss index string, optional and exclusive with index_path
-        :param n_neighbors: parameter k for knn, default 10
         :param dataset:
-        :param dim: dimensionality of the vectors (required if index_str is passed, ignored otherwise)
         :param nprobe: number of probes for search, ignored if index is loaded from file
         """
 
@@ -57,26 +55,28 @@ class FaissWrapper:
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Search for the nearest neighbors of n vectors.
-        :param vector: np.ndarray of shape (n, dim)
+        :param vectors: np.ndarray of shape (n, dim)
         :return: Index matrix I and distance matrix D
         """
         return self._index.search(vectors, n_neighbors)
 
-    def _search_vector(self, vector: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def _search_vector(
+        self, vector: np.ndarray, n_neighbors: int
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Search for the nearest neighbors of a vector.
         :param vector: np.ndarray of shape (dim)
         :return: Index matrix I and distance matrix D
         """
-        return self.search_vectors(vector.reshape(1, -1))
+        return self.search_vectors(vector.reshape(1, -1), n_neighbors)
 
-    def _search_text_get_I_D(self, text: str) -> Tuple[np.ndarray, np.ndarray]:
+    def _search_text_get_I_D(self, text: str, n_neighbors) -> Tuple[np.ndarray, np.ndarray]:
         """
         Get the I and D matrices from a text. Wraps around _search_vector
         :return: Index matrix I and distance matrix D
         """
         vector = self.embedder.get_embedding(text).numpy()
-        return self._search_vector(vector)
+        return self._search_vector(vector, n_neighbors)
 
     def _index_to_text(self, index: int) -> str:
         """
@@ -86,7 +86,7 @@ class FaissWrapper:
         """
         return self.dataset.search_chunk(index)
 
-    def search_text(self, text: str) -> List[Tuple[str, float]]:
+    def search_text(self, text: str, n_neighbors=10) -> List[Tuple[str, float]]:
         """
         Search for the nearest neighbors of a text.
         :param text:
@@ -94,11 +94,11 @@ class FaissWrapper:
         todo: check if they are sorted by distance, there is an index in faiss that re-orders results at the end
         """
 
-        I, D = self._search_text_get_I_D(text)
+        I, D = self._search_text_get_I_D(text, n_neighbors)
 
         return [(self._index_to_text(i), j) for i, j in zip(D[0], I[0]) if i != -1]
 
-    def search_multiple_texts(self, texts: List[str]) -> List[List[Tuple[str, float]]]:
+    def search_multiple_texts(self, texts: List[str], n_neighbors: int) -> List[List[Tuple[str, float]]]:
         """
         Search for the nearest neighbors of multiple texts.
         :param texts:
@@ -112,7 +112,7 @@ class FaissWrapper:
                 self.embedder.get_embedding(texts[i : i + MAX_BATCH_SIZE]).numpy()
             )
 
-        I, D = self.search_vectors(np.concatenate(embeddings))  # check axis
+        I, D = self.search_vectors(np.concatenate(embeddings), n_neighbors)  # check axis
 
         return [
             [(self._index_to_text(i), j) for i, j in zip(D_i, I_i) if i != -1]
