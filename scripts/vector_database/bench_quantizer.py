@@ -16,6 +16,7 @@ from scripts.vector_database.utils import embeddings_iterator, train_vector_db
 INPUT_DIR_DEFAULT = "scripts/embeddings/data/"
 OUTPUT_DIR_DEFAULT = "scripts/vector_database/data/"
 CENTROIDS_DEFAULT = 5  # 131072
+# DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DEVICE = "cpu"
 KNN_NEIGHBORS_DEFAULT = 100
 MMLU_SAMPLE_SIZE_DEFAULT = 10
@@ -35,7 +36,7 @@ def build_mmlu_embds(mmlu_sample_size):
     for i in range(min(mmlu_sample_size, len(questions))):
         embd_list.append(embedder.get_embedding(questions[i]))
 
-    return torch.cat(embd_list).numpy()
+    return torch.cat(embd_list).cpu().numpy()
 
 
 def build_baselines(mmlu_embds: np.ndarray, knn_neighbors: int):
@@ -45,7 +46,7 @@ def build_baselines(mmlu_embds: np.ndarray, knn_neighbors: int):
     for offset, embeddings in enumerate(embeddings_iterator(INPUT_DIR_DEFAULT, DEVICE)):
         D, I = faiss.knn(
             mmlu_embds,
-            embeddings.numpy(),
+            embeddings.cpu().numpy(),
             min(embeddings.shape[0], knn_neighbors),
             metric=faiss.METRIC_INNER_PRODUCT,
         )
@@ -167,7 +168,6 @@ def main():
 
     os.makedirs(args.output_dir, exist_ok=True)
 
-
     print("Building mmlu embeddings")
     emb_path = os.path.join(args.output_dir, f"mmlu_embds_{args.mmlu_sample_size}.npy")
     if not os.path.exists(emb_path):
@@ -175,16 +175,21 @@ def main():
         # dump the embeddings to disk
         np.save(emb_path, mmlu_embds)
     else:
-        mmlu_embds = np.load(os.path.join(args.output_dir, f"mmlu_embds_{args.mmlu_sample_size}.npy"))
-
+        mmlu_embds = np.load(
+            os.path.join(args.output_dir, f"mmlu_embds_{args.mmlu_sample_size}.npy")
+        )
 
     # random embeddings
     # mmlu_embds = np.random.rand(args.mmlu_sample_size, 384).astype(np.float32)
 
     print("Building mmlu baselines")
 
-    d_path = os.path.join(args.output_dir, f"mmlu_baselines_{args.mmlu_sample_size}_D.npy")
-    i_path = os.path.join(args.output_dir, f"mmlu_baselines_{args.mmlu_sample_size}_I.npy")
+    d_path = os.path.join(
+        args.output_dir, f"mmlu_baselines_{args.mmlu_sample_size}_D.npy"
+    )
+    i_path = os.path.join(
+        args.output_dir, f"mmlu_baselines_{args.mmlu_sample_size}_I.npy"
+    )
 
     if os.path.exists(d_path) and os.path.exists(i_path):
         D_base = np.load(d_path)
@@ -193,8 +198,6 @@ def main():
         D_base, I_base = build_baselines(mmlu_embds, args.knn_neighbors)
         np.save(d_path, D_base)
         np.save(i_path, I_base)
-
-
 
     # benchmark with scalar quantizers
     # for sq_type in ["SQ4", "SQ8"]:
@@ -210,7 +213,7 @@ def main():
     #         args.nprobe,
     #         args.knn_neighbors,
     #     )
-    #
+
     # exit()
     # for M in [128]:
     #     index_str = f"IVF{centroids},PQ{M}x4fsr"
@@ -238,46 +241,46 @@ def main():
             args.knn_neighbors,
         )
 
-    exit()
-    for M in [128]:
-        index_str = f"OPQ{M}_{M * 4}"
-        benchmark(
-            index_str,
-            mmlu_embds,
-            I_base,
-            args.training_size,
-            args.train_on_gpu,
-            args.output_dir,
-            args.nprobe,
-            args.knn_neighbors,
-        )
+    # for M in [128]:
+    #     index_str = f"OPQ{M}_{M * 4}"
+    #     benchmark(
+    #         index_str,
+    #         mmlu_embds,
+    #         I_base,
+    #         args.training_size,
+    #         args.train_on_gpu,
+    #         args.output_dir,
+    #         args.nprobe,
+    #         args.knn_neighbors,
+    #     )
     # benchmark with product quantizers
-    for M in [256]:
-        index_str = f"OPQ{M}_{M * 4},IVF{centroids},PQ{M}"
-        benchmark(
-            index_str,
-            mmlu_embds,
-            I_base,
-            args.training_size,
-            args.train_on_gpu,
-            args.output_dir,
-            args.nprobe,
-            args.knn_neighbors,
-        )
+    # for M in [256]:
+    #     index_str = f"OPQ{M}_{M * 4},IVF{args.centroids},PQ{M}"
+    #     benchmark(
+    #         index_str,
+    #         mmlu_embds,
+    #         I_base,
+    #         args.training_size,
+    #         args.train_on_gpu,
+    #         args.output_dir,
+    #         args.nprobe,
+    #         args.knn_neighbors,
+    #     )
 
     # benchmark with product quantizers (fast scan)
     for M in [64, 128, 256]:
-        index_str = f"OPQ{M}_{M * 4},IVF{centroids}_HNSW32,PQ{M}x4fsr"
-        benchmark(
-            index_str,
-            mmlu_embds,
-            I_base,
-            args.training_size,
-            args.train_on_gpu,
-            args.output_dir,
-            args.nprobe,
-            args.knn_neighbors,
-        )
+        for centroids in [1000, 2000, 5000]:
+            index_str = f"OPQ{M}_{M * 4},IVF{centroids}_HNSW32,PQ{M}x4fsr"
+            benchmark(
+                index_str,
+                mmlu_embds,
+                I_base,
+                args.training_size,
+                args.train_on_gpu,
+                args.output_dir,
+                args.nprobe,
+                args.knn_neighbors,
+            )
 
     return
 
