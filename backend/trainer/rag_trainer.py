@@ -63,7 +63,7 @@ class RagTrainer(Trainer):
         tokenized_answers = self.model.llm.tokenizer(
             answers, padding=False
         )  # BatchEncoding object
-        batch["targets"] = tokenized_answers["input_ids"]
+        batch["targets"] = tokenized_answers
         return super().train_step(batch)
 
 
