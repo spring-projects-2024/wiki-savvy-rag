@@ -59,6 +59,7 @@ def main():
     test_loader = DataLoader(test_data, batch_size=batch_size)
     train_metadata = {
         "id": "yahoo_answers",
+        "use_as": "use as train"
     }
 
     print("Preparing training...")
