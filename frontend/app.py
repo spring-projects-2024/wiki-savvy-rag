@@ -1,3 +1,5 @@
+from itertools import chain
+import json
 import streamlit as st
 from backend.model.rag_handler import RagHandler
 from backend.vector_database.dataset import Dataset
@@ -37,7 +39,7 @@ def load_rag_handler():
             "dataset": dataset,
             "embedder": embedder,
         },
-        use_rag=True,
+        use_rag=False,
     )
 
 
@@ -55,28 +57,68 @@ for message in st.session_state.messages:
             message["content"]
         )  # allow to have latex and markdown code after generation
 
+
+# fake generator on llm answer (string)
+def string_generator(strlist):
+    # akes a string to make a generator out of this, allowing to have a nice live token generation effect
+    for s in strlist:
+        yield s
+        time.sleep(0.008)
+
+
+def naive_inference(history, query):
+    response, retrieved_docs = rag.naive_inference_with_retrieved_docs(
+        histories=history,
+        queries=query,
+    )
+
+    assert isinstance(response, str)
+
+    return string_generator(response), retrieved_docs
+
+
+def autoregressive_inference(history, query):
+    return rag.autoregressive_generation_iterator_with_retrieved_docs(query=query)
+
+
+def post_process_titles(text: str):
+    """This function is necessary because the json in titles is not formatted properly"""
+    return (
+        text.replace("['", '["')
+        .replace("',", '",')
+        .replace(", '", ', "')
+        .replace(",'", ',"')
+        .replace("']", '"]')
+    )
+
+
+def response_generator(history, query):
+    response, retrieved_docs = autoregressive_inference(history, query)
+
+    # todo: print markdown correctly
+    # craft references for the retrieved documents in markdown
+    retrieved_docs_str = """<small>
+    """
+    for i, (doc, _) in enumerate(retrieved_docs):
+        titles = " > ".join(json.loads(post_process_titles(doc["titles"])))
+        retrieved_docs_str += f""">  Chunk {i+1}: {titles}
+        """
+    retrieved_docs_str += "</small>"
+
+    # return chain(string_generator(retrieved_docs_str), response)
+    return string_generator(retrieved_docs_str)
+
+
 if prompt := st.chat_input("What do you want to know?"):
     st.chat_message("user").markdown(prompt)
 
-    response = rag.naive_inference(
-        histories=st.session_state.messages,
-        queries=prompt,
-    )
-
-    # fake generator on llm answer (string)
-    def string_generator(strlist):
-        """Takes a string to make a generator out of this, allowing to have a nice live token generation effect"""
-        for s in strlist:
-            yield s
-            time.sleep(0.008)
-
-    stream = string_generator(response)
+    stream = response_generator(st.session_state.messages, prompt)
 
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("assistant"):
-        st.write_stream(stream)
-        # st.markdown(response)   #writes in the chat the llm answer
+        response = st.write_stream(stream)
+
     st.session_state.messages.append(
         {"role": "assistant", "content": response}
     )  # updates the chat history once a new prompt is given

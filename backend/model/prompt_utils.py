@@ -16,7 +16,7 @@ def join_messages_query_rag(
     message += "== Retrieved documents ==\n"
     for i, (doc, _) in enumerate(retrieved_docs):
         message += f"=== Document {i} ===\n"
-        message += doc + "\n"
+        message += doc["text"] + "\n"
     message += f"== User Query ==\n{query}"
     new_history.append({"role": "user", "content": message})
     return new_history
