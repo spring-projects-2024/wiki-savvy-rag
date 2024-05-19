@@ -85,6 +85,7 @@ def main():
         "checkpoint_root_dir": "../checkpoints",
         "seed": seed,
         "wandb_project": wandb_project,
+        "compile_model": False,
     }
 
     print("Training...")
