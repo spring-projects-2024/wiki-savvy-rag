@@ -89,35 +89,6 @@ class RagHandler(nn.Module):
     def craft_training_prompt(self, query: str, doc: str, answer: str) -> str:
         return f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:\n{answer}"
 
-    # def prepare_prompt(
-    #     self, query: str, doc: str, answer: str
-    # ) -> Tuple[Dict[str, torch.Tensor], int]:
-    #     """
-    #     Assemble a prompt with the context, query, and answer.
-    #     Return a dictionary with keys "input_ids", "attention_mask", "query_plus_context_length".
-    #     "input_ids" is a tensor of shape (1, seq_len) with the tokenized prompt.
-    #     "attention_mask" is a tensor of shape (1, seq_len) with 1s in positions corresponding to tokens
-    #     and 0s in positions corresponding to padding tokens.
-    #     "query_plus_context_length" is the length of the query and context part of the prompt. To train,
-    #     look only at the logits corresponding to the answer part of the prompt.
-    #     """
-    #     header = f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:\n"
-    #     header_tokens = self.llm.tokenizer(header, return_tensors="pt", padding=False)
-    #     query_plus_context_length = header_tokens["input_ids"].shape[1]
-    #     answer_tokens = self.llm.tokenizer(answer, return_tensors="pt", padding=False)
-    #     # if the tokenizer adds a <s> token at the beginning, we remove it
-    #     if answer_tokens["input_ids"][0] == self.llm.tokenizer.encode("<s>"):
-    #         answer_tokens["input_ids"] = answer_tokens["input_ids"][1:]
-    #         answer_tokens["attention_mask"] = answer_tokens["attention_mask"][1:]
-    #     input_ids = torch.cat(header_tokens["input_ids"], answer_tokens["input_ids"])
-    #     attention_mask = torch.cat(
-    #         header_tokens["attention_mask"], answer_tokens["attention_mask"]
-    #     )
-    #     return {
-    #         "input_ids": input_ids,
-    #         "attention_mask": attention_mask,
-    #     }, query_plus_context_length
-
     def compute_probabilities_for_training(
         self,
         forward_output: Dict[str, torch.Tensor],
@@ -243,84 +214,6 @@ class RagHandler(nn.Module):
             "logits": logits,
             "answer_lengths": answer_lengths,
         }
-
-    # def replug_forward(
-    #     self,
-    #     query: str,
-    #     answer: str,
-    # ) -> Dict[str, torch.Tensor]:
-    #     """
-    #     logits: (num_docs, seq_len, vocab_size). The logits for each retrieved document, with
-    #     the given query and answer.
-    #     scores: (num_docs,). The scores of the retrieved documents, normalized.
-    #     Used to average probabilities later.
-    #     context_lengths: (num_docs,). The length of the query and context part of the prompt. These will
-    #     be used to look only at the logits corresponding to the answer part of the prompt.
-    #     """
-    #     retrieved_docs = self.faiss.search_text(query)
-    #     prompts = []
-    #     scores = []
-    #     context_lengths = []
-    #     for doc, score in retrieved_docs:
-    #         tokenized_prompt, query_plus_context_length = self.prepare_prompt(
-    #             query, doc, answer
-    #         )
-    #         prompts.append(tokenized_prompt)
-    #         scores.append(score)
-    #         context_lengths.append(query_plus_context_length)
-    #     # make a batch of prompts (get_logits expects a single dict with batched tensors as values)
-    #     padding_id = self.llm.tokenizer.pad_token_id
-    #     input_ids = [prompt["input_ids"] for prompt in prompts]
-    #     padded_input_ids = pad_sequence(
-    #         input_ids, batch_first=True, padding_value=padding_id
-    #     )
-    #     attention_mask = torch.stack([prompt["attention_mask"] for prompt in prompts])
-    #     batch = {
-    #         "input_ids": padded_input_ids,
-    #         "attention_mask": attention_mask,
-    #     }
-    #     logits = self.llm.get_logits(batch)  # (num_docs, seq_len, vocab_size)
-    #     scores = torch.tensor(scores)  # (num_docs,)
-    #     scores /= scores.sum()
-    #     context_lengths = torch.tensor(context_lengths)  # (num_docs,)
-    #     return {
-    #         "logits": logits,
-    #         "scores": scores,
-    #         "context_lengths": context_lengths,
-    #     }
-
-    # def get_logits_replug(
-    #     self,
-    #     queries: List[str],
-    # ) -> List[torch.Tensor]:
-    #     """
-    #     Probably not useful. This function takes a batch of queries. For each of them, it retrieves
-    #     documents with faiss, feeds the query with each document to the model, and computes the average
-    #     of the logits weighted by the scores of the retrieved documents.
-    #     Problems:
-    #     - for training, we probably need to have also the answer concatenated to the query
-    #     - the averaging is done over the logits, but we probably want to average over the probabilities
-    #     """
-    #     retrieved_for_every_query = self.faiss.search_multiple_texts(queries)
-    #     avg_logits_for_every_query = []
-    #     for query, retrieved in zip(queries, retrieved_for_every_query):
-    #         queries_with_context = []
-    #         scores = []
-    #         for tup in retrieved:
-    #             doc, score = tup
-    #             scores.append(score)
-    #             query_with_context = self.craft_replug_query(query, doc)
-    #             queries_with_context.append(query_with_context)
-    #         logits = self.llm.get_logits(
-    #             queries_with_context
-    #         )  # (num_docs, seq_len, vocab_size)
-    #         scores = torch.tensor(scores)
-    #         scores /= scores.sum()
-    #         avg_logits = (logits * scores[:, None, None]).sum(
-    #             dim=0
-    #         )  # (seq_len, vocab_size)
-    #         avg_logits_for_every_query.append(avg_logits)
-    #     return avg_logits_for_every_query  # (num_queries, seq_len, vocab_size)
 
     @torch.no_grad()
     def autoregressive_generation_iterator_with_retrieved_docs(
@@ -497,3 +390,110 @@ if __name__ == "__main__":
     x = rag_handler.forward_single_query_multiple_docs("ciao", "bene")
 
     print(x)
+
+    # def prepare_prompt(
+    #     self, query: str, doc: str, answer: str
+    # ) -> Tuple[Dict[str, torch.Tensor], int]:
+    #     """
+    #     Assemble a prompt with the context, query, and answer.
+    #     Return a dictionary with keys "input_ids", "attention_mask", "query_plus_context_length".
+    #     "input_ids" is a tensor of shape (1, seq_len) with the tokenized prompt.
+    #     "attention_mask" is a tensor of shape (1, seq_len) with 1s in positions corresponding to tokens
+    #     and 0s in positions corresponding to padding tokens.
+    #     "query_plus_context_length" is the length of the query and context part of the prompt. To train,
+    #     look only at the logits corresponding to the answer part of the prompt.
+    #     """
+    #     header = f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:\n"
+    #     header_tokens = self.llm.tokenizer(header, return_tensors="pt", padding=False)
+    #     query_plus_context_length = header_tokens["input_ids"].shape[1]
+    #     answer_tokens = self.llm.tokenizer(answer, return_tensors="pt", padding=False)
+    #     # if the tokenizer adds a <s> token at the beginning, we remove it
+    #     if answer_tokens["input_ids"][0] == self.llm.tokenizer.encode("<s>"):
+    #         answer_tokens["input_ids"] = answer_tokens["input_ids"][1:]
+    #         answer_tokens["attention_mask"] = answer_tokens["attention_mask"][1:]
+    #     input_ids = torch.cat(header_tokens["input_ids"], answer_tokens["input_ids"])
+    #     attention_mask = torch.cat(
+    #         header_tokens["attention_mask"], answer_tokens["attention_mask"]
+    #     )
+    #     return {
+    #         "input_ids": input_ids,
+    #         "attention_mask": attention_mask,
+    #     }, query_plus_context_length
+
+    # def replug_forward(
+    #     self,
+    #     query: str,
+    #     answer: str,
+    # ) -> Dict[str, torch.Tensor]:
+    #     """
+    #     logits: (num_docs, seq_len, vocab_size). The logits for each retrieved document, with
+    #     the given query and answer.
+    #     scores: (num_docs,). The scores of the retrieved documents, normalized.
+    #     Used to average probabilities later.
+    #     context_lengths: (num_docs,). The length of the query and context part of the prompt. These will
+    #     be used to look only at the logits corresponding to the answer part of the prompt.
+    #     """
+    #     retrieved_docs = self.faiss.search_text(query)
+    #     prompts = []
+    #     scores = []
+    #     context_lengths = []
+    #     for doc, score in retrieved_docs:
+    #         tokenized_prompt, query_plus_context_length = self.prepare_prompt(
+    #             query, doc, answer
+    #         )
+    #         prompts.append(tokenized_prompt)
+    #         scores.append(score)
+    #         context_lengths.append(query_plus_context_length)
+    #     # make a batch of prompts (get_logits expects a single dict with batched tensors as values)
+    #     padding_id = self.llm.tokenizer.pad_token_id
+    #     input_ids = [prompt["input_ids"] for prompt in prompts]
+    #     padded_input_ids = pad_sequence(
+    #         input_ids, batch_first=True, padding_value=padding_id
+    #     )
+    #     attention_mask = torch.stack([prompt["attention_mask"] for prompt in prompts])
+    #     batch = {
+    #         "input_ids": padded_input_ids,
+    #         "attention_mask": attention_mask,
+    #     }
+    #     logits = self.llm.get_logits(batch)  # (num_docs, seq_len, vocab_size)
+    #     scores = torch.tensor(scores)  # (num_docs,)
+    #     scores /= scores.sum()
+    #     context_lengths = torch.tensor(context_lengths)  # (num_docs,)
+    #     return {
+    #         "logits": logits,
+    #         "scores": scores,
+    #         "context_lengths": context_lengths,
+    #     }
+
+    # def get_logits_replug(
+    #     self,
+    #     queries: List[str],
+    # ) -> List[torch.Tensor]:
+    #     """
+    #     Probably not useful. This function takes a batch of queries. For each of them, it retrieves
+    #     documents with faiss, feeds the query with each document to the model, and computes the average
+    #     of the logits weighted by the scores of the retrieved documents.
+    #     Problems:
+    #     - for training, we probably need to have also the answer concatenated to the query
+    #     - the averaging is done over the logits, but we probably want to average over the probabilities
+    #     """
+    #     retrieved_for_every_query = self.faiss.search_multiple_texts(queries)
+    #     avg_logits_for_every_query = []
+    #     for query, retrieved in zip(queries, retrieved_for_every_query):
+    #         queries_with_context = []
+    #         scores = []
+    #         for tup in retrieved:
+    #             doc, score = tup
+    #             scores.append(score)
+    #             query_with_context = self.craft_replug_query(query, doc)
+    #             queries_with_context.append(query_with_context)
+    #         logits = self.llm.get_logits(
+    #             queries_with_context
+    #         )  # (num_docs, seq_len, vocab_size)
+    #         scores = torch.tensor(scores)
+    #         scores /= scores.sum()
+    #         avg_logits = (logits * scores[:, None, None]).sum(
+    #             dim=0
+    #         )  # (seq_len, vocab_size)
+    #         avg_logits_for_every_query.append(avg_logits)
+    #     return avg_logits_for_every_query  # (num_queries, seq_len, vocab_size)
