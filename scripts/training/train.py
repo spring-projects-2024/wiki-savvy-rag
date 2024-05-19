@@ -13,11 +13,9 @@ from transformers import get_linear_schedule_with_warmup
 def main():
 
     parser = argparse.ArgumentParser()
-
     parser.add_argument(
         "--config_path", type=str, default="configs/training/prova.yaml"
     )
-
     args = parser.parse_args()
 
     with open(args.config_path, "r") as f:
@@ -93,3 +91,7 @@ def main():
 
     rag_trainer = RagTrainer(**train_config)
     rag_trainer.train()
+
+
+if __name__ == "__main__":
+    main()

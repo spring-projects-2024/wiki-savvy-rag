@@ -7,10 +7,6 @@ from peft import LoraConfig, TaskType, get_peft_model
 from peft.utils import prepare_model_for_kbit_training
 
 
-# TODO:
-# 1. have a dataloader load data with the correct format
-
-
 # class RagCriterionOld(nn.Module):
 #     """
 #     For use with forward_single_query_multiple_docs and compute_probabilities_for_training.
