@@ -118,19 +118,16 @@ class RagHandler:
         """
         logits = forward_output["logits"]  # (num_docs, seq_len, vocab_size)
         scores = forward_output["scores"]  # (num_docs,)
-        context_lengths = forward_output["context_lengths"]  # (num_docs,)
-        # we want to keep only the logits corresponding to the answer part of the prompt
-        answer_lengths = logits.shape[1] - context_lengths
-        mask = (
-            torch.arange(logits.shape[1])[None, :] < answer_lengths[:, None]
-        )  # (num_docs, seq_len)
-        probas = torch.nn.functional.softmax(
-            logits, dim=-1
-        )  # (num_docs, seq_len, vocab_size)
-        probas = (probas * scores[:, None, None]).sum(dim=0)  # (seq_len, vocab_size)
+        answer_length = forward_output["answer_length"]  # (1,)
+        answer_logits = logits[
+            :, -answer_length:
+        ]  # (num_docs, answer_length, vocab_size)
+        answer_probas = torch.nn.functional.softmax(answer_logits, dim=-1)
+        aggregated_probas = (answer_probas * scores[:, None, None]).sum(
+            dim=0
+        )  # (answer_length, vocab_size)
         return {
-            "probas": probas,
-            "answer_mask": mask,
+            "probas": aggregated_probas,
         }
 
     def logits_to_weighted_probas(self, logits: torch.Tensor, scores: torch.Tensor):
