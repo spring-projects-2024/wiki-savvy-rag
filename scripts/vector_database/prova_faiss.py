@@ -11,10 +11,12 @@ M = 128
 
 # HNSW is pretty good for accuracy
 
-index = faiss.index_factory(D, f"IVF16000,PQ{M}x4fsr", faiss.METRIC_INNER_PRODUCT)
+index = faiss.index_factory(D, f"PQ128", faiss.METRIC_INNER_PRODUCT)
 index.nprobe = 16
 
-N = 2*10**4
+N = 10**3
+
+exit()
 # Load the dataset
 dataset = datasets.SyntheticDataset(D, 1, N, 1000)
 
