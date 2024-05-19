@@ -54,8 +54,8 @@ def main():
     print("Preparing data...")
 
     train_data = load_yahoo_answers(subset="stem")
-    train_loader = DataLoader(train_data["train"], batch_size=batch_size)
-    test_data = load_mmlu(split="val", subset="stem")
+    train_loader = DataLoader(train_data, batch_size=batch_size)
+    test_data = load_mmlu(split="validation", subset="stem")
     test_loader = DataLoader(test_data, batch_size=batch_size)
 
     print("Preparing training...")
@@ -85,6 +85,7 @@ def main():
         "checkpoint_root_dir": "../checkpoints",
         "seed": seed,
         "wandb_project": wandb_project,
+        "compile_model": False,
     }
 
     print("Training...")

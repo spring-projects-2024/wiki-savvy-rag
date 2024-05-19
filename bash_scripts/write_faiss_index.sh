@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name="train"
+#SBATCH --job-name="write_faiss"
 #SBATCH --account=3144366
 #SBATCH --partition=stud
 #SBATCH --gpus=1
@@ -19,6 +19,6 @@ source activate base
 
 conda info --envs
 
-python scripts/training/train.py --config_path configs/training/prova.yaml
+python3 scripts/vector_database/train_vector_database.py --index "PQ128" --training_size .01 --nprobe 32 --output "scripts/vector_database/data/PQ128.index"
 
 conda deactivate
