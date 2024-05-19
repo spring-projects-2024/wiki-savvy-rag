@@ -2,6 +2,7 @@ import time
 from copy import deepcopy
 from typing import Optional, List, Dict, Tuple, Iterable
 
+from torch import nn
 from torch.nn.utils.rnn import pad_sequence
 import numpy as np
 import torch
@@ -23,7 +24,7 @@ from backend.model.prompt_utils import (
 # having a temperature, etc.
 
 
-class RagHandler:
+class RagHandler(nn.Module):
     def __init__(
         self,
         model_name: str,
@@ -35,6 +36,8 @@ class RagHandler:
         faiss_kwargs: Optional[dict] = None,
         use_qlora: bool = False,
     ):
+
+        super().__init__()
         llm_kwargs = llm_kwargs if llm_kwargs is not None else {}
         tokenizer_kwargs = tokenizer_kwargs if tokenizer_kwargs is not None else {}
         faiss_kwargs = (

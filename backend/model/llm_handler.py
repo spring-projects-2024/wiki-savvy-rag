@@ -34,6 +34,8 @@ class LLMHandler:
         tokenizer_kwargs: Optional[dict] = None,
         use_qlora: bool = False,
     ):
+
+        self.device = device
         if llm_kwargs is None:
             llm_kwargs = {}
         if tokenizer_kwargs is None:
