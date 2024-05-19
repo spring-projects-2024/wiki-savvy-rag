@@ -148,6 +148,12 @@ class RagHandler:
         query: str,
         answer: str,
     ) -> Dict[str, torch.Tensor]:
+        """
+        Retrieve documents with faiss, craft a prompt for each document, and get the logits for each prompt.
+        Return the logits and the scores of the retrieved documents, normalized. Also return
+        the length of the answer part of the prompt.
+        Output tensors are on the same device as the model.
+        """
         retrieved_docs = self.faiss.search_text(query)
         headers = []  # strings
         scores = []  # floats
@@ -172,6 +178,8 @@ class RagHandler:
             "input_ids": input_ids,
             "attention_mask": attention_mask,
         }
+        batch["input_ids"] = batch["input_ids"].to(self.llm.device)
+        batch["attention_mask"] = batch["attention_mask"].to(self.llm.device)
         logits = self.llm.get_logits(batch)  # (num_docs, seq_len, vocab_size)
         scores = torch.tensor(scores)  # (num_docs,)
         scores /= scores.sum()
@@ -186,7 +194,9 @@ class RagHandler:
         """
         Does rag inference with a single document retrieved for each query.
         :param batch: a dictionary with keys "query" and "answer", both lists of strings
-        :return: a dictionary with keys "logits" and "answer_lengths"
+        :return: a dictionary with keys "logits" and "answer_lengths". "logits" is a tensor of shape
+        (batch_size, max_len, vocab_size), and it is on the same device as the model.
+        "answer_lengths" is a list of integers, the lengths of the answers.
         """
         queries: List[str] = batch["query"]
         answers: List[str] = batch["answer"]
@@ -197,7 +207,10 @@ class RagHandler:
             header = f"Context:\n{doc_content}\n\nQuery:\n{query}\n\nAnswer:\n"
             headers.append(header)
         tokenized_headers = self.llm.tokenizer(headers, padding=False)
-        tokenized_answers = self.llm.tokenizer(answers, padding=False)
+        if "targets" in batch:
+            tokenized_answers = batch["targets"]
+        else:
+            tokenized_answers = self.llm.tokenizer(answers, padding=False)
         answer_lengths = [
             len(tokenized_answer) for tokenized_answer in tokenized_answers["input_ids"]
         ]
@@ -212,6 +225,7 @@ class RagHandler:
             padding=True,
             return_tensors="pt",  # 'pt' for PyTorch, use 'tf' for TensorFlow if needed
         )
+        padded_input_ids = padded_input_ids.to(self.llm.device)
         logits = self.llm.get_logits(
             padded_input_ids
         )  # (batch_size, max_len, vocab_size)

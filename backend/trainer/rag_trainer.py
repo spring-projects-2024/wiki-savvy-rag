@@ -5,10 +5,8 @@ from torch import nn
 
 
 # TODO:
-# 1. implement RagCriterion to work with forward_batch_query_single_doc
-# 2. implement train_step for RagTrainer
-# 3. have a dataloader load data with the correct format
-# 4. ensure RagHandler can be used as model in Trainer
+# 1. have a dataloader load data with the correct format
+# 2. quantize model inside __init__ of RagTrainer then call parent
 
 
 class RagCriterionOld(nn.Module):
@@ -43,7 +41,7 @@ class RagCriterion(nn.Module):
         :param batch: dict with keys "targets"
         """
         logits = output["logits"]  # (batch_size, max_len, vocab_size)
-        targets = batch["targets"]  # (batch_size, max_len)
+        targets = batch["targets"]  # list of tensors of different lengths
         answer_lengths = output["answer_lengths"]  # (batch_size,)
         loss = 0
         for logits_one_query, answer_length, answer_tokens in zip(
@@ -64,11 +62,13 @@ class RagTrainer(Trainer):
             self.model, RagHandler
         ), "RagTrainer expects a RagHandler model."
         assert isinstance(
-            self.criterion, RagCriterionOld
+            self.criterion, RagCriterion
         ), "RagTrainer expects a RagCriterion criterion."
 
-    # def train_step(self, batch: dict) -> dict:
-    #     for key in batch:
-    #         if isinstance(batch[key], torch.Tensor):
-    #             batch[key] = batch[key].to(self.device)
-    #     output = self.model.replug_forward(batch)
+    def train_step(self, batch: dict) -> dict:
+        answers = batch["answer"]
+        tokenized_answers = self.model.llm.tokenizer(
+            answers, padding=False
+        )  # BatchEncoding object
+        batch["targets"] = tokenized_answers["input_ids"]
+        return super().train_step(batch)
