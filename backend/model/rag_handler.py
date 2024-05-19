@@ -181,6 +181,52 @@ class RagHandler:
             "answer_length": answer_length,
         }
 
+    def forward_batch_query_single_doc(self, batch: Dict):
+        queries: List[str] = batch["query"]
+        answers: List[str] = batch["answer"]
+
+        retrieved_docs = self.faiss.search_multiple_texts(queries, n_neighbors=1)
+
+        headers = []  # strings
+
+        for query, doc in zip(queries, retrieved_docs):
+            doc_content, doc_score = doc[0]
+            header = f"Context:\n{doc_content}\n\nQuery:\n{query}\n\nAnswer:\n"
+            headers.append(header)
+
+        tokenized_headers = self.llm.tokenizer(headers, padding=False)
+
+        tokenized_answers = self.llm.tokenizer(answers, padding=False)
+
+        answer_lengths = [
+            len(tokenized_answer) for tokenized_answer in tokenized_answers["input_ids"]
+        ]
+
+        # Step 1: Concatenate input_ids from tokenized_headers and tokenized_answers
+        concatenated_input_ids = [
+            tokenized_header + tokenized_answer
+            for tokenized_header, tokenized_answer in zip(
+                tokenized_headers["input_ids"], tokenized_answers["input_ids"]
+            )
+        ]
+
+        # Step 2: Pad the concatenated input_ids using the tokenizer
+        padded_input_ids = self.llm.tokenizer.pad(
+            {"input_ids": concatenated_input_ids},
+            padding=True,
+            return_tensors="pt",  # 'pt' for PyTorch, use 'tf' for TensorFlow if needed
+        )
+
+
+
+        # Step 3: Get the logits from the model
+        logits = self.llm.get_logits(padded_input_ids)
+
+        return {
+            "logits": logits,
+            "answer_lengths": answer_lengths,
+        }
+
     # def replug_forward(
     #     self,
     #     query: str,
@@ -420,21 +466,17 @@ if __name__ == "__main__":
         model_name="Minami-su/Qwen1.5-0.5B-Chat_llamafy",
         device="cpu",
         use_rag=True,
-        faiss_kwargs={
-            "index_path": INDEX_PATH,
-            "dataset": dataset,
-            "embedder": embedder,
-        },
+        # faiss_kwargs={
+        #     "index_path": INDEX_PATH,
+        #     "dataset": dataset,
+        #     "embedder": embedder,
+        # },
     )
 
-    query = "What is Anarchism?"
+    # x = rag_handler.forward_batch_query_single_doc(
+    #     {"query": ["ciao", "come", "stai"], "answer": ["bene", "molto", "adjpasd"]}
+    # )
 
-    # t = time.time()
-    # a = rag_handler.autoregressive_generation(query, 20)
-    # print(f"Time taken: {time.time() - t}")
+    x = rag_handler.forward_single_query_multiple_docs("ciao", "bene")
 
-    # t = time.time()
-    a = rag_handler.auto_regressive_generation(query, 100)
-    # print(f"Time taken: {time.time() - t}")
-
-    print(a)
+    print(x)

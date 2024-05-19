@@ -228,18 +228,18 @@ def main():
     #         args.knn_neighbors,
     #     )
 
-    for M in [64, 128, 256]:
-        index_str = f"PQ{M}"
-        benchmark(
-            index_str,
-            mmlu_embds,
-            I_base,
-            args.training_size,
-            args.train_on_gpu,
-            args.output_dir,
-            args.nprobe,
-            args.knn_neighbors,
-        )
+    # for M in [64, 128]:
+    #     index_str = f"PQ{M}"
+    #     benchmark(
+    #         index_str,
+    #         mmlu_embds,
+    #         I_base,
+    #         args.training_size,
+    #         args.train_on_gpu,
+    #         args.output_dir,
+    #         args.nprobe,
+    #         args.knn_neighbors,
+    #     )
 
     # for M in [128]:
     #     index_str = f"OPQ{M}_{M * 4}"
