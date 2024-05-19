@@ -78,10 +78,7 @@ def craft_query(
 
 
 if __name__ == "__main__":
-    dataset = load_mmlu(split="test", subset="stem")
-    question = dataset[5]
-    examples = [dataset[i] for i in range(5)]
-    prompt = craft_query(question, chat=True, examples=examples)
-    print(prompt)
-    a = {}
-    a.update({"a": 1})
+    dataset = load_yahoo_answers("stem")
+
+    question = dataset[0]
+    print(question)

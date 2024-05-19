@@ -4,14 +4,14 @@ import time
 
 from faiss.contrib.evaluation import knn_intersection_measure
 
-D = 768
-M = 128
-
+D = 768 // 2
+M = 256
+centroids = 1000
 # best quantization is PQ{M}x4fsr but requires clustering
 
 # HNSW is pretty good for accuracy
 
-index = faiss.index_factory(D, f"PQ128", faiss.METRIC_INNER_PRODUCT)
+index = faiss.index_factory(D, f"HNSW32_SQ8", faiss.METRIC_INNER_PRODUCT)
 index.nprobe = 16
 
 N = 10**3

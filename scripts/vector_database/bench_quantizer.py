@@ -228,18 +228,19 @@ def main():
     #         args.knn_neighbors,
     #     )
 
-    # for M in [64, 128]:
-    #     index_str = f"PQ{M}"
-    #     benchmark(
-    #         index_str,
-    #         mmlu_embds,
-    #         I_base,
-    #         args.training_size,
-    #         args.train_on_gpu,
-    #         args.output_dir,
-    #         args.nprobe,
-    #         args.knn_neighbors,
-    #     )
+    for sq in [4, 8]:
+        for sw_size in [16, 32, 64]:
+            index_str = f"HNSW{sw_size}_SQ{sq}"
+            benchmark(
+                index_str,
+                mmlu_embds,
+                I_base,
+                args.training_size,
+                args.train_on_gpu,
+                args.output_dir,
+                args.nprobe,
+                args.knn_neighbors,
+            )
 
     # for M in [128]:
     #     index_str = f"OPQ{M}_{M * 4}"
