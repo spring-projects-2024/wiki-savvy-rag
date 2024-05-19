@@ -44,12 +44,9 @@ class RagHandler:
                 "embedder": None,
             }
         )
-
         self.llm_config = self.get_default_llm_config()
-
         if llm_config is not None:
             self.llm_config.update(llm_config)
-
         self.faiss = FaissWrapper(device=device, **faiss_kwargs)
         self.llm = LLMHandler(
             device=device,
@@ -58,6 +55,10 @@ class RagHandler:
             tokenizer_kwargs=tokenizer_kwargs,
         )
         self.use_rag = use_rag
+
+    def __call__(self, batch: dict) -> dict:
+        # for use with RagTrainer
+        return self.forward_batch_query_single_doc(batch)
 
     @staticmethod
     def get_default_llm_config():
@@ -182,46 +183,38 @@ class RagHandler:
         }
 
     def forward_batch_query_single_doc(self, batch: Dict):
+        """
+        Does rag inference with a single document retrieved for each query.
+        :param batch: a dictionary with keys "query" and "answer", both lists of strings
+        :return: a dictionary with keys "logits" and "answer_lengths"
+        """
         queries: List[str] = batch["query"]
         answers: List[str] = batch["answer"]
-
         retrieved_docs = self.faiss.search_multiple_texts(queries, n_neighbors=1)
-
         headers = []  # strings
-
         for query, doc in zip(queries, retrieved_docs):
             doc_content, doc_score = doc[0]
             header = f"Context:\n{doc_content}\n\nQuery:\n{query}\n\nAnswer:\n"
             headers.append(header)
-
         tokenized_headers = self.llm.tokenizer(headers, padding=False)
-
         tokenized_answers = self.llm.tokenizer(answers, padding=False)
-
         answer_lengths = [
             len(tokenized_answer) for tokenized_answer in tokenized_answers["input_ids"]
         ]
-
-        # Step 1: Concatenate input_ids from tokenized_headers and tokenized_answers
         concatenated_input_ids = [
             tokenized_header + tokenized_answer
             for tokenized_header, tokenized_answer in zip(
                 tokenized_headers["input_ids"], tokenized_answers["input_ids"]
             )
         ]
-
-        # Step 2: Pad the concatenated input_ids using the tokenizer
         padded_input_ids = self.llm.tokenizer.pad(
             {"input_ids": concatenated_input_ids},
             padding=True,
             return_tensors="pt",  # 'pt' for PyTorch, use 'tf' for TensorFlow if needed
         )
-
-
-
-        # Step 3: Get the logits from the model
-        logits = self.llm.get_logits(padded_input_ids)
-
+        logits = self.llm.get_logits(
+            padded_input_ids
+        )  # (batch_size, max_len, vocab_size)
         return {
             "logits": logits,
             "answer_lengths": answer_lengths,

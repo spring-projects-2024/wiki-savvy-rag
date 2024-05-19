@@ -32,6 +32,31 @@ class RagCriterionOld(nn.Module):
         return {"loss": loss}
 
 
+class RagCriterion(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.cross_entropy = nn.CrossEntropyLoss(reduction="mean")
+
+    def forward(self, output: dict, batch: dict) -> dict:
+        """
+        :param output: dict with keys "logits", "answer_lengths"
+        :param batch: dict with keys "targets"
+        """
+        logits = output["logits"]  # (batch_size, max_len, vocab_size)
+        targets = batch["targets"]  # (batch_size, max_len)
+        answer_lengths = output["answer_lengths"]  # (batch_size,)
+        loss = 0
+        for logits_one_query, answer_length, answer_tokens in zip(
+            logits, answer_lengths, targets
+        ):
+            assert len(answer_tokens) == answer_length
+            loss += self.cross_entropy(
+                logits_one_query[-answer_length:, :], answer_tokens
+            )
+        loss /= len(answer_lengths)
+        return {"loss": loss}
+
+
 class RagTrainer(Trainer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
