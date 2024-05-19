@@ -142,7 +142,7 @@ class RagHandler:
         )  # (num_docs, seq_len, vocab_size)
         return (probas * scores[:, None, None]).sum(dim=0)  # (seq_len, vocab_size)
 
-    def replug_forward(
+    def forward_single_query_multiple_docs(
         self,
         query: str,
         answer: str,

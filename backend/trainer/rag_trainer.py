@@ -1,11 +1,10 @@
 from jepa.trainer.trainer import Trainer
+from backend.model.rag_handler import RagHandler
 import torch
 from torch import nn
 
 
 # TODO:
-# 1. implement criterion for RAG as a nn.Module
-# 2. implement train_step in RagTrainer
 # 3. have a dataloader load data with the correct format
 # 4. ensure RagHandler can be used as model in Trainer
 
@@ -13,7 +12,7 @@ from torch import nn
 class RagCriterion(nn.Module):
     def __init__(self):
         super().__init__()
-        self.cross_entropy_from_log_proba = nn.NLLLoss()
+        self.cross_entropy_from_log_proba = nn.NLLLoss(reduction="mean")
 
     def forward(self, output: dict, batch: dict) -> dict:
         """
@@ -28,4 +27,17 @@ class RagCriterion(nn.Module):
 
 
 class RagTrainer(Trainer):
-    pass
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        assert isinstance(
+            self.model, RagHandler
+        ), "RagTrainer expects a RagHandler model."
+        assert isinstance(
+            self.criterion, RagCriterion
+        ), "RagTrainer expects a RagCriterion criterion."
+
+    # def train_step(self, batch: dict) -> dict:
+    #     for key in batch:
+    #         if isinstance(batch[key], torch.Tensor):
+    #             batch[key] = batch[key].to(self.device)
+    #     output = self.model.replug_forward(batch)
