@@ -61,9 +61,10 @@ class RagTrainer(Trainer):
     def train_step(self, batch: dict) -> dict:
         answers = batch["answer"]
         tokenized_answers = self.model.llm.tokenizer(
-            answers, padding=False
+            answers, padding=False, return_tensors="pt"
         )  # BatchEncoding object
         batch["targets"] = tokenized_answers
+
         return super().train_step(batch)
 
 
