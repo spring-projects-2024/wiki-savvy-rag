@@ -1,11 +1,7 @@
-import torch
-from utils import naive_inference, build_retrieved_docs_str
 import streamlit as st
 
-from backend.model.rag_handler import RagHandler
-from backend.vector_database.dataset import DatasetSQL
-from backend.vector_database.embedder_wrapper import EmbedderWrapper
-from sidebar import build_sidebar, MODELS
+from chatbot_controller import load_controller
+from sidebar import build_sidebar
 import os
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -17,43 +13,11 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 build_sidebar()
 configs = st.session_state["configs"]
 
+controller = load_controller()
 
-@st.cache_resource
-def load_rag_handler(
-    model_idx: str,
-    db_path: str,
-    index_path: str,
-    device: str,
-    use_rag: bool,
-):
-    rag_files_found = os.path.exists(index_path) and os.path.exists(db_path)
-    if use_rag and rag_files_found:
-        dataset = DatasetSQL(db_path=db_path)
-        embedder = EmbedderWrapper(device)
-        faiss_kwargs = {
-            "index_path": index_path,
-            "dataset": dataset,
-            "embedder": embedder,
-        }
-    else:
-        faiss_kwargs = None
-
-    model = MODELS[model_idx]
-
-    return RagHandler(
-        model_name=model["model"],
-        device=device,
-        llm_kwargs={
-            "torch_dtype": "auto",
-            "do_sample": True,
-        },
-        faiss_kwargs=faiss_kwargs,
-        use_rag=use_rag and rag_files_found,
-        use_qlora=model["use_qlora"],
-    )
-
-
-rag = load_rag_handler(**configs)
+if controller.should_update_configs(configs):
+    with st.spinner("Loading Chatbot. It could take a while..."):
+        controller.update_configs(configs)
 
 st.title("Wikipedia Savvy")
 
@@ -67,19 +31,21 @@ for message in st.session_state.messages:
             and message.get("retrieved_docs")
             and len(message["retrieved_docs"]) > 0
         ):
-            st.markdown(build_retrieved_docs_str(message["retrieved_docs"]))
+            st.markdown(controller.build_retrieved_docs_str(message["retrieved_docs"]))
 
         st.markdown(message["content"])
 
 if prompt := st.chat_input("What do you want to know?"):
     st.chat_message("user").markdown(prompt)
 
-    stream, retrieved_docs = naive_inference(rag, st.session_state.messages, prompt)
+    stream, retrieved_docs = controller.naive_inference(
+        st.session_state.messages, prompt
+    )
 
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("assistant"):
-        st.markdown(build_retrieved_docs_str(retrieved_docs))
+        st.markdown(controller.build_retrieved_docs_str(retrieved_docs))
         response = st.write_stream(stream)
 
     st.session_state.messages.append(

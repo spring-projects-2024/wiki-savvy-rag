@@ -191,7 +191,9 @@ class RagHandler(nn.Module):
             header = f"Context:\n{doc_content}\n\nQuery:\n{query}\n\nAnswer:\n"
             headers.append(header)
 
-        tokenized_headers: BatchEncoding = self.llm.tokenizer(headers, padding=False, return_tensors="pt").to(self.llm.device)
+        tokenized_headers: BatchEncoding = self.llm.tokenizer(
+            headers, padding=False, return_tensors="pt"
+        ).to(self.llm.device)
 
         if "targets" in batch:
             tokenized_answers = batch["targets"]
@@ -203,9 +205,7 @@ class RagHandler(nn.Module):
         ]
         concatenated_input_ids = [
             # concatenate the tokenized header and the tokenized answer which are tensors
-            torch.cat(
-                [tokenized_header, tokenized_answer], dim=0
-            )
+            torch.cat([tokenized_header, tokenized_answer], dim=0)
             # tokenized_header + tokenized_answer
             for tokenized_header, tokenized_answer in zip(
                 tokenized_headers["input_ids"], tokenized_answers["input_ids"]
@@ -225,9 +225,7 @@ class RagHandler(nn.Module):
             "attention_mask": padded_input_ids["attention_mask"],
         }
 
-        logits = self.llm.get_logits(
-            llm_inputs
-        )  # (batch_size, max_len, vocab_size)
+        logits = self.llm.get_logits(llm_inputs)  # (batch_size, max_len, vocab_size)
         return {
             "logits": logits,
             "answer_lengths": answer_lengths,
