@@ -21,6 +21,17 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
+Based on your virtual env, you may also need to run:
+
+For Conda
+```
+conda install -c conda-forge libmagic
+```
+For Brew
+```
+brew install libmagic
+```
+
 ## Create SQLite dataset
 
 ```

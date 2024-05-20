@@ -21,9 +21,9 @@ def get_id_from_link_prompt(query: str) -> List[str]:
     """
 
     pattern = r"https:\/\/arxiv\.org\/abs\/([0-9]{4}\.[0-9]{5})"
-    ids = re.findall(pattern, query)
-    if len(ids) != 0:
-        return ids
+    ret_ids = re.findall(pattern, query)
+    if len(ret_ids) != 0:
+        return set(ret_ids)
     return None
 
 

@@ -1,5 +1,6 @@
 import streamlit as st
 
+# from backend.arxiv.utils import get_id_from_link_prompt
 from chatbot_controller import load_controller
 from sidebar import build_sidebar
 import os
@@ -36,6 +37,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 if prompt := st.chat_input("What do you want to know?"):
+
     st.chat_message("user").markdown(prompt)
 
     stream, retrieved_docs = controller.naive_inference(
