@@ -35,11 +35,13 @@ for message in st.session_state.messages:
             st.markdown(controller.build_retrieved_docs_str(message["retrieved_docs"]))
         st.markdown(message["content"])
 
-if prompt := st.chat_input("What do you want to know?"):
+if prompt := st.chat_input(
+    "Please ask a question. (You can also augment my reply by indicating arxiv paper links) "
+):
     y = get_id_from_link_prompt(prompt)
     st.write(y)
-    st.chat_message("user").markdown(prompt)
 
+    st.chat_message("user").markdown(prompt)
     stream, retrieved_docs = controller.naive_inference(
         st.session_state.messages, prompt
     )
