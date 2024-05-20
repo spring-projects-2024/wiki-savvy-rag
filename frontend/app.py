@@ -8,7 +8,6 @@ import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 # TODOS:
-# - Option in decoding (top k, top p, temperature)
 # - Use memory to craft better query
 # - Decide how to distinguish RAG vs non-RAG prompts
 

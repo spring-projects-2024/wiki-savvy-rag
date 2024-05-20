@@ -5,7 +5,7 @@ import time
 from typing import Dict, List
 
 import streamlit as st
-from backend.model.rag_handler import RagHandler
+from backend.model.rag_handler import TOP_K, TOP_P, RagHandler
 from backend.vector_database.dataset import DatasetSQL
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
 
@@ -29,6 +29,9 @@ DB_PATH_DEFAULT = "./scripts/dataset/data/dataset.db"
 INDEX_PATH_DEFAULT = "./scripts/vector_database/data/default.index"
 DEVICE_DEFAULT = "cuda:0"
 USE_RAG_DEFAULT = True
+RETRIEVED_DOCS_DEFAULT = 5
+INFERENCE_TYPE_DEFAULT = "naive"
+DECODING_STRATEGY_DEFAULT = "top_k"
 
 
 @st.cache_resource(show_spinner="Loading Chatbot. It could take a while...")
@@ -107,10 +110,21 @@ class ChatbotController:
         history: List[Dict],
         query: str,
     ):
+        kwargs = {}
+        if self.configs["decoding_strategy"] == "greedy":
+            kwargs["do_sample"] = False
+        elif self.configs["decoding_strategy"] == "top_k":
+            kwargs["do_sample"] = True
+            kwargs["top_k"] = TOP_K
+        elif self.configs["decoding_strategy"] == "top_p":
+            kwargs["do_sample"] = True
+            kwargs["top_p"] = TOP_P
+
         response, retrieved_docs = self.rag.naive_inference_with_retrieved_docs(
             histories=history,
             queries=query,
             n_docs=self.configs["retrieved_docs"],
+            **kwargs,
         )
 
         assert isinstance(response, str)
@@ -122,9 +136,11 @@ class ChatbotController:
         history: List[Dict],
         query: str,
     ):
-        return self.rag.autoregressive_generation_with_retrieved_docs(
+        return self.rag.autoregressive_inference(
             query=query,
             n_docs=self.configs["retrieved_docs"],
+            return_generator=True,
+            decoding_strategy=self.configs["decoding_strategy"],
         )
 
     def _mock_inference(

@@ -26,6 +26,9 @@ from backend.model.prompt_utils import (
 # having a temperature, etc.
 
 AUTOREGRESSIVE_GEN_MAX_LENGTH = 1000
+DECODING_STRATEGIES = ["greedy", "top_k", "top_p"]
+TOP_K = 50
+TOP_P = 0.9
 
 
 class RagHandler(nn.Module):
@@ -118,7 +121,7 @@ class RagHandler(nn.Module):
             "probas": aggregated_probas,
         }
 
-    def logits_to_weighted_probas(self, logits: torch.Tensor, scores: torch.Tensor):
+    def logits_to_weighted_probs(self, logits: torch.Tensor, scores: torch.Tensor):
         """
 
         :param logits:
@@ -235,9 +238,35 @@ class RagHandler(nn.Module):
             "answer_lengths": answer_lengths,
         }
 
+    def _next_token_strategy(self, probs, decoding_strategy):
+        assert decoding_strategy in DECODING_STRATEGIES
+        # probs has messed up indices (there is an extra useless dimension at the beginning)
+        # the code takes this into account
+
+        if decoding_strategy == "greedy":
+            next_token = torch.argmax(probs)
+        elif decoding_strategy == "top_k":
+            top_k_probs, top_k_indices = torch.topk(probs, TOP_K)
+            next_token = top_k_indices[:, torch.multinomial(top_k_probs, 1).item()]
+        elif decoding_strategy == "top_p":
+            sorted_probs, top_k_indices = torch.sort(probs, descending=True)
+            cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
+            sorted_indices_to_remove = cumulative_probs > TOP_P
+            # shift to the right to keep the first token that exceeds TOP_P
+            sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[:, :-1].clone()
+            sorted_indices_to_remove[:, 0] = False
+            sorted_probs[sorted_indices_to_remove] = 0
+            sorted_probs /= sorted_probs.sum()
+            next_token = top_k_indices[:, torch.multinomial(sorted_probs, 1).item()]
+        return next_token
+
     @torch.no_grad()
-    def autoregressive_generation_with_retrieved_docs(
-        self, query: str, n_docs: int = 10
+    def autoregressive_inference(
+        self,
+        query: str,
+        n_docs: int = 10,
+        decoding_strategy: str = "greedy",
+        return_generator: bool = False,
     ) -> Tuple[Iterable[str], List[Tuple[str, float]]]:
         """
         Method that does autoregressive generation. It accepts a query. First it retrieves passages.
@@ -311,10 +340,9 @@ class RagHandler(nn.Module):
                 # compute the average of the logits weighted by the scores of the retrieved documents
                 torch_logits = torch.stack(all_logits)
 
-                probs = self.logits_to_weighted_probas(torch_logits, similarities)
+                probs = self.logits_to_weighted_probs(torch_logits, similarities)
 
-                # get the token with the highest probability
-                next_token = torch.argmax(probs)
+                next_token = self._next_token_strategy(probs, decoding_strategy)
 
                 # get the token from the tokenizer
                 next_token_str = self.llm.tokenizer.decode(next_token)
@@ -332,15 +360,10 @@ class RagHandler(nn.Module):
                 answer.append(next_token_str)
                 yield next_token_str
 
-        return generator(), retrieved_docs
-
-    @torch.no_grad()
-    def autoregressive_generation_iterator(self, query: str) -> Iterable[str]:
-        generator, _ = self.autoregressive_generation_with_retrieved_docs(query)
-        return generator
-
-    def auto_regressive_generation(self, query: str) -> str:
-        return "".join(self.autoregressive_generation_iterator(query))
+        if return_generator:
+            return generator(), retrieved_docs
+        else:
+            return "".join(generator()), retrieved_docs
 
     def naive_inference_with_retrieved_docs(
         self,

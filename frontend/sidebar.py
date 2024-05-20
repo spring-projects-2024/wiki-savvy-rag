@@ -1,19 +1,29 @@
 import os
 import torch
 import streamlit as st
+from backend.model.rag_handler import DECODING_STRATEGIES, TOP_K, TOP_P
 from chatbot_controller import (
     DB_PATH_DEFAULT,
+    DECODING_STRATEGY_DEFAULT,
     DEVICE_DEFAULT,
     INDEX_PATH_DEFAULT,
+    INFERENCE_TYPE_DEFAULT,
     INFERENCE_TYPES,
     MODEL_DEFAULT,
     MODELS,
+    RETRIEVED_DOCS_DEFAULT,
 )
 
 INFERENCE_TYPE_MAP = {
     "naive": "Naive",
     "autoregressive": "Autoregressive (REPLUG)",
     "mock": "Mock (testing purposes)",
+}
+
+DECODING_STRATEGY_MAP = {
+    "top_k": f"Top-K ({TOP_K} tokens)",
+    "top_p": f"Top-P ({TOP_P*100}%)",
+    "greedy": "Greedy",
 }
 
 
@@ -43,8 +53,9 @@ def build_sidebar():
                 ),
                 "use_rag": True,
             },
-            "inference_type": "naive",
-            "retrieved_docs": 5,
+            "inference_type": INFERENCE_TYPE_DEFAULT,
+            "retrieved_docs": RETRIEVED_DOCS_DEFAULT,
+            "decoding_strategy": DECODING_STRATEGY_DEFAULT,
         }
 
     configs = st.session_state["configs"].copy()
@@ -67,7 +78,8 @@ def build_sidebar():
             f"""
         ## Configurations  
         Device: *{available_devices[rag_initialization_cfgs["device"]]}*  
-        Model: *{MODELS[rag_initialization_cfgs["model_idx"]]["name"]}* 
+        Model: *{MODELS[rag_initialization_cfgs["model_idx"]]["name"]}*  
+        Decoding Strategy: **{DECODING_STRATEGY_MAP[configs["decoding_strategy"]]}**
         #### RAG   
         {rag_str}
         """
@@ -99,6 +111,12 @@ def build_sidebar():
                 index=rag_initialization_cfgs["model_idx"],
                 format_func=lambda x: MODELS[x]["name"],
             )
+            new_decoding_strategy = st.selectbox(
+                "Decoding Strategy",
+                DECODING_STRATEGIES,
+                index=DECODING_STRATEGIES.index(configs["decoding_strategy"]),
+                format_func=lambda x: DECODING_STRATEGY_MAP[x],
+            )
             st.markdown("#### RAG")
             new_use_rag = st.checkbox(
                 "Use RAG", value=rag_initialization_cfgs["use_rag"]
@@ -126,6 +144,7 @@ def build_sidebar():
                 }
                 configs["inference_type"] = new_inference_type
                 configs["retrieved_docs"] = new_retrieved_docs
+                configs["decoding_strategy"] = new_decoding_strategy
 
                 st.session_state["configs"] = configs
                 st.rerun()
