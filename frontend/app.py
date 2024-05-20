@@ -33,7 +33,6 @@ for message in st.session_state.messages:
             and len(message["retrieved_docs"]) > 0
         ):
             st.markdown(controller.build_retrieved_docs_str(message["retrieved_docs"]))
-
         st.markdown(message["content"])
 
 if prompt := st.chat_input("What do you want to know?"):
@@ -47,7 +46,8 @@ if prompt := st.chat_input("What do you want to know?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("assistant"):
-        st.markdown(controller.build_retrieved_docs_str(retrieved_docs))
+        if len(retrieved_docs) > 0:
+            st.markdown(controller.build_retrieved_docs_str(retrieved_docs))
         response = st.write_stream(stream)
 
     st.session_state.messages.append(

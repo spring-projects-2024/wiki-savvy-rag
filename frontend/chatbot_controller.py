@@ -22,7 +22,7 @@ MODELS = [
     },
 ]
 
-MODEL_DEFAULT = 1
+MODEL_DEFAULT = 0
 DB_PATH_DEFAULT = "./scripts/dataset/data/dataset.db"
 INDEX_PATH_DEFAULT = "./scripts/vector_database/data/default.index"
 DEVICE_DEFAULT = "cuda:0"
@@ -70,8 +70,6 @@ class ChatbotController:
         )
 
     def should_update_configs(self, configs: Dict[str, str]):
-        print(self.configs, configs)
-        print(self.configs != configs)
         return self.configs != configs
 
     def update_configs(self, configs: Dict[str, str]):
@@ -152,7 +150,7 @@ class ChatbotController:
         ]
         return self.string_generator(response), retrieved_docs
 
-    def _post_process_titles(text: str):
+    def _post_process_titles(self, text: str):
         """This function is necessary because the json in titles is not formatted properly"""
         return (
             text.replace("['", '["')
