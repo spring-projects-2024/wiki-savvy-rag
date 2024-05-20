@@ -6,6 +6,8 @@ from torch import nn
 from torch.nn.utils.rnn import pad_sequence
 import numpy as np
 import torch
+from transformers import BatchEncoding
+
 from backend.model.llm_handler import LLMHandler
 from backend.vector_database.faiss_wrapper import FaissWrapper
 from backend.vector_database.dataset import DatasetSQL
@@ -204,11 +206,18 @@ class RagHandler(nn.Module):
         padded_input_ids = self.llm.tokenizer.pad(
             {"input_ids": concatenated_input_ids},
             padding=True,
-            return_tensors="pt",  # 'pt' for PyTorch, use 'tf' for TensorFlow if needed
+            return_tensors="pt",
         )
-        padded_input_ids = padded_input_ids.to(self.llm.device)
+        padded_input_ids: BatchEncoding = padded_input_ids.to(self.llm.device)
+
+        # make dictionary with keys "input_ids" and "attention_mask"
+        llm_inputs = {
+            "input_ids": padded_input_ids["input_ids"],
+            "attention_mask": padded_input_ids["attention_mask"],
+        }
+
         logits = self.llm.get_logits(
-            padded_input_ids
+            llm_inputs
         )  # (batch_size, max_len, vocab_size)
         return {
             "logits": logits,
