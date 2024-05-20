@@ -5,9 +5,16 @@ from chatbot_controller import (
     DB_PATH_DEFAULT,
     DEVICE_DEFAULT,
     INDEX_PATH_DEFAULT,
+    INFERENCE_TYPES,
     MODEL_DEFAULT,
     MODELS,
 )
+
+INFERENCE_TYPE_MAP = {
+    "naive": "Naive",
+    "autoregressive": "Autoregressive (REPLUG)",
+    "mock": "Mock (testing purposes)",
+}
 
 
 @st.cache_data
@@ -27,22 +34,28 @@ def build_sidebar():
 
     if "configs" not in st.session_state:
         st.session_state["configs"] = {
-            "model_idx": MODEL_DEFAULT,
-            "db_path": DB_PATH_DEFAULT,
-            "index_path": INDEX_PATH_DEFAULT,
-            "device": DEVICE_DEFAULT if DEVICE_DEFAULT in available_devices else "cpu",
-            "use_rag": True,
+            "rag_initialization": {
+                "model_idx": MODEL_DEFAULT,
+                "db_path": DB_PATH_DEFAULT,
+                "index_path": INDEX_PATH_DEFAULT,
+                "device": (
+                    DEVICE_DEFAULT if DEVICE_DEFAULT in available_devices else "cpu"
+                ),
+                "use_rag": True,
+            },
+            "inference_type": "naive",
+            "retrieved_docs": 5,
         }
 
     configs = st.session_state["configs"].copy()
 
     with st.sidebar:
+        rag_initialization_cfgs = configs["rag_initialization"]
+        rag_files_found = os.path.exists(
+            rag_initialization_cfgs["index_path"]
+        ) and os.path.exists(rag_initialization_cfgs["db_path"])
 
-        rag_files_found = os.path.exists(configs["index_path"]) and os.path.exists(
-            configs["db_path"]
-        )
-
-        if configs["use_rag"]:
+        if rag_initialization_cfgs["use_rag"]:
             if rag_files_found:
                 rag_str = "Use RAG ✅"
             else:
@@ -53,18 +66,20 @@ def build_sidebar():
         st.markdown(
             f"""
         ## Configurations  
-        Device: *{available_devices[configs["device"]]}*  
-        Model: *{MODELS[configs["model_idx"]]["name"]}* 
+        Device: *{available_devices[rag_initialization_cfgs["device"]]}*  
+        Model: *{MODELS[rag_initialization_cfgs["model_idx"]]["name"]}* 
         #### RAG   
         {rag_str}
         """
         )
 
-        if configs["use_rag"]:
+        if rag_initialization_cfgs["use_rag"]:
             st.markdown(
                 f"""
-            Database Path: *{configs["db_path"]}*  
-            Index Path: *{configs["index_path"]}*  
+            Database Path: *{rag_initialization_cfgs["db_path"]}*  
+            Index Path: *{rag_initialization_cfgs["index_path"]}*    
+            Inference Type: **{INFERENCE_TYPE_MAP[configs["inference_type"]]}**  
+            Number of documents to retrieve: **{configs["retrieved_docs"]}**
             """
             )
 
@@ -73,27 +88,44 @@ def build_sidebar():
             new_device = st.selectbox(
                 "Device",
                 list(available_devices.keys()),
-                index=list(available_devices.keys()).index(configs["device"]),
+                index=list(available_devices.keys()).index(
+                    rag_initialization_cfgs["device"]
+                ),
                 format_func=lambda x: available_devices[x],
             )
             new_model_idx = st.selectbox(
                 "Model",
                 [i for i in range(len(MODELS))],
-                index=configs["model_idx"],
+                index=rag_initialization_cfgs["model_idx"],
                 format_func=lambda x: MODELS[x]["name"],
             )
             st.markdown("#### RAG")
-            new_use_rag = st.checkbox("Use RAG", value=configs["use_rag"])
+            new_use_rag = st.checkbox(
+                "Use RAG", value=rag_initialization_cfgs["use_rag"]
+            )
             new_db_path = st.text_input("Database Path", DB_PATH_DEFAULT)
             new_index_path = st.text_input("Vector Index Path", INDEX_PATH_DEFAULT)
+            new_inference_type = st.selectbox(
+                "Inference Type",
+                INFERENCE_TYPES,
+                index=INFERENCE_TYPES.index("naive"),
+                format_func=lambda x: INFERENCE_TYPE_MAP[x],
+            )
+            new_retrieved_docs = st.number_input(
+                "Number of retrieved documents", 1, 10, configs["retrieved_docs"]
+            )
 
             submitted = st.form_submit_button("Apply")
             if submitted:
-                configs["model_idx"] = new_model_idx
-                configs["db_path"] = new_db_path
-                configs["index_path"] = new_index_path
-                configs["device"] = new_device
-                configs["use_rag"] = new_use_rag
+                configs["rag_initialization"] = {
+                    "model_idx": new_model_idx,
+                    "db_path": new_db_path,
+                    "index_path": new_index_path,
+                    "device": new_device,
+                    "use_rag": new_use_rag,
+                }
+                configs["inference_type"] = new_inference_type
+                configs["retrieved_docs"] = new_retrieved_docs
 
                 st.session_state["configs"] = configs
                 st.rerun()

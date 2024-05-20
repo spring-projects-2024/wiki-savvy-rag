@@ -22,6 +22,8 @@ MODELS = [
     },
 ]
 
+INFERENCE_TYPES = ["naive", "autoregressive", "mock"]
+
 MODEL_DEFAULT = 0
 DB_PATH_DEFAULT = "./scripts/dataset/data/dataset.db"
 INDEX_PATH_DEFAULT = "./scripts/vector_database/data/default.index"
@@ -40,11 +42,9 @@ class ChatbotController:
         self.rag = None
 
     def _init_rag_handler(self):
-        cfgs = self.configs
-        rag_files_found = os.path.exists(cfgs["index_path"]) and os.path.exists(
-            cfgs["db_path"]
-        )
-        if cfgs["use_rag"] and rag_files_found:
+        cfgs = self.configs["rag_initialization"]
+        use_rag = self.real_use_rag()
+        if use_rag:
             dataset = DatasetSQL(db_path=cfgs["db_path"])
             embedder = EmbedderWrapper(cfgs["device"])
             faiss_kwargs = {
@@ -65,22 +65,30 @@ class ChatbotController:
                 "do_sample": True,
             },
             faiss_kwargs=faiss_kwargs,
-            use_rag=cfgs["use_rag"] and rag_files_found,
+            use_rag=use_rag,
             use_qlora=model["use_qlora"],
         )
 
-    def should_update_configs(self, configs: Dict[str, str]):
-        return self.configs != configs
+    def real_use_rag(self):
+        cfgs = self.configs["rag_initialization"]
+        rag_files_found = os.path.exists(cfgs["index_path"]) and os.path.exists(
+            cfgs["db_path"]
+        )
+        return cfgs["use_rag"] and rag_files_found
 
     def update_configs(self, configs: Dict[str, str]):
-        if self.configs == configs:
-            return
+        if (
+            self.configs is None
+            or self.configs["rag_initialization"] != configs["rag_initialization"]
+        ):
+            if self.rag is not None:
+                # for semplicity, delete and reinitialize the rag handler
+                del self.rag
 
-        self.configs = configs
-        if self.rag is not None:
-            # for semplicity, delete and reinitialize the rag handler
-            del self.rag
-        self._init_rag_handler()
+            self.configs = configs
+            self._init_rag_handler()
+        else:
+            self.configs = configs
 
     def _string_generator(self, strlist: List[str]):
         for s in strlist:
@@ -88,6 +96,10 @@ class ChatbotController:
             time.sleep(0.008)
 
     def inference(self, history: List[Dict], query: str):
+        if self.configs["inference_type"] == "mock":
+            return self._mock_inference(history, query)
+        if not self.real_use_rag() or self.configs["inference_type"] == "naive":
+            return self._naive_inference(history, query)
         return self._autoregressive_inference(history, query)
 
     def _naive_inference(
@@ -98,6 +110,7 @@ class ChatbotController:
         response, retrieved_docs = self.rag.naive_inference_with_retrieved_docs(
             histories=history,
             queries=query,
+            n_docs=self.configs["retrieved_docs"],
         )
 
         assert isinstance(response, str)
@@ -109,7 +122,10 @@ class ChatbotController:
         history: List[Dict],
         query: str,
     ):
-        return self.rag.autoregressive_generation_with_retrieved_docs(query=query)
+        return self.rag.autoregressive_generation_with_retrieved_docs(
+            query=query,
+            n_docs=self.configs["retrieved_docs"],
+        )
 
     def _mock_inference(
         self,
@@ -149,7 +165,7 @@ class ChatbotController:
                 1,
             ),
         ]
-        return self.string_generator(response), retrieved_docs
+        return self._string_generator(response), retrieved_docs
 
     def _post_process_titles(self, text: str):
         """This function is necessary because the json in titles is not formatted properly"""

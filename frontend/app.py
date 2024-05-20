@@ -8,9 +8,7 @@ import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 # TODOS:
-# - Option in type of inference
 # - Option in decoding (top k, top p, temperature)
-# - Option for number of retrieved documents
 # - Use memory to craft better query
 # - Decide how to distinguish RAG vs non-RAG prompts
 
@@ -19,9 +17,8 @@ configs = st.session_state["configs"]
 
 controller = load_controller()
 
-if controller.should_update_configs(configs):
-    with st.spinner("Loading Chatbot. It could take a while..."):
-        controller.update_configs(configs)
+with st.spinner("Loading/Updating the Chatbot. It could take a while..."):
+    controller.update_configs(configs)
 
 st.title("Wikipedia Savvy")
 
@@ -45,7 +42,8 @@ if prompt := st.chat_input(
     st.write(y)
 
     st.chat_message("user").markdown(prompt)
-    stream, retrieved_docs = controller.inference(st.session_state.messages, prompt)
+    with st.spinner("Thinking..."):
+        stream, retrieved_docs = controller.inference(st.session_state.messages, prompt)
 
     st.session_state.messages.append({"role": "user", "content": prompt})
 

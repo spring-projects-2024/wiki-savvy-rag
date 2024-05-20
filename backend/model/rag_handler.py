@@ -40,7 +40,6 @@ class RagHandler(nn.Module):
         faiss_kwargs: Optional[dict] = None,
         use_qlora: bool = False,
     ):
-
         super().__init__()
         llm_kwargs = llm_kwargs if llm_kwargs is not None else {}
         tokenizer_kwargs = tokenizer_kwargs if tokenizer_kwargs is not None else {}
@@ -74,6 +73,9 @@ class RagHandler(nn.Module):
         self.llm.model.to(device)
         self.llm.device = device
         self.faiss.to(device)
+
+    def set_use_rag(self, use_rag: bool):
+        self.use_rag = use_rag
 
     @staticmethod
     def get_default_llm_config():
@@ -235,7 +237,7 @@ class RagHandler(nn.Module):
 
     @torch.no_grad()
     def autoregressive_generation_with_retrieved_docs(
-        self, query: str
+        self, query: str, n_docs: int = 10
     ) -> Tuple[Iterable[str], List[Tuple[str, float]]]:
         """
         Method that does autoregressive generation. It accepts a query. First it retrieves passages.
@@ -246,7 +248,7 @@ class RagHandler(nn.Module):
         """
 
         if self.use_rag:
-            retrieved_docs = self.faiss.search_text(query)
+            retrieved_docs = self.faiss.search_text(query, n_neighbors=n_docs)
             autoregressive_state = [
                 {
                     "past_key_values": None,
@@ -344,6 +346,7 @@ class RagHandler(nn.Module):
         self,
         histories: List[List[Dict]] | List[Dict],
         queries: List[str] | str,
+        n_docs: int = 10,
         **kwargs,
     ) -> Tuple[
         List[str] | str, List[List[Tuple[str, float]]] | List[Tuple[str, float]]
@@ -360,7 +363,7 @@ class RagHandler(nn.Module):
                 if self.use_rag is False:
                     updated_histories.append(join_messages_query_no_rag(history, query))
                 else:
-                    retrieved_now = self.faiss.search_text(query)
+                    retrieved_now = self.faiss.search_text(query, n_neighbors=n_docs)
                     # here we would do some preprocessing on the retrieved documents
                     updated_histories.append(
                         join_messages_query_rag(history, query, retrieved_now)
@@ -372,7 +375,7 @@ class RagHandler(nn.Module):
                 updated_histories = join_messages_query_no_rag(histories, queries)
                 retrieved = []
             else:
-                retrieved = self.faiss.search_text(queries)
+                retrieved = self.faiss.search_text(queries, n_neighbors=n_docs)
                 # here we would do some preprocessing on the retrieved documents
                 updated_histories = join_messages_query_rag(
                     histories, queries, retrieved
