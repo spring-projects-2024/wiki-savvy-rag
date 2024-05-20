@@ -6,8 +6,13 @@ from jepa.trainer.trainer import Trainer
 from backend.model.rag_handler import RagHandler
 import torch
 from torch import nn
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, get_linear_schedule_with_warmup, \
-    BatchEncoding
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    BitsAndBytesConfig,
+    get_linear_schedule_with_warmup,
+    BatchEncoding,
+)
 from peft import LoraConfig, TaskType, get_peft_model
 from peft.utils import prepare_model_for_kbit_training
 
@@ -50,7 +55,9 @@ class RagCriterion(nn.Module):
         for logits_one_query, answer_length, answer_tokens in zip(
             logits, answer_lengths, targets["input_ids"]
         ):
-            assert len(answer_tokens) == answer_length, f"{len(answer_tokens)}  {answer_length}"
+            assert (
+                len(answer_tokens) == answer_length
+            ), f"{len(answer_tokens)}  {answer_length}"
             loss += self.cross_entropy(
                 logits_one_query[-answer_length:, :], answer_tokens
             )
@@ -99,7 +106,7 @@ def prepare_for_qlora(model: AutoModelForCausalLM) -> AutoModelForCausalLM:
     return model
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(torch.cuda.is_available())
 
     rag_handler = RagHandler(
@@ -111,7 +118,6 @@ if __name__ == '__main__':
         # tokenizer_kwargs=tokenizer_kwargs,
         # faiss_kwargs=faiss_kwargs,
     )
-
 
     batch_size = 1
 
@@ -127,7 +133,7 @@ if __name__ == '__main__':
 
     optimizer = AdamW(rag_handler.llm.model.parameters())
     criterion = RagCriterion()
-    num_training_steps = len(train_loader) * 2
+    num_training_steps = 20_000  # todo: change
     num_warmup_steps = int(0.1 * num_training_steps)
     scheduler = get_linear_schedule_with_warmup(
         optimizer=optimizer,
