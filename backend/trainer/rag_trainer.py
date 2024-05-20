@@ -45,7 +45,7 @@ class RagCriterion(nn.Module):
         for logits_one_query, answer_length, answer_tokens in zip(
             logits, answer_lengths, targets
         ):
-            assert len(answer_tokens) == answer_length
+            assert len(answer_tokens) == answer_length, f"{len(answer_tokens)}  {answer_length}\n{answer_tokens.shape}"
             loss += self.cross_entropy(
                 logits_one_query[-answer_length:, :], answer_tokens
             )
