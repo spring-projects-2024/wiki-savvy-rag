@@ -85,7 +85,7 @@ def build_sidebar():
             st.markdown("#### RAG")
             new_use_rag = st.checkbox("Use RAG", value=configs["use_rag"])
             new_db_path = st.text_input("Database Path", DB_PATH_DEFAULT)
-            new_index_path = st.text_input("Index Path", INDEX_PATH_DEFAULT)
+            new_index_path = st.text_input("Vector Index Path", INDEX_PATH_DEFAULT)
 
             submitted = st.form_submit_button("Apply")
             if submitted:
