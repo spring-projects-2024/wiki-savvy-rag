@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     optimizer = AdamW(rag_handler.llm.model.parameters())
     criterion = RagCriterion()
-    num_training_steps = len(train_loader) * 2
+    num_training_steps = 20_000  # todo: change
     num_warmup_steps = int(0.1 * num_training_steps)
     scheduler = get_linear_schedule_with_warmup(
         optimizer=optimizer,

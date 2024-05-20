@@ -12,7 +12,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 # TODOS:
 # - Use memory to craft better query
-# - Decides how to distinguish RAG vs non-RAG prompts
+# - Decide how to distinguish RAG vs non-RAG prompts
 
 build_sidebar()
 configs = st.session_state["configs"]
