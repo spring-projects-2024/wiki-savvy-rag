@@ -203,7 +203,7 @@ class RagHandler(nn.Module):
         concatenated_input_ids = [
             # concatenate the tokenized header and the tokenized answer which are tensors
             torch.cat(
-                [tokenized_header, tokenized_answer], dim=1
+                [tokenized_header, tokenized_answer], dim=0
             )
             # tokenized_header + tokenized_answer
             for tokenized_header, tokenized_answer in zip(
