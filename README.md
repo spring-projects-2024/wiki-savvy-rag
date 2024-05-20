@@ -21,17 +21,6 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-Based on your virtual env, you may also need to run:
-
-For Conda
-```
-conda install -c conda-forge libmagic
-```
-For Brew
-```
-brew install libmagic
-```
-
 ## Create SQLite dataset
 
 ```
@@ -65,7 +54,19 @@ python scripts/vector_database/train_vector_database.py
 
 ## Troubleshooting libmagic dependency
 
-If `refextract` import throws error and can't find libmagic, run the following command:
+If `refextract` import throws error and can't find libmagic, based on your virtual env, you may also need to run:
+
+For Conda
+```
+conda install -c conda-forge libmagic
+```
+
+On MacOS (Brew), Python Virtual Environment
 ```
 brew install libmagic
+```
+
+On Windows, Python Virtual Environment 
+```
+pip install python-magic-bin
 ```

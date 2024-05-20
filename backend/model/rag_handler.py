@@ -25,6 +25,8 @@ from backend.model.prompt_utils import (
 # good if we decouple getting probabilities from decoding, so that we can choose between greedy, beam search,
 # having a temperature, etc.
 
+AUTOREGRESSIVE_GEN_MAX_LENGTH = 1000
+
 
 class RagHandler(nn.Module):
     def __init__(
@@ -62,6 +64,7 @@ class RagHandler(nn.Module):
             use_qlora=use_qlora,
         )
         self.use_rag = use_rag
+        self.device = device
 
     def __call__(self, batch: dict) -> dict:
         # for use with RagTrainer
@@ -85,7 +88,6 @@ class RagHandler(nn.Module):
     #     return f"Context:\n{doc}\n\nQuery:\n{query}"
 
     def craft_autoregressive_query(self, query: str, doc: str) -> str:
-        # return f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:"
         return f"Context:\n{doc}\n\nQuery:\n{query}\n"
 
     def craft_training_prompt(self, query: str, doc: str, answer: str) -> str:
@@ -232,20 +234,19 @@ class RagHandler(nn.Module):
         }
 
     @torch.no_grad()
-    def autoregressive_generation_iterator_with_retrieved_docs(
-        self, query: str, max_length=50
+    def autoregressive_generation_with_retrieved_docs(
+        self, query: str
     ) -> Tuple[Iterable[str], List[Tuple[str, float]]]:
         """
-        method that does autoregressive generation. It accepts a query. First it retrieves passages.
+        Method that does autoregressive generation. It accepts a query. First it retrieves passages.
         For each passage it maintains its past key values. For each token, it calls k times the previous
-         method and the previous method to get probas for next token. Then does greedy generation.
+        method and the previous method to get probas for next token. Then does greedy generation.
         :param query:
         :return:
         """
-        retrieved_docs = self.faiss.search_text(query)
 
-        def generator():
-            answer = ""
+        if self.use_rag:
+            retrieved_docs = self.faiss.search_text(query)
             autoregressive_state = [
                 {
                     "past_key_values": None,
@@ -262,17 +263,38 @@ class RagHandler(nn.Module):
             ]
 
             similarities = torch.tensor(
-                [state["similarity"] for state in autoregressive_state]
+                [state["similarity"] for state in autoregressive_state],
+                device=self.device,
             )
 
             similarities /= similarities.sum()
+        else:
+            retrieved_docs = []
+            autoregressive_state = [
+                {
+                    "past_key_values": None,
+                    "doc": None,
+                    "similarity": 1.0,
+                    "query": query,
+                    "tokenized_query": self.llm.tokenizer(
+                        query,
+                        return_tensors="pt",
+                        padding=False,
+                    )["input_ids"],
+                }
+            ]
+            similarities = torch.tensor([1.0], device=self.device)
 
-            while len(answer) < max_length:
+        @torch.no_grad()
+        def generator():
+            answer = []
+            while len(answer) < AUTOREGRESSIVE_GEN_MAX_LENGTH:
                 all_logits = []
 
                 for state in autoregressive_state:
+                    tokenized_query = state["tokenized_query"].to(self.device)
                     result = self.llm.model(
-                        state["tokenized_query"],
+                        tokenized_query,
                         past_key_values=state["past_key_values"],
                         use_cache=True,
                     )
@@ -294,27 +316,29 @@ class RagHandler(nn.Module):
 
                 # get the token from the tokenizer
                 next_token_str = self.llm.tokenizer.decode(next_token)
-                answer += next_token_str
 
                 for state in autoregressive_state:
                     state["query"] += next_token_str
                     state["tokenized_query"] = torch.tensor([[next_token]])  # type: ignore
 
+                if len(answer) > 0 and next_token_str == self.llm.tokenizer.eos_token:
+                    break
+
+                if next_token_str in self.llm.tokenizer.all_special_tokens:
+                    continue
+
+                answer.append(next_token_str)
                 yield next_token_str
 
         return generator(), retrieved_docs
 
     @torch.no_grad()
-    def autoregressive_generation_iterator(
-        self, query: str, max_length=50
-    ) -> Iterable[str]:
-        generator, _ = self.autoregressive_generation_iterator_with_retrieved_docs(
-            query, max_length=max_length
-        )
+    def autoregressive_generation_iterator(self, query: str) -> Iterable[str]:
+        generator, _ = self.autoregressive_generation_with_retrieved_docs(query)
         return generator
 
-    def auto_regressive_generation(self, query: str, max_length=50) -> str:
-        return "".join(self.autoregressive_generation_iterator(query, max_length))
+    def auto_regressive_generation(self, query: str) -> str:
+        return "".join(self.autoregressive_generation_iterator(query))
 
     def naive_inference_with_retrieved_docs(
         self,

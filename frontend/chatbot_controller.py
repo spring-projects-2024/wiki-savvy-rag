@@ -87,7 +87,10 @@ class ChatbotController:
             yield s
             time.sleep(0.008)
 
-    def naive_inference(
+    def inference(self, history: List[Dict], query: str):
+        return self._autoregressive_inference(history, query)
+
+    def _naive_inference(
         self,
         history: List[Dict],
         query: str,
@@ -101,16 +104,14 @@ class ChatbotController:
 
         return self._string_generator(response), retrieved_docs
 
-    def autoregressive_inference(
+    def _autoregressive_inference(
         self,
         history: List[Dict],
         query: str,
     ):
-        return self.rag.autoregressive_generation_iterator_with_retrieved_docs(
-            query=query
-        )
+        return self.rag.autoregressive_generation_with_retrieved_docs(query=query)
 
-    def mock_inference(
+    def _mock_inference(
         self,
         history: List[Dict],
         query: str,
