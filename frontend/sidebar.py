@@ -1,25 +1,13 @@
 import os
 import torch
 import streamlit as st
-
-MODELS = [
-    {
-        "name": "Minami-su Qwen1.5 0.5B Chat Llamafy",
-        "model": "Minami-su/Qwen1.5-0.5B-Chat_llamafy",
-        "use_qlora": False,
-    },
-    {
-        "name": "Microsoft Phi-3 Mini 128k Instruct (QLoRA)",
-        "model": "microsoft/phi-3-mini-128k-instruct",
-        "use_qlora": True,
-    },
-]
-
-MODEL_DEFAULT = 0
-DB_PATH_DEFAULT = "./scripts/dataset/data/dataset.db"
-INDEX_PATH_DEFAULT = "./scripts/vector_database/data/default.index"
-DEVICE_DEFAULT = "cuda:0"
-USE_RAG_DEFAULT = True
+from chatbot_controller import (
+    DB_PATH_DEFAULT,
+    DEVICE_DEFAULT,
+    INDEX_PATH_DEFAULT,
+    MODEL_DEFAULT,
+    MODELS,
+)
 
 
 @st.cache_data
@@ -46,7 +34,7 @@ def build_sidebar():
             "use_rag": True,
         }
 
-    configs = st.session_state["configs"]
+    configs = st.session_state["configs"].copy()
 
     with st.sidebar:
 
