@@ -13,3 +13,4 @@ refextract
 libmagic
 arxiv
 peft
+bitsandbytes
