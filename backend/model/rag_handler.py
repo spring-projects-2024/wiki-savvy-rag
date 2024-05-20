@@ -189,16 +189,23 @@ class RagHandler(nn.Module):
             doc_content, doc_score = doc[0]
             header = f"Context:\n{doc_content}\n\nQuery:\n{query}\n\nAnswer:\n"
             headers.append(header)
-        tokenized_headers = self.llm.tokenizer(headers, padding=False)
+        tokenized_headers = self.llm.tokenizer(headers, padding=False, return_tensors="pt")
+        # tokenized_headers has type BatchEncoding (claim??)
+
         if "targets" in batch:
             tokenized_answers = batch["targets"]
         else:
             tokenized_answers = self.llm.tokenizer(answers, padding=False)
+
         answer_lengths = [
             len(tokenized_answer) for tokenized_answer in tokenized_answers["input_ids"]
         ]
         concatenated_input_ids = [
-            tokenized_header + tokenized_answer
+            # concatenate the tokenized header and the tokenized answer which are tensors
+            torch.cat(
+                [tokenized_header, tokenized_answer], dim=1
+            )
+            # tokenized_header + tokenized_answer
             for tokenized_header, tokenized_answer in zip(
                 tokenized_headers["input_ids"], tokenized_answers["input_ids"]
             )
