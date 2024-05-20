@@ -59,7 +59,7 @@ class RagCriterion(nn.Module):
                 len(answer_tokens) == answer_length
             ), f"{len(answer_tokens)}  {answer_length}"
             loss += self.cross_entropy(
-                logits_one_query[-answer_length:, :], answer_tokens
+                logits_one_query[-answer_length - 1 : -1, :], answer_tokens
             )
         loss /= len(answer_lengths)
         return {"loss": loss}
