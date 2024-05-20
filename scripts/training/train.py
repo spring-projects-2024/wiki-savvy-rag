@@ -54,6 +54,8 @@ def main():
 
     print("Preparing data...")
 
+    # TODO: currently only batch_size=1 is supported. To have larger batch sizes,
+    # the collate_fn in the DataLoader should be modified to pad the sequences.
     train_data = load_yahoo_answers(subset="stem")
     train_loader = DataLoader(train_data, batch_size=batch_size)
     test_data = load_mmlu(split="validation", subset="stem")

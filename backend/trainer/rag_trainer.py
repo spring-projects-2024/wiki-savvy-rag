@@ -6,8 +6,13 @@ from jepa.trainer.trainer import Trainer
 from backend.model.rag_handler import RagHandler
 import torch
 from torch import nn
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, get_linear_schedule_with_warmup, \
-    BatchEncoding
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    BitsAndBytesConfig,
+    get_linear_schedule_with_warmup,
+    BatchEncoding,
+)
 from peft import LoraConfig, TaskType, get_peft_model
 from peft.utils import prepare_model_for_kbit_training
 
@@ -50,9 +55,11 @@ class RagCriterion(nn.Module):
         for logits_one_query, answer_length, answer_tokens in zip(
             logits, answer_lengths, targets["input_ids"]
         ):
-            assert len(answer_tokens) == answer_length, f"{len(answer_tokens)}  {answer_length}"
+            assert (
+                len(answer_tokens) == answer_length
+            ), f"{len(answer_tokens)}  {answer_length}"
             loss += self.cross_entropy(
-                logits_one_query[-answer_length:, :], answer_tokens
+                logits_one_query[-answer_length - 1 : -1, :], answer_tokens
             )
         loss /= len(answer_lengths)
         return {"loss": loss}
@@ -99,7 +106,7 @@ def prepare_for_qlora(model: AutoModelForCausalLM) -> AutoModelForCausalLM:
     return model
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(torch.cuda.is_available())
 
     rag_handler = RagHandler(
@@ -111,7 +118,6 @@ if __name__ == '__main__':
         # tokenizer_kwargs=tokenizer_kwargs,
         # faiss_kwargs=faiss_kwargs,
     )
-
 
     batch_size = 1
 
