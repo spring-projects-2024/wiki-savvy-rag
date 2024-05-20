@@ -191,7 +191,7 @@ class RagHandler(nn.Module):
             header = f"Context:\n{doc_content}\n\nQuery:\n{query}\n\nAnswer:\n"
             headers.append(header)
 
-        tokenized_headers: BatchEncoding = self.llm.tokenizer(headers, padding=False, return_tensors="pt")
+        tokenized_headers: BatchEncoding = self.llm.tokenizer(headers, padding=False, return_tensors="pt").to(self.llm.device)
 
         if "targets" in batch:
             tokenized_answers = batch["targets"]
