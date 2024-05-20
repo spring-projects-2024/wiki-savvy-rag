@@ -1,5 +1,7 @@
 from typing import Dict, List, Optional, Union
-
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from peft import LoraConfig, TaskType, get_peft_model
+from peft.utils import prepare_model_for_kbit_training
 import torch
 from transformers import (
     AutoModelForCausalLM,
@@ -28,18 +30,31 @@ class LLMHandler:
         self,
         model_name: str = DEFAULT_MODEL,
         device: str = "cpu",
-        model_kwargs: Optional[dict] = None,  # torch_dtype
+        llm_kwargs: Optional[dict] = None,  # torch_dtype
         tokenizer_kwargs: Optional[dict] = None,
+        use_qlora: bool = False,
     ):
-        if model_kwargs is None:
-            model_kwargs = {}
+
+        self.device = device
+        if llm_kwargs is None:
+            llm_kwargs = {}
         if tokenizer_kwargs is None:
             tokenizer_kwargs = {}
+        self.use_qlora = use_qlora
+        if self.use_qlora:
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.float16,
+                bnb_4bit_quant_type="nf4",
+            )
+        else:
+            quantization_config = None
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
             device_map=device,
             trust_remote_code=True,
-            **model_kwargs,
+            quantization_config=quantization_config,
+            **llm_kwargs,
         )
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, **tokenizer_kwargs)
         self.pipe = pipeline(

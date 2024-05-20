@@ -4,7 +4,7 @@ from tqdm import tqdm
 from transformers import AutoTokenizer
 import json
 
-from backend.vector_database.dataset import Dataset
+from backend.vector_database.dataset import DatasetSQL
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
 
 DB_DIR_DEFAULT = "scripts/dataset/data"
@@ -15,7 +15,7 @@ COUNT = 1000
 DUMP = 200_000
 curr_d = DUMP
 
-dataset = Dataset(db_path=os.path.join(DB_DIR_DEFAULT, DB_NAME_DEFAULT + ".db"))
+dataset = DatasetSQL(db_path=os.path.join(DB_DIR_DEFAULT, DB_NAME_DEFAULT + ".db"))
 
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 

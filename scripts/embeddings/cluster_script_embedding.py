@@ -7,7 +7,7 @@ import torch
 from tqdm import tqdm
 
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
-from backend.vector_database.dataset import Dataset
+from backend.vector_database.dataset import DatasetSQL
 import argparse
 
 DB_DIR_DEFAULT = "scripts/dataset/data"
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         print("Specified directory doesn't exist. Creating it...")
         os.mkdir(args.output_dir)
 
-    dataset = Dataset(db_path=os.path.join(args.db_dir, args.db_name + ".db"))
+    dataset = DatasetSQL(db_path=os.path.join(args.db_dir, args.db_name + ".db"))
     embedder = EmbedderWrapper(args.device)
 
     count_of_chunks = dataset.count_of_chunks()

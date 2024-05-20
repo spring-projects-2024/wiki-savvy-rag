@@ -3,7 +3,7 @@ import os
 from typing import Iterable
 
 
-class Dataset:
+class DatasetSQL:
     """
     Represents a dataset that interacts with a SQLite database.
 
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     if not os.path.exists(DB_DIR_PATH):
         os.mkdir(DB_DIR_PATH)
 
-    dataset = Dataset(db_path=DB_DIR_PATH + "/test.db")
+    dataset = DatasetSQL(db_path=DB_DIR_PATH + "/test.db")
 
     dataset.create_tables()
 

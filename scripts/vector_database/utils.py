@@ -66,7 +66,7 @@ def train_vector_db(
         indices = torch.randperm(embeddings.size(dim=0))[
             : int(embeddings.size(dim=0) * training_size)
         ]
-        training_set.append(embeddings.numpy()[indices])
+        training_set.append(embeddings.cpu().numpy()[indices])
 
     training_set = np.concatenate(training_set)
 

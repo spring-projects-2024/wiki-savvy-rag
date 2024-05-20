@@ -2,7 +2,7 @@ from itertools import chain
 import json
 import streamlit as st
 from backend.model.rag_handler import RagHandler
-from backend.vector_database.dataset import Dataset
+from backend.vector_database.dataset import DatasetSQL
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
 import time
 
@@ -18,7 +18,7 @@ st.title("Wikipedia Savvy")
 
 @st.cache_resource
 def load_dataset():
-    return Dataset(db_path=DB_PATH)
+    return DatasetSQL(db_path=DB_PATH)
 
 
 @st.cache_resource
@@ -31,7 +31,7 @@ def load_rag_handler():
     return RagHandler(
         model_name=MODEL_NAME,
         device=DEVICE,
-        model_kwargs={
+        llm_kwargs={
             "torch_dtype": "auto",
         },
         faiss_kwargs={

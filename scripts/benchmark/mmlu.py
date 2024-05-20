@@ -101,8 +101,8 @@ def main():
         model_name=model_name,
         device=device,
         use_rag=args.use_rag,
-        llm_config=rag_kwargs,
-        model_kwargs=model_kwargs,
+        llm_generation_config=rag_kwargs,
+        llm_kwargs=model_kwargs,
         tokenizer_kwargs=tokenizer_kwargs,
         faiss_kwargs=faiss_kwargs,
     )

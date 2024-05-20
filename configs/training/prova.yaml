@@ -1,0 +1,23 @@
+{
+  device: cuda,
+  use_qlora: true,
+  log_to_wandb: true,
+  wandb_project: "rag",
+  seed: 42,
+  model_name: Minami-su/Qwen1.5-0.5B-Chat_llamafy,
+  model_kwargs: { torch_dtype: auto },
+  tokenizer_kwargs: {},
+  faiss_kwargs:
+    {
+      index_path: scripts/vector_database/data/PQ128.index,
+      embedder: null,
+      dataset: "scripts/dataset/data/dataset.db",
+    },
+  llm_generation_config: null,
+  llm_kwargs: null,
+  optimizer_params: { lr: 0.00001, weight_decay: 0.01 },
+  max_epochs: 1,
+  batch_size: 1,
+  log_interval: 10,
+  checkpoint_interval: 1,
+}
