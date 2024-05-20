@@ -184,13 +184,14 @@ class RagHandler(nn.Module):
         queries: List[str] = batch["query"]
         answers: List[str] = batch["answer"]
         retrieved_docs = self.faiss.search_multiple_texts(queries, n_neighbors=1)
+        # retrieved_docs = [[("ciao", 0.5)]]
         headers = []  # strings
         for query, doc in zip(queries, retrieved_docs):
             doc_content, doc_score = doc[0]
             header = f"Context:\n{doc_content}\n\nQuery:\n{query}\n\nAnswer:\n"
             headers.append(header)
-        tokenized_headers = self.llm.tokenizer(headers, padding=False, return_tensors="pt")
-        # tokenized_headers has type BatchEncoding (claim??)
+
+        tokenized_headers: BatchEncoding = self.llm.tokenizer(headers, padding=False, return_tensors="pt")
 
         if "targets" in batch:
             tokenized_answers = batch["targets"]
@@ -210,6 +211,7 @@ class RagHandler(nn.Module):
                 tokenized_headers["input_ids"], tokenized_answers["input_ids"]
             )
         ]
+
         padded_input_ids = self.llm.tokenizer.pad(
             {"input_ids": concatenated_input_ids},
             padding=True,
