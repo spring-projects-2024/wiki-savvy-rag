@@ -14,14 +14,6 @@ from transformers.utils import ModelOutput
 # TODO: does pipe handle eval mode?
 
 
-def get_default_gen_args():
-    return {
-        "max_new_tokens": 500,
-        # "temperature": 0.0,
-        "do_sample": False,
-    }
-
-
 DEFAULT_MODEL = "microsoft/phi-3-mini-128k-instruct"
 
 
