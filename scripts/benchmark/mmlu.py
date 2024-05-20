@@ -1,6 +1,6 @@
 import time
 import json
-from backend.benchmark.utils import format_question, craft_query, load_mmlu
+from backend.benchmark.utils import craft_query, load_mmlu
 import argparse
 import yaml
 import datasets
@@ -38,7 +38,7 @@ def evaluate(
             craft_query(question, chat=True, examples=examples) for question in batch
         ]
         histories = [[] for _ in range(batch_size)]
-        responses = rag_handler.naive_inference(
+        responses, _ = rag_handler.naive_inference(
             histories,
             queries,
         )

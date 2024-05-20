@@ -1,10 +1,7 @@
-import time
 from copy import deepcopy
 from typing import Optional, List, Dict, Tuple, Iterable
 
 from torch import nn
-from torch.nn.utils.rnn import pad_sequence
-import numpy as np
 import torch
 from transformers import BatchEncoding
 
@@ -17,14 +14,6 @@ from backend.model.prompt_utils import (
     join_messages_query_rag,
 )
 
-
-# TODO: write inference averaging probabilities over the retrieved documents:
-# need to do it autoregressively, so we need to get from llm both logits and key value caches
-# for the next token generation. The forward pass of the llm already returns the key value caches in
-# the output in addition to the logits. We need to pass those around.
-# good if we decouple getting probabilities from decoding, so that we can choose between greedy, beam search,
-# having a temperature, etc.
-
 AUTOREGRESSIVE_GEN_MAX_LENGTH = 1000
 DECODING_STRATEGIES = ["greedy", "top_k", "top_p"]
 TOP_K = 50
@@ -32,6 +21,18 @@ TOP_P = 0.9
 
 
 class RagHandler(nn.Module):
+    """
+    Handler for a RAG model. It uses a FaissWrapper to retrieve documents based on user queries,
+    and an LLMHandler to generate text.
+
+    Attributes:
+    - llm: an LLMHandler object.
+    - faiss: a FaissWrapper object.
+    - use_rag: whether to use the RAG model.
+    - device: the device on which the model is loaded.
+    - llm_generation_config: a dictionary with default configuration for the LLM model.
+    """
+
     def __init__(
         self,
         model_name: str,
@@ -54,9 +55,6 @@ class RagHandler(nn.Module):
                 "embedder": None,
             }
         )
-        self.llm_generation_config = self.get_default_llm_config()
-        if llm_generation_config is not None:
-            self.llm_generation_config.update(llm_generation_config)
         self.faiss = FaissWrapper(device=device, **faiss_kwargs)
         self.llm = LLMHandler(
             device=device,
@@ -67,30 +65,22 @@ class RagHandler(nn.Module):
         )
         self.use_rag = use_rag
         self.device = device
+        self.llm_generation_config = self.get_default_llm_config()
+        if llm_generation_config is not None:
+            self.llm_generation_config.update(llm_generation_config)
 
     def __call__(self, batch: dict) -> dict:
         # for use with RagTrainer
         return self.forward_batch_query_single_doc(batch)
 
     def to(self, device: str):
+        """Move the model to the given device."""
         self.llm.model.to(device)
         self.llm.device = device
         self.faiss.to(device)
 
     def set_use_rag(self, use_rag: bool):
         self.use_rag = use_rag
-
-    @staticmethod
-    def get_default_llm_config():
-        # TODO: choose default values
-        return {
-            "max_new_tokens": 500,
-            "do_sample": False,
-            # "temperature": 0.1,
-        }
-
-    # def craft_replug_query(self, query: str, doc: str) -> str:
-    #     return f"Context:\n{doc}\n\nQuery:\n{query}"
 
     def craft_autoregressive_query(self, query: str, doc: str) -> str:
         return f"Context:\n{doc}\n\nQuery:\n{query}\n"
@@ -121,18 +111,6 @@ class RagHandler(nn.Module):
             "probas": aggregated_probas,
         }
 
-    def logits_to_weighted_probs(self, logits: torch.Tensor, scores: torch.Tensor):
-        """
-
-        :param logits:
-        :param scores: Need to be normalized
-        :return:
-        """
-        probas = torch.nn.functional.softmax(
-            logits, dim=-1
-        )  # (num_docs, seq_len, vocab_size)
-        return (probas * scores[:, None, None]).sum(dim=0)  # (seq_len, vocab_size)
-
     def forward_single_query_multiple_docs(
         self,
         query: str,
@@ -147,10 +125,12 @@ class RagHandler(nn.Module):
         retrieved_docs = self.faiss.search_text(query)
         headers = []  # strings
         scores = []  # floats
+
         for doc, score in retrieved_docs:
             header = f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:\n"
             headers.append(header)
             scores.append(score)
+
         tokenized_headers = self.llm.tokenizer(
             headers, return_tensors="pt", padding=True
         )  # (num_docs, seq_len)
@@ -168,12 +148,14 @@ class RagHandler(nn.Module):
             "input_ids": input_ids,
             "attention_mask": attention_mask,
         }
+
         batch["input_ids"] = batch["input_ids"].to(self.llm.device)
         batch["attention_mask"] = batch["attention_mask"].to(self.llm.device)
         logits = self.llm.get_logits(batch)  # (num_docs, seq_len, vocab_size)
         scores = torch.tensor(scores)  # (num_docs,)
         scores /= scores.sum()
         answer_length = tokenized_answer["input_ids"].shape[1]
+
         return {
             "logits": logits,
             "scores": scores,
@@ -238,10 +220,22 @@ class RagHandler(nn.Module):
             "answer_lengths": answer_lengths,
         }
 
+    def _logits_to_weighted_probs(self, logits: torch.Tensor, scores: torch.Tensor):
+        """
+        Compute the probabilities of the tokens by aggregating the probabilities of the retrieved documents.
+        :param logits:
+        :param scores: Need to be normalized
+        :return:
+        """
+        probas = torch.nn.functional.softmax(
+            logits, dim=-1
+        )  # (num_docs, seq_len, vocab_size)
+        return (probas * scores[:, None, None]).sum(dim=0)  # (seq_len, vocab_size)
+
     def _next_token_strategy(self, probs, decoding_strategy):
         assert decoding_strategy in DECODING_STRATEGIES
-        # probs has messed up indices (there is an extra useless dimension at the beginning)
-        # the code takes this into account
+        # probs has messed up indices (there is an extra dimension at the beginning),
+        # this code takes this into account
 
         if decoding_strategy == "greedy":
             next_token = torch.argmax(probs)
@@ -269,11 +263,23 @@ class RagHandler(nn.Module):
         return_generator: bool = False,
     ) -> Tuple[Iterable[str], List[Tuple[str, float]]]:
         """
-        Method that does autoregressive generation. It accepts a query. First it retrieves passages.
-        For each passage it maintains its past key values. For each token, it calls k times the previous
-        method and the previous method to get probas for next token. Then does greedy generation.
-        :param query:
-        :return:
+        This method performs autoregressive generation. It operates as follows:
+
+        1. Accepts a query as input.
+        2. It retrieves relevant passages based on the query.
+        3. For each passage, calculates the probability of the next token based on the query and the passage.
+        4. It then computes the average of the probabilities weighted by the scores of the retrieved documents.
+        6. It then applies a decoding strategy to determine the next token based on these probabilities.
+        7. This process continues until either the maximum sequence length is reached or an end-of-sequence token is encountered.
+
+        This method reuses cached values of the past key values of the model to avoid recomputing them.
+
+        :param query: the query for which to generate text
+        :param n_docs: the number of documents to retrieve
+        :param decoding_strategy: the decoding strategy to use. Can be "greedy", "top_k", or "top_p"
+        :param return_generator: whether to return a generator or the generated text
+
+        :return: a tuple with the token generator and the retrieved documents
         """
 
         if self.use_rag:
@@ -340,7 +346,7 @@ class RagHandler(nn.Module):
                 # compute the average of the logits weighted by the scores of the retrieved documents
                 torch_logits = torch.stack(all_logits)
 
-                probs = self.logits_to_weighted_probs(torch_logits, similarities)
+                probs = self._logits_to_weighted_probs(torch_logits, similarities)
 
                 next_token = self._next_token_strategy(probs, decoding_strategy)
 
@@ -365,7 +371,7 @@ class RagHandler(nn.Module):
         else:
             return "".join(generator()), retrieved_docs
 
-    def naive_inference_with_retrieved_docs(
+    def naive_inference(
         self,
         histories: List[List[Dict]] | List[Dict],
         queries: List[str] | str,
@@ -374,10 +380,29 @@ class RagHandler(nn.Module):
     ) -> Tuple[
         List[str] | str, List[List[Tuple[str, float]]] | List[Tuple[str, float]]
     ]:
-        # we are assuming that queries and histories are coherent in type
-        # we support both batch inference and single queries, but we assume that if queries is a string then histories
-        # is a list of dictionaries containing the chat history
-        # if queries is a list of strings then histories is a list of lists of dictionaries containing the chat history
+        """
+        This method performs inference with the RAG model. It operates as follows:
+
+        1. Accepts a query as input.
+        2. Retrieves relevant passages based on the query.
+        3. Creates a prompt with the retrieved passages and the query.
+        4. Generates text based on the prompt.
+
+        This method leverages the pipeline method of the Transformers library to perform inference.
+        It is inserted here for comparison purposes with the autoregressive generation method.
+
+        We are assuming that queries and histories are coherent in type.
+        We support both batch inference and single queries, but we assume that if queries is a string then histories
+        is a list of dictionaries containing the chat history.
+        If queries is a list of strings then histories is a list of lists of dictionaries containing the chat history.
+
+        :param histories: the chat history/histories (right now it is only used in the case RAG is not used)
+        :param queries: the query(queries) for which to generate text
+        :param n_docs: the number of documents to retrieve
+        :param kwargs: additional arguments to pass to the LLM model
+
+        :return: a tuple with the generated text and the retrieved documents
+        """
 
         if isinstance(queries, list):
             updated_histories = []
@@ -415,17 +440,12 @@ class RagHandler(nn.Module):
 
         return response, retrieved
 
-    def naive_inference(
-        self,
-        histories: List[List[Dict]] | List[Dict],
-        queries: List[str] | str,
-        **kwargs,
-    ) -> List[str] | str:
-        response, _ = self.naive_inference_with_retrieved_docs(
-            histories, queries, **kwargs
-        )
-
-        return response
+    @staticmethod
+    def get_default_llm_config():
+        return {
+            "max_new_tokens": 500,
+            "do_sample": False,
+        }
 
     def add_arxiv_paper(self, paper):
         raise NotImplementedError
@@ -434,6 +454,7 @@ class RagHandler(nn.Module):
 INDEX_PATH = "scripts/vector_database/data/default.index"
 DB_PATH = "scripts/dataset/data/dataset.db"
 
+# TODO: To clean up
 if __name__ == "__main__":
     print("i'm alive")
     embedder = EmbedderWrapper("cpu")

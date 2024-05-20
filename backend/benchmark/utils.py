@@ -8,10 +8,12 @@ def load_mmlu(
     split: str = "test", subset: Union[list, str, None] = "stem"
 ) -> datasets.Dataset:
     """
-    :param split: one of test, validation, dev, auxiliary_train
-    :param subset: one of None, 'stem', or a list of strings. If None,
-    return the entire dataset. If 'stem', return only the STEM subcategories.
-    If a list of strings, return only the subcategories in the list.
+    Function to load the MMLU dataset.
+    :param split: specifies the type of dataset split to be returned. Acceptable values are 'test', 'validation', 'dev', and 'auxiliary_train'.
+    :param subset: determines the subset of the dataset to be returned. Acceptable values are None, 'stem', or a list of strings.
+    If None, the function will return the entire dataset.
+    If 'stem', the function will return only the subcategories related to Science, Technology, Engineering, and Mathematics (STEM).
+    If a list of strings is provided, the function will return only the subcategories specified in the list.
     """
     dataset = load_dataset("cais/mmlu", "all")
     dataset = dataset[split]
@@ -26,6 +28,13 @@ def load_mmlu(
 
 
 def load_yahoo_answers(subset: Union[list, str, None] = "stem") -> datasets.Dataset:
+    """
+    Function to load the Yahoo Answers QA dataset.
+    :param subset: determines the subset of the dataset to be returned. Acceptable values are None, 'stem', or a list of strings.
+    If None, the function will return the entire dataset.
+    If 'stem', the function will return only the subcategories related to Science, Technology, Engineering, and Mathematics (STEM).
+    If a list of strings is provided, the function will return only the subcategories specified in the list.
+    """
     dataset = load_dataset("yahoo_answers_qa")
     dataset = dataset["train"]
     if subset is None:
@@ -39,7 +48,7 @@ def load_yahoo_answers(subset: Union[list, str, None] = "stem") -> datasets.Data
     return dataset
 
 
-def format_question(question: dict, include_answer: bool = False) -> str:
+def _format_question(question: dict, include_answer: bool = False) -> str:
     prompt = f"Question: {question['question']}\n"
     for i, choice in enumerate(question["choices"]):
         prompt += f"{chr(65 + i)}. {choice}\n"
@@ -70,9 +79,9 @@ def craft_query(
     prompt += "\n"
     if examples:
         for example in examples:
-            prompt += format_question(example, include_answer=True)
+            prompt += _format_question(example, include_answer=True)
             prompt += "\n\n"
-    prompt += format_question(question, include_answer=False)
+    prompt += _format_question(question, include_answer=False)
 
     prompt += "\n\nAnswer (only the letter):\n"
     return prompt

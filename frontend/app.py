@@ -7,10 +7,6 @@ import os
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
-# TODOS:
-# - Use memory to craft better query or don't care and tell the user that the context is always lost
-# - Decide how to distinguish RAG vs non-RAG prompts or don't care as above
-
 build_sidebar()
 configs = st.session_state["configs"]
 
@@ -37,8 +33,9 @@ for message in st.session_state.messages:
 if prompt := st.chat_input(
     "Please ask a question. (You can also augment my reply by indicating arxiv paper links) "
 ):
-    y = get_id_from_link_prompt(prompt)
-    st.write(y)
+    arxiv_paper_ids = get_id_from_link_prompt(prompt)
+    if arxiv_paper_ids:
+        st.write(arxiv_paper_ids)
 
     st.chat_message("user").markdown(prompt)
     with st.spinner("Thinking..."):

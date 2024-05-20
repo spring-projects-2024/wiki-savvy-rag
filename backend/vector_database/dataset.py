@@ -177,7 +177,9 @@ class DatasetSQL:
 
 
 class MockDataset:
-    def __init__(self, chunks):
+    """A mock dataset class for testing"""
+
+    def __init__(self, chunks: list):
         self.chunks = chunks
 
     def search_chunk(self, id):

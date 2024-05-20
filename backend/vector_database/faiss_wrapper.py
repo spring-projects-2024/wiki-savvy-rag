@@ -6,10 +6,22 @@ import faiss
 import numpy as np
 from backend.vector_database.dataset import DatasetSQL, MockDataset
 
-# TODO: allow processing queries in batches
+import os
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 
 class FaissWrapper:
+    """Wrapper class for the Faiss library. Handles the indexing and searching of vectors.
+
+    Attributes:
+    - device: The device on which the model is loaded.
+    - dataset: The dataset to be used.
+    - embedder: The EmbedderWrapper object to be used.
+    - dim: The dimensionality of the embeddings.
+    - _index: The Faiss index object.
+    """
+
     def __init__(
         self,
         device,
@@ -22,10 +34,12 @@ class FaissWrapper:
     ):
         """
         Instantiate a FaissWrapper object.
-        :param index_path: path to a saved index, optional and exclusive with index_str
-        :param index_str: Faiss index string, optional and exclusive with index_path
-        :param dataset:
-        :param nprobe: number of probes for search, ignored if index is loaded from file
+        :param device: The device on which the model is loaded.
+        :param dataset: The dataset to be used.
+        :param embedder: The EmbedderWrapper object to be used.
+        :param index_path: The path to the index file. If provided, index_str is ignored.
+        :param index_str: The index string. if index_path is not provided, this is used to create the index.
+        :param nprobe: The number of clusters to look at during search. Default is 10.
         """
         if embedder is None:
             embedder = EmbedderWrapper(device)
@@ -59,6 +73,7 @@ class FaissWrapper:
         """
         Search for the nearest neighbors of n vectors.
         :param vectors: np.ndarray of shape (n, dim)
+        :param n_neighbors: The number of neighbors to search for.
         :return: Index matrix I and distance matrix D
         """
         return self._index.search(vectors, n_neighbors)
@@ -69,15 +84,18 @@ class FaissWrapper:
         """
         Search for the nearest neighbors of a vector.
         :param vector: np.ndarray of shape (dim)
+        :param n_neighbors: The number of neighbors to search for.
         :return: Index matrix I and distance matrix D
         """
         return self.search_vectors(vector.reshape(1, -1), n_neighbors)
 
     def _search_text_get_I_D(
-        self, text: str, n_neighbors
+        self, text: str, n_neighbors: int
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Get the I and D matrices from a text. Wraps around _search_vector
+        :param text: The text to search for.
+        :param n_neighbors: The number of neighbors to search for.
         :return: Index matrix I and distance matrix D
         """
         vector = self.embedder.get_embedding(text).numpy()
@@ -85,18 +103,16 @@ class FaissWrapper:
 
     def _index_to_text(self, index: int) -> str:
         """
-        todo: implement this as it depends on the structure of the dataset
-        :param index:
-        :return:
+        :param index: The index of the text.
+        :return: The text corresponding to the index.
         """
         return self.dataset.search_chunk(index)
 
     def search_text(self, text: str, n_neighbors=10) -> List[Tuple[str, float]]:
         """
         Search for the nearest neighbors of a text.
-        :param text:
+        :param text: The text to search for.
         :return: List of tuples of (text, distance)
-        todo: check if they are sorted by distance, there is an index in faiss that re-orders results at the end
         """
 
         I, D = self._search_text_get_I_D(text, n_neighbors)
@@ -108,7 +124,8 @@ class FaissWrapper:
     ) -> List[List[Tuple[str, float]]]:
         """
         Search for the nearest neighbors of multiple texts.
-        :param texts:
+        :param texts: List of texts to search for.
+        :param n_neighbors: The number of neighbors to search for.
         :return: List of lists of tuples of (text, similarity)
         """
         MAX_BATCH_SIZE = 250
@@ -119,9 +136,7 @@ class FaissWrapper:
                 self.embedder.get_embedding(texts[i : i + MAX_BATCH_SIZE]).numpy()
             )
 
-        I, D = self.search_vectors(
-            np.concatenate(embeddings), n_neighbors
-        )  # check axis
+        I, D = self.search_vectors(np.concatenate(embeddings), n_neighbors)
 
         return [
             [(self._index_to_text(i), j) for i, j in zip(D_i, I_i) if i != -1]
@@ -129,6 +144,11 @@ class FaissWrapper:
         ]
 
     def train_from_vectors(self, data, train_on_gpu=False):
+        """
+        Train the index on the input data.
+        :param data: The data to train on.
+        :param train_on_gpu: Whether to train on the GPU. Default is False.
+        """
         if train_on_gpu:
             index_ivf = faiss.extract_index_ivf(self._index)
             clustering_index = faiss.index_cpu_to_all_gpus(
@@ -139,13 +159,13 @@ class FaissWrapper:
         self._index.train(data)
 
     def add_vectors(self, data):
-
+        """Add vectors to the index."""
         self._index.add(data)
 
     def train_from_text(self, data: Iterable[str]):
         """
         Wrapper around train_from_vectors that takes text as input.
-        :param data:
+        :param data: The data to train on.
         """
 
         self.train_from_vectors(self.embedder.get_embedding(data))
@@ -153,7 +173,7 @@ class FaissWrapper:
     def add_text(self, data: Iterable[str]):
         """
         Wrapper around add_vectors that takes text as input.
-        :param data:
+        :param data: The data to add.
         """
 
         self.add_vectors(self.embedder.get_embedding(data))
@@ -162,7 +182,7 @@ class FaissWrapper:
         faiss.write_index(self._index, path)
 
 
-INDEX_PATH = "backend/vector_database/data/faiss.index"
+INDEX_PATH = "backend/vector_database/data/default.index"
 
 if __name__ == "__main__":
     chunks = ["ciao", "sono", "mattia"]
@@ -191,7 +211,7 @@ if __name__ == "__main__":
     print("--------testing--------")
 
     fw = FaissWrapper(
-        index_path="index_faiss.index",
+        index_path=INDEX_PATH,
         dataset=dataset,
         device="cpu",
         embedder=embedder,

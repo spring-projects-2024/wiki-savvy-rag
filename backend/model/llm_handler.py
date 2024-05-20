@@ -1,7 +1,5 @@
 from typing import Dict, List, Optional, Union
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-from peft import LoraConfig, TaskType, get_peft_model
-from peft.utils import prepare_model_for_kbit_training
 import torch
 from transformers import (
     AutoModelForCausalLM,
@@ -11,13 +9,21 @@ from transformers import (
 from transformers.utils import ModelOutput
 
 
-# TODO: does pipe handle eval mode?
-
-
 DEFAULT_MODEL = "microsoft/phi-3-mini-128k-instruct"
 
 
 class LLMHandler:
+    """
+    Handler for a language model.
+
+    Attributes:
+    - model: a pretrained language model.
+    - tokenizer: a pretrained tokenizer.
+    - pipe: a pipeline for text generation.
+    - device: the device on which the model is loaded.
+    - use_qlora: whether to use qLoRA quantization.
+    """
+
     def __init__(
         self,
         model_name: str = DEFAULT_MODEL,
@@ -26,7 +32,6 @@ class LLMHandler:
         tokenizer_kwargs: Optional[dict] = None,
         use_qlora: bool = False,
     ):
-
         self.device = device
         if llm_kwargs is None:
             llm_kwargs = {}
@@ -97,6 +102,7 @@ class LLMHandler:
     @torch.inference_mode()
     def inference(self, messages, generation_args: Dict) -> List[str] | str:
         """
+        Generate text based on a list of messages.
         Example of messages structure:
             messages = [
                 {"role": "user", "content": "Can you provide ways to eat combinations of bananas and dragonfruits?"},

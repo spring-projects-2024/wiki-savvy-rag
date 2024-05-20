@@ -3,6 +3,7 @@ from copy import deepcopy
 
 
 def join_messages_query_no_rag(history: List[Dict[str, str]], query):
+    """Function to join the history with the user query."""
     new_history = deepcopy(history)
     new_history.append({"role": "user", "content": query})
     return new_history
@@ -11,6 +12,11 @@ def join_messages_query_no_rag(history: List[Dict[str, str]], query):
 def join_messages_query_rag(
     history: List[Dict[str, str]], query: str, retrieved_docs: List[Tuple[str, float]]
 ):
+    """Function to join the history with the user query and the retrieved documents.
+    Currently only the text of the documents is added to the message and the history is ignored.
+    """
+    # todo: add retrieved docs to the message
+
     new_history = deepcopy(history)
     message = ""
     message += "== Retrieved documents ==\n"

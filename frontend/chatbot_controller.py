@@ -120,7 +120,7 @@ class ChatbotController:
             kwargs["do_sample"] = True
             kwargs["top_p"] = TOP_P
 
-        response, retrieved_docs = self.rag.naive_inference_with_retrieved_docs(
+        response, retrieved_docs = self.rag.naive_inference(
             histories=history,
             queries=query,
             n_docs=self.configs["retrieved_docs"],
