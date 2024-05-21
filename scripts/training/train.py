@@ -51,6 +51,9 @@ def main():
         tokenizer_kwargs=tokenizer_kwargs,
         faiss_kwargs=faiss_kwargs,
     )
+
+
+    # todo: check if this is necessary when reading from disk an already quantized model
     rag_handler.llm.model = prepare_for_qlora(rag_handler.llm.model)
 
     print("Preparing data...")

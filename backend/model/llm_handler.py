@@ -8,7 +8,6 @@ from transformers import (
 )
 from transformers.utils import ModelOutput
 
-
 DEFAULT_MODEL = "microsoft/phi-3-mini-128k-instruct"
 
 
@@ -28,15 +27,27 @@ class LLMHandler:
         self,
         model_name: str = DEFAULT_MODEL,
         device: str = "cpu",
-        llm_kwargs: Optional[dict] = None,  # torch_dtype
+        pretrained_model_path: Optional[str] = None,
+        llm_kwargs: Optional[dict] = None,
         tokenizer_kwargs: Optional[dict] = None,
         use_qlora: bool = False,
     ):
+        """
+
+        :param model_name:
+        :param device:
+        :param pretrained_model_path:
+        :param quantization_config_path:
+        :param llm_kwargs:
+        :param tokenizer_kwargs:
+        :param use_qlora:
+        """
         self.device = device
         if llm_kwargs is None:
             llm_kwargs = {}
         if tokenizer_kwargs is None:
             tokenizer_kwargs = {}
+
         self.use_qlora = use_qlora
         if self.use_qlora:
             quantization_config = BitsAndBytesConfig(
@@ -46,13 +57,20 @@ class LLMHandler:
             )
         else:
             quantization_config = None
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            device_map=device,
-            trust_remote_code=True,
-            quantization_config=quantization_config,
-            **llm_kwargs,
-        )
+
+        self.quantization_config = quantization_config
+
+        if pretrained_model_path is not None:
+            self.model = AutoModelForCausalLM.from_pretrained(pretrained_model_path)
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                device_map=device,
+                trust_remote_code=True,
+                quantization_config=quantization_config,
+                **llm_kwargs,
+            )
+
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, **tokenizer_kwargs)
         self.pipe = pipeline(
             "text-generation",
@@ -122,3 +140,6 @@ class LLMHandler:
         print(f"Loading weights from {path}")
         state_dict = torch.load(path)
         self.model.load_state_dict(state_dict)
+
+    def save_weights(self, path):
+        self.model.save_pretrained(path)

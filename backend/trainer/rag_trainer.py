@@ -165,4 +165,7 @@ if __name__ == "__main__":
     print("Training...")
 
     rag_trainer = RagTrainer(**train_config)
-    rag_trainer.train()
+
+    print("Saving...")
+    rag_trainer.model.llm.save_weights("modello_salvato")
+    # rag_trainer.train()
