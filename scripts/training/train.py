@@ -28,6 +28,7 @@ def main():
     optimizer_params = config["optimizer_params"]
     max_epochs = config["max_epochs"]
     batch_size = config["batch_size"]
+    gradient_accumulation_steps = config["gradient_accumulation_steps"]
     log_to_wandb = config["log_to_wandb"]
     log_interval = config["log_interval"]
     checkpoint_interval = config["checkpoint_interval"]
@@ -99,6 +100,7 @@ def main():
         "seed": seed,
         "wandb_project": wandb_project,
         "compile_model": False,
+        "gradient_accumulation_steps": gradient_accumulation_steps,
     }
 
     print("Training...")

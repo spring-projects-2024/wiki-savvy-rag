@@ -18,6 +18,7 @@
   optimizer_params: { lr: 0.0002, weight_decay: 0.001 },
   max_epochs: 1,
   batch_size: 1,
+  gradient_accumulation_steps: 4,
   log_interval: 10,
   checkpoint_interval: 1,
 }
