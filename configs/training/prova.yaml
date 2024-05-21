@@ -4,7 +4,7 @@
   log_to_wandb: true,
   wandb_project: "rag",
   seed: 42,
-  model_name: Minami-su/Qwen1.5-0.5B-Chat_llamafy,
+  model_name: Qwen/Qwen1.5-0.5B-Chat,
   model_kwargs: { torch_dtype: auto },
   tokenizer_kwargs: {},
   faiss_kwargs:

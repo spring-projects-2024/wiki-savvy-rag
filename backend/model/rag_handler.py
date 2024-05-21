@@ -172,13 +172,36 @@ class RagHandler(nn.Module):
         """
         queries: List[str] = batch["query"]
         answers: List[str] = batch["answer"]
+
+        eos_token = self.llm.tokenizer.eos_token
+        answers = [answer + eos_token for answer in answers]
+
         retrieved_docs = self.faiss.search_multiple_texts(queries, n_neighbors=1)
         # retrieved_docs = [[("ciao", 0.5)]]
-        headers = []  # strings
+        headers: List[str] = []
         for query, doc in zip(queries, retrieved_docs):
             doc_content, doc_score = doc[0]
-            header = f"Context:\n{doc_content}\n\nQuery:\n{query}\n\nAnswer:\n"
-            headers.append(header)
+            # header = f"Context:\n{doc_content}\n\nQuery:\n{query}\n\nAnswer:\n"
+
+            messages = [
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant. You are specialized in answering STEM questions. "
+                    "You will be provided with a context and a question to answer based on the context.",
+                },
+                {
+                    "role": "user",
+                    "content": f"Context:\n{doc_content}\nQuestion:\n{query}",
+                },
+            ]
+
+            mess_prep: str = self.llm.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+
+            headers.append(mess_prep)
 
         tokenized_headers: BatchEncoding = self.llm.tokenizer(
             headers, padding=False, return_tensors="pt"
@@ -187,7 +210,9 @@ class RagHandler(nn.Module):
         if "targets" in batch:
             tokenized_answers = batch["targets"]
         else:
-            tokenized_answers = self.llm.tokenizer(answers, padding=False)
+            tokenized_answers = self.llm.tokenizer(
+                answers, padding=False, return_tensors="pt"
+            )
 
         answer_lengths = [
             len(tokenized_answer) for tokenized_answer in tokenized_answers["input_ids"]
