@@ -29,6 +29,7 @@ DECODING_STRATEGY_MAP = {
 
 @st.cache_data
 def load_available_devices():
+    """Loads the available devices (CPU and CUDA devices) and returns them as a dictionary."""
     devices = {
         "cpu": "CPU",
     }
@@ -40,6 +41,7 @@ def load_available_devices():
 
 
 def build_sidebar():
+    """Builds the sidebar with the configurations form."""
     available_devices = load_available_devices()
 
     if "configs" not in st.session_state:
