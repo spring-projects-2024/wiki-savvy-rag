@@ -31,6 +31,7 @@ def main():
     gradient_accumulation_steps = config["gradient_accumulation_steps"]
     log_to_wandb = config["log_to_wandb"]
     log_interval = config["log_interval"]
+    checkpoint_interval_steps = config["checkpoint_interval_steps"]
     checkpoint_interval = config["checkpoint_interval"]
     seed = config["seed"]
     wandb_project = config["wandb_project"]
@@ -98,12 +99,12 @@ def main():
         "scheduler": scheduler,
         "log_to_wandb": log_to_wandb,
         "log_interval": log_interval,
-        "checkpoint_interval": checkpoint_interval,
         "checkpoint_root_dir": "../checkpoints",
         "seed": seed,
         "wandb_project": wandb_project,
         "compile_model": False,
         "gradient_accumulation_steps": gradient_accumulation_steps,
+        "checkpoint_interval_steps": checkpoint_interval_steps,
     }
 
     print("Training...")

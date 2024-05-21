@@ -1,3 +1,5 @@
+import os
+from typing import Optional
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 
@@ -66,24 +68,40 @@ class RagCriterion(nn.Module):
 
 
 class RagTrainer(Trainer):
-    def __init__(self, model: RagHandler, **kwargs):
+    def __init__(
+        self, model: RagHandler, checkpoint_interval_steps: Optional[int], **kwargs
+    ):
+        self.checkpoint_interval_steps = checkpoint_interval_steps
         super().__init__(model, **kwargs)
         # torch.compile(model.llm.model)  # artigianale. commentalo per spegnerlo
 
     def train_step(self, batch: dict) -> dict:
+        if self.step % self.checkpoint_interval_steps == 0:
+            self.make_checkpoint()
         answers = batch["answer"]
         tokenized_answers: BatchEncoding = self.model.llm.tokenizer(
             answers, padding=False, return_tensors="pt"
-        )  # BatchEncoding object
-
-        token_answ = {
+        )
+        targets = {
             "input_ids": tokenized_answers["input_ids"],
             "attention_mask": tokenized_answers["attention_mask"],
         }
-
-        batch["targets"] = token_answ
-
+        batch["targets"] = targets
         return super().train_step(batch)
+
+    def make_checkpoint(self):
+        """
+        We override this method because we are using qlora and we want to
+        save the weights using huggingface methods rather than torch.save.
+        """
+        chkpt_dir = os.path.join(
+            self.checkpoint_root_dir,
+            "step" + str(self.step),
+        )
+        self.model.llm.save_weights(chkpt_dir)
+        if self.log_to_wandb:
+            artifact_name = f"chkpt-{self.step}"
+            self.logger.log_checkpoint(chkpt_dir, artifact_name)
 
 
 def prepare_for_qlora(model: AutoModelForCausalLM) -> AutoModelForCausalLM:
