@@ -42,6 +42,8 @@ def train_vector_db(
     """Trains a vector database with the given configuration.
     :param index_str: the index factory string
     :param input_dir: the directory containing the embeddings files
+    :param nprobe: the number of probes for the IVF quantizer
+    :param device: the device to use for the embedder
     :param training_size: the fraction of the data to use for training
     :param train_on_gpu: whether to train on GPU"""
 

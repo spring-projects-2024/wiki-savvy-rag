@@ -11,7 +11,9 @@ DB_NAME = "dataset"
 INPUT_DIR = "scripts/embeddings/data/"
 INPUT_FILE_REGEX = "embeddings_[a-z]+.pt"
 
-# run this script only when the embeddings files are small
+# This script loads the embeddings files and checks if the embeddings are correct.
+# It is used to check that the output of cluster_script_embedding.py is correct.
+# Should run this script only when the embeddings files are small
 
 if __name__ == "__main__":
     file_regex = re.compile(INPUT_FILE_REGEX)

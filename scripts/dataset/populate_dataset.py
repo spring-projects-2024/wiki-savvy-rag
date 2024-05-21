@@ -10,6 +10,15 @@ DB_DIR_DEFAULT = "scripts/dataset/data"
 DB_NAME_DEFAULT = "dataset"
 PAGES_TO_PROCESS_DEFAULT = utils.N_PAGES
 
+
+# This script populates the dataset database with the chunks extracted from the subsample_chunkeder.xml file.
+# The command line arguments are:
+# --input: Location of the subsample_chunkeder.xml file
+# --db_dir: Directory where the database is/will be located
+# --db_name: Name of the database
+# --pages: Maximum amount of pages to insert in database
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 

@@ -1,17 +1,15 @@
 import os
-import re
-import torch
-from backend.data_cleaning import utils
 from backend.vector_database.dataset import DatasetSQL
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
 from backend.vector_database.faiss_wrapper import FaissWrapper
 
-
 DB_DIR = "scripts/dataset/data"
 DB_NAME = "dataset"
-INDEX_PATH = "scripts/vector_database/data/flat.index"
+INDEX_PATH = "scripts/vector_database/data/default.index"
 
-# run this script only when the index file small
+# This script loads the embeddings files and checks if the embeddings are correct.
+# It is used to check that the output of cluster_script_embedding.py is correct.
+# Should run this script only when the index file small
 
 if __name__ == "__main__":
     dataset = DatasetSQL(db_path=os.path.join(DB_DIR, DB_NAME + ".db"))

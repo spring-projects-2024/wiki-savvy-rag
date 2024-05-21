@@ -8,6 +8,9 @@ DB_NAME = "dataset"
 
 DUMP_PATH = "wikidump_processing/data/subsample_chunkeder.xml"
 
+# This script checks if the dataset is correctly populated and if the search functions work as expected.
+# It is used to check that the output of the populate_dataset.py script is correct.
+
 if __name__ == "__main__":
     dataset = DatasetSQL(db_path=os.path.join(DB_DIR, DB_NAME + ".db"))
 

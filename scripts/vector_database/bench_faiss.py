@@ -13,16 +13,30 @@ from backend.benchmark.utils import load_mmlu
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
 from scripts.vector_database.utils import embeddings_iterator, train_vector_db
 
+
 INPUT_DIR_DEFAULT = "scripts/embeddings/data/"
 OUTPUT_DIR_DEFAULT = "scripts/vector_database/data/"
 CENTROIDS_DEFAULT = 5  # 131072
-# DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DEVICE = "cpu"
 KNN_NEIGHBORS_DEFAULT = 100
 MMLU_SAMPLE_SIZE_DEFAULT = 10
 TRAIN_ON_GPU_DEFAULT = False
 TRAINING_SIZE_DEFAULT = 0.2
 NPROBE_DEFAULT = 10
+
+# This script benchmarks the performance of different indexes.
+# In particular, it measures the recall of the indexes when compared to the brute force search,
+# the time taken to run all the search queries and the size of the index on disk (which is a proxy
+# for the memory usage).
+#
+# The command line arguments are:
+# --centroids: Number of centroids for the IVF quantizer
+# --knn_neighbors: Max number of neighbors for computing recall
+# --nprobe: Number of probes for the IVF quantizer
+# --training_size: Fraction of the dataset to use for training
+# --mmlu_sample_size: Number of samples to use from the MMLU dataset for the benchmarks
+# --train_on_gpu: Whether to train on GPU
+# --output_dir: Location of the directory where to store the output files
 
 
 def build_mmlu_embds(mmlu_sample_size):
@@ -67,6 +81,8 @@ def benchmark(
     nprobe: int,
     n_neighbors: int,
 ):
+    """Runs the benchmark for a given index."""
+
     results = {}
 
     vector_db = train_vector_db(
@@ -109,6 +125,7 @@ def benchmark(
     results["training_size"] = training_size
     results["train_on_gpu"] = train_on_gpu
     results["mmul_sample_size"] = mmlu_embds.shape[0]
+
     # save checkpoint of results
     with open(
         os.path.join(output_dir, "bench_quantizer.json"), "a", encoding="utf-8"
@@ -179,9 +196,6 @@ def main():
             os.path.join(args.output_dir, f"mmlu_embds_{args.mmlu_sample_size}.npy")
         )
 
-    # random embeddings
-    # mmlu_embds = np.random.rand(args.mmlu_sample_size, 384).astype(np.float32)
-
     print("Building mmlu baselines")
 
     d_path = os.path.join(
@@ -199,10 +213,9 @@ def main():
         np.save(d_path, D_base)
         np.save(i_path, I_base)
 
-    # benchmark with scalar quantizers
+    # hierarchical indexes, product quantizer
     for nn in [16, 32, 64]:
         for pq in [12, 24]:
-        # index_str = f"IVF{centroids}_HNSW32,{sq_type}"
             index_str = f"HNSW{nn}_PQ{pq}"
             benchmark(
                 index_str,
@@ -215,20 +228,7 @@ def main():
                 args.knn_neighbors,
             )
 
-    # exit()
-    # for M in [128]:
-    #     index_str = f"IVF{centroids},PQ{M}x4fsr"
-    #     benchmark(
-    #         index_str,
-    #         mmlu_embds,
-    #         I_base,
-    #         args.training_size,
-    #         args.train_on_gpu,
-    #         args.output_dir,
-    #         args.nprobe,
-    #         args.knn_neighbors,
-    #     )
-
+    # hierarchical indexes, scalar quantizer
     for sq in [4, 8]:
         for sw_size in [16]:
             index_str = f"HNSW{sw_size}_SQ{sq}"
@@ -243,35 +243,7 @@ def main():
                 args.knn_neighbors,
             )
 
-    # todo: also HNSW32_PQ12
-
-    # for M in [128]:
-    #     index_str = f"OPQ{M}_{M * 4}"
-    #     benchmark(
-    #         index_str,
-    #         mmlu_embds,
-    #         I_base,
-    #         args.training_size,
-    #         args.train_on_gpu,
-    #         args.output_dir,
-    #         args.nprobe,
-    #         args.knn_neighbors,
-    #     )
-    # benchmark with product quantizers
-    # for M in [256]:
-    #     index_str = f"OPQ{M}_{M * 4},IVF{args.centroids},PQ{M}"
-    #     benchmark(
-    #         index_str,
-    #         mmlu_embds,
-    #         I_base,
-    #         args.training_size,
-    #         args.train_on_gpu,
-    #         args.output_dir,
-    #         args.nprobe,
-    #         args.knn_neighbors,
-    #     )
-
-    # benchmark with product quantizers (fast scan)
+    # IVF indexes, product quantizer
     for M in [64, 128, 256]:
         for centroids in [1000, 2000, 5000]:
             index_str = f"OPQ{M}_{M * 4},IVF{centroids}_HNSW32,PQ{M}x4fsr"
@@ -285,8 +257,6 @@ def main():
                 args.nprobe,
                 args.knn_neighbors,
             )
-
-    return
 
 
 if __name__ == "__main__":

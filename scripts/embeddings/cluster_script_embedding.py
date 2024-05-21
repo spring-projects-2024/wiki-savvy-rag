@@ -16,6 +16,17 @@ OUTPUT_DIR_DEFAULT = "scripts/embeddings/data/"
 MAX_ACCUMULATION_DEFAULT = 250
 MAX_CHUNKS_DEFAULT = 50_000
 
+# This script generates the embeddings for the chunks in the dataset and stores them in files.
+# The command line arguments are:
+# --db_dir: Directory where the database is located
+# --db_name: Name of the database
+# --output_dir: Location of the directory where to store the output files
+# --chunks: Maximum amount of chunks to process
+# --offset: Offset from the beginning of the dataset
+# --max_accumulation: Maximum number of chunks to keep on memory before dumping the embeddings on file
+# --chunks_per_file: Number of chunks to store in each file
+# --device: Device where to run the embedder
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 

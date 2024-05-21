@@ -5,19 +5,24 @@ from transformers import AutoTokenizer
 import json
 
 from backend.vector_database.dataset import DatasetSQL
-from backend.vector_database.embedder_wrapper import EmbedderWrapper
 
 DB_DIR_DEFAULT = "scripts/dataset/data"
 DB_NAME_DEFAULT = "dataset"
-model_path = "BAAI/bge-small-en-v1.5"
+MODEL_PATH = "BAAI/bge-small-en-v1.5"
 
 COUNT = 1000
 DUMP = 200_000
+
+# This script generates a report on the length of the chunks in the dataset.
+# In particular, it counts the number of chunks with a length greater than 512,
+# which is the maximum length allowed by the embedding model.
+# The report is stored in the scripts/embeddings/report_length_chunks.json file.
+
 curr_d = DUMP
 
 dataset = DatasetSQL(db_path=os.path.join(DB_DIR_DEFAULT, DB_NAME_DEFAULT + ".db"))
 
-tokenizer = AutoTokenizer.from_pretrained(model_path)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 
 total_chunks = dataset.count_of_chunks()
 
