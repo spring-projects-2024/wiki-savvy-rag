@@ -69,9 +69,9 @@ def main():
         "num_samples": len(train_data),
     }
 
-    WandbLogger.log_dataset(
-        train_data, train_metadata, project="rag", entity="mattia-scardecchia"
-    )
+    # WandbLogger.log_dataset(
+    #     train_data, train_metadata, project="rag", entity="mattia-scardecchia"
+    # )
 
     print("Preparing training...")
 
