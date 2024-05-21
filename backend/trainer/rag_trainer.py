@@ -101,6 +101,8 @@ def prepare_for_qlora(model: AutoModelForCausalLM) -> AutoModelForCausalLM:
         ],
         bias="none",
         task_type=TaskType.CAUSAL_LM,
+        lora_alpha=16,
+        lora_dropout=0.1,
     )
     model = get_peft_model(model, lora_config)
     return model

@@ -21,7 +21,7 @@ TOP_P = 0.9
 
 
 def compute_probabilities_for_training(
-        forward_output: Dict[str, torch.Tensor],
+    forward_output: Dict[str, torch.Tensor],
 ) -> dict[str, torch.Tensor]:
     """
     This method takes the output of replug_forward, computes the probabilities of the tokens
@@ -96,12 +96,15 @@ class RagHandler(nn.Module):
         if llm_generation_config is not None:
             self.llm_generation_config.update(llm_generation_config)
 
-    def __call__(self, batch: dict) -> dict:
+    def forward(self, batch: dict) -> dict:
         # for use with RagTrainer
         return self.forward_batch_query_single_doc(batch)
 
     def to(self, device: str):
-        """Move the model to the given device."""
+        """
+        Move the model to the given device.
+        We override this to move also faiss and embedder to device.
+        """
         self.llm.model.to(device)
         self.llm.device = device
         self.faiss.to(device)
@@ -130,58 +133,6 @@ class RagHandler(nn.Module):
 
         return mess_prep
 
-    # def forward_single_query_multiple_docs(
-    #     self,
-    #     query: str,
-    #     answer: str,
-    # ) -> Dict[str, torch.Tensor]:
-    #     """
-    #     Retrieve documents with faiss, craft a prompt for each document, and get the logits for each prompt.
-    #     Return the logits and the scores of the retrieved documents, normalized. Also return
-    #     the length of the answer part of the prompt.
-    #     Output tensors are on the same device as the model.
-    #     """
-    #     retrieved_docs = self.faiss.search_text(query)
-    #     headers = []  # strings
-    #     scores = []  # floats
-    #
-    #     for doc, score in retrieved_docs:
-    #         # WARNING THIS IS WRONG
-    #         header = f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:\n"
-    #         headers.append(header)
-    #         scores.append(score)
-    #
-    #     tokenized_headers = self.llm.tokenizer(
-    #         headers, return_tensors="pt", padding=True
-    #     )  # (num_docs, seq_len)
-    #     tokenized_answer = self.llm.tokenizer(
-    #         answer, return_tensors="pt"
-    #     )  # (1, seq_len)
-    #     input_ids = torch.cat(
-    #         [tokenized_headers["input_ids"], tokenized_answer["input_ids"]], dim=1
-    #     )  # (num_docs, seq_len)
-    #     attention_mask = torch.cat(
-    #         [tokenized_headers["attention_mask"], tokenized_answer["attention_mask"]],
-    #         dim=1,
-    #     )  # (num_docs, seq_len)
-    #     batch = {
-    #         "input_ids": input_ids,
-    #         "attention_mask": attention_mask,
-    #     }
-    #
-    #     batch["input_ids"] = batch["input_ids"].to(self.llm.device)
-    #     batch["attention_mask"] = batch["attention_mask"].to(self.llm.device)
-    #     logits = self.llm.get_logits(batch)  # (num_docs, seq_len, vocab_size)
-    #     scores = torch.tensor(scores)  # (num_docs,)
-    #     scores /= scores.sum()
-    #     answer_length = tokenized_answer["input_ids"].shape[1]
-    #
-    #     return {
-    #         "logits": logits,
-    #         "scores": scores,
-    #         "answer_length": answer_length,
-    #     }
-
     def forward_batch_query_single_doc(self, batch: Dict):
         """
         Does rag inference with a single document retrieved for each query.
@@ -197,14 +148,12 @@ class RagHandler(nn.Module):
         answers = [answer + eos_token for answer in answers]
 
         retrieved_docs = self.faiss.search_multiple_texts(queries, n_neighbors=1)
-        # retrieved_docs = [[("ciao", 0.5)]]
         headers: List[str] = []
         for query, doc in zip(queries, retrieved_docs):
             doc_content, doc_score = doc[0]
             # header = f"Context:\n{doc_content}\n\nQuery:\n{query}\n\nAnswer:\n"
-
-            mess_prep = self.craft_autoregressive_query(query, doc_content)
-            headers.append(mess_prep)
+            header = self.craft_autoregressive_query(query, doc_content)
+            headers.append(header)
 
         tokenized_headers: BatchEncoding = self.llm.tokenizer(
             headers, padding=False, return_tensors="pt"
@@ -478,26 +427,6 @@ class RagHandler(nn.Module):
     def add_arxiv_paper(self, paper):
         raise NotImplementedError
 
-
-INDEX_PATH = "scripts/vector_database/data/default.index"
-DB_PATH = "scripts/dataset/data/dataset.db"
-
-# TODO: To clean up
-if __name__ == "__main__":
-    print("i'm alive")
-    embedder = EmbedderWrapper("cpu")
-    dataset = DatasetSQL(db_path=DB_PATH)
-    rag_handler = RagHandler(
-        model_name="Minami-su/Qwen1.5-0.5B-Chat_llamafy",
-        device="cpu",
-        use_rag=True,
-        # faiss_kwargs={
-        #     "index_path": INDEX_PATH,
-        #     "dataset": dataset,
-        #     "embedder": embedder,
-        # },
-    )
-
     # x = rag_handler.forward_batch_query_single_doc(
     #     {"query": ["ciao", "come", "stai"], "answer": ["bene", "molto", "adjpasd"]}
     # )
@@ -610,3 +539,55 @@ if __name__ == "__main__":
     #         )  # (seq_len, vocab_size)
     #         avg_logits_for_every_query.append(avg_logits)
     #     return avg_logits_for_every_query  # (num_queries, seq_len, vocab_size)
+
+    # def forward_single_query_multiple_docs(
+    #     self,
+    #     query: str,
+    #     answer: str,
+    # ) -> Dict[str, torch.Tensor]:
+    #     """
+    #     Retrieve documents with faiss, craft a prompt for each document, and get the logits for each prompt.
+    #     Return the logits and the scores of the retrieved documents, normalized. Also return
+    #     the length of the answer part of the prompt.
+    #     Output tensors are on the same device as the model.
+    #     """
+    #     retrieved_docs = self.faiss.search_text(query)
+    #     headers = []  # strings
+    #     scores = []  # floats
+    #
+    #     for doc, score in retrieved_docs:
+    #         # WARNING THIS IS WRONG
+    #         header = f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:\n"
+    #         headers.append(header)
+    #         scores.append(score)
+    #
+    #     tokenized_headers = self.llm.tokenizer(
+    #         headers, return_tensors="pt", padding=True
+    #     )  # (num_docs, seq_len)
+    #     tokenized_answer = self.llm.tokenizer(
+    #         answer, return_tensors="pt"
+    #     )  # (1, seq_len)
+    #     input_ids = torch.cat(
+    #         [tokenized_headers["input_ids"], tokenized_answer["input_ids"]], dim=1
+    #     )  # (num_docs, seq_len)
+    #     attention_mask = torch.cat(
+    #         [tokenized_headers["attention_mask"], tokenized_answer["attention_mask"]],
+    #         dim=1,
+    #     )  # (num_docs, seq_len)
+    #     batch = {
+    #         "input_ids": input_ids,
+    #         "attention_mask": attention_mask,
+    #     }
+    #
+    #     batch["input_ids"] = batch["input_ids"].to(self.llm.device)
+    #     batch["attention_mask"] = batch["attention_mask"].to(self.llm.device)
+    #     logits = self.llm.get_logits(batch)  # (num_docs, seq_len, vocab_size)
+    #     scores = torch.tensor(scores)  # (num_docs,)
+    #     scores /= scores.sum()
+    #     answer_length = tokenized_answer["input_ids"].shape[1]
+    #
+    #     return {
+    #         "logits": logits,
+    #         "scores": scores,
+    #         "answer_length": answer_length,
+    #     }
