@@ -8,7 +8,7 @@ DB_NAME = "dataset"
 INDEX_PATH = "scripts/vector_database/data/default.index"
 
 # This script loads the embeddings files and checks if the embeddings are correct.
-# It is used to check that the output of cluster_script_embedding.py is correct.
+# It is used to check that the output of train_vector_database.py is correct.
 # Should run this script only when the index file small
 
 if __name__ == "__main__":
