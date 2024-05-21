@@ -70,6 +70,7 @@ class RagHandler(nn.Module):
         tokenizer_kwargs: Optional[dict] = None,
         faiss_kwargs: Optional[dict] = None,
         use_qlora: bool = False,
+        pretrained_model_path: Optional[str] = None,
     ):
         super().__init__()
         llm_kwargs = llm_kwargs if llm_kwargs is not None else {}
@@ -89,6 +90,7 @@ class RagHandler(nn.Module):
             llm_kwargs=llm_kwargs,
             tokenizer_kwargs=tokenizer_kwargs,
             use_qlora=use_qlora,
+            pretrained_model_path=pretrained_model_path,
         )
         self.use_rag = use_rag
         self.device = device

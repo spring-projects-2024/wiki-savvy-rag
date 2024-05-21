@@ -178,6 +178,7 @@ if __name__ == "__main__":
         "seed": 42,
         "wandb_project": "ajdoasjda",
         "compile_model": False,
+        "checkpoint_interval_steps": 1000,
     }
 
     print("Training...")
@@ -187,3 +188,12 @@ if __name__ == "__main__":
     print("Saving...")
     rag_trainer.model.llm.save_weights("modello_salvato")
     # rag_trainer.train()
+
+    rag_handler = RagHandler(
+        model_name=None,
+        device="cpu",
+        use_qlora=False,
+        llm_generation_config=None,
+        llm_kwargs=None,
+        pretrained_model_path="modello_salvato",
+    )
