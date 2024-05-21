@@ -66,13 +66,13 @@ python scripts/dataset/populate_dataset.py
     --db_name="dataset"
 ```
 
-### Calculate embeddings
+### Compute embeddings
 
 The following script calculates the embeddings and dumps them on multiple files in the specified folder.
 The required space on disk for all the embeddings is about 20GB (*to confirm*).
 
 ```bash
-python scripts/embeddings/cluster_script_embedding.py
+python scripts/embeddings/compute_embeddings.py
     --device "cuda:0"
     --db_dir "scripts/dataset/data"
     --db_name="dataset"
@@ -94,8 +94,7 @@ The required space on disk depends on the chosen index factory.
 
 ```bash
 python scripts/vector_database/train_vector_database.py
-    --device "cuda:0"
-    --index "SQ8"
+    --index "PQ128"
     --training_size 0.1
     --input_dir "scripts/embeddings/data"
     --output "scripts/vector_database/data/default.index"
@@ -122,4 +121,12 @@ pip install python-magic-bin
 
 ## Reproduce our results 
 
+### Benchmark on FAISS indices
+
+### Benchmark on MMLU  
+
+### Train LLM
+
 ## ChatBot
+
+*Include animated gif*

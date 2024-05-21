@@ -22,6 +22,6 @@ source activate base
 
 conda info --envs
 
-python3 scripts/embeddings/cluster_script_embedding.py --device "cuda" --max_accumulation 250 --offset $1 --chunks $2
+python3 scripts/embeddings/compute_embeddings.py --device "cuda" --max_accumulation 250 --offset $1 --chunks $2
 
 conda deactivate
