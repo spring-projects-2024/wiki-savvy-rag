@@ -32,7 +32,6 @@ def main():
     log_to_wandb = config["log_to_wandb"]
     log_interval = config["log_interval"]
     checkpoint_interval_steps = config["checkpoint_interval_steps"]
-    checkpoint_interval = config["checkpoint_interval"]
     seed = config["seed"]
     wandb_project = config["wandb_project"]
 
@@ -52,7 +51,6 @@ def main():
         tokenizer_kwargs=tokenizer_kwargs,
         faiss_kwargs=faiss_kwargs,
     )
-
 
     # todo: check if this is necessary when reading from disk an already quantized model
     rag_handler.llm.model = prepare_for_qlora(rag_handler.llm.model)
