@@ -15,10 +15,10 @@
     },
   llm_generation_config: null,
   llm_kwargs: null,
-  optimizer_params: { lr: 0.0002, weight_decay: 0.001 },
+  optimizer_params: { lr: 0.001, weight_decay: 0.001 },
   max_epochs: 1,
   batch_size: 1,
   gradient_accumulation_steps: 4,
   log_interval: 10,
-  checkpoint_interval_steps: 5000,
+  checkpoint_interval_steps: 1000,
 }

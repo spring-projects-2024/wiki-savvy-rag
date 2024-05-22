@@ -10,6 +10,8 @@ from torch.optim import AdamW
 from backend.benchmark.utils import load_yahoo_answers, load_mmlu
 from transformers import get_linear_schedule_with_warmup
 
+import sys
+sys.stdout = sys.stderr
 
 def main():
 
@@ -77,6 +79,8 @@ def main():
     print("Preparing training...")
 
     optimizer = AdamW(rag_handler.llm.model.parameters(), **optimizer_params)
+
+
     criterion = RagCriterion()
     num_training_steps = len(train_loader) * max_epochs
     num_warmup_steps = int(0.1 * num_training_steps)
@@ -99,7 +103,7 @@ def main():
         "scheduler": scheduler,
         "log_to_wandb": log_to_wandb,
         "log_interval": log_interval,
-        "checkpoint_root_dir": "../checkpoints",
+        "checkpoint_root_dir": "checkpoints",
         "seed": seed,
         "wandb_project": wandb_project,
         "compile_model": False,
@@ -108,9 +112,6 @@ def main():
     }
 
     print("Training...")
-
-    for name, param in rag_handler.named_parameters():
-        print(name, param.requires_grad)
 
     rag_trainer = RagTrainer(**train_config)
     rag_trainer.train()
