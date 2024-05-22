@@ -1,6 +1,5 @@
 import streamlit as st
 
-from backend.arxiv.utils import get_id_from_link_prompt
 from chatbot_controller import load_controller
 from sidebar import build_sidebar
 import os
@@ -22,31 +21,33 @@ if "messages" not in st.session_state:
 
 # Display chat messages
 for message in st.session_state.messages:
+    if (
+        message["role"] == "assistant"
+        and message.get("retrieved_docs")
+        and len(message["retrieved_docs"]) > 0
+    ):
+        with st.chat_message("rag", avatar=":material/article:"):
+            st.write(
+                controller.build_retrieved_docs_html(message["retrieved_docs"]),
+                unsafe_allow_html=True,
+            )
     with st.chat_message(message["role"]):
-        if (
-            message["role"] == "assistant"
-            and message.get("retrieved_docs")
-            and len(message["retrieved_docs"]) > 0
-        ):
-            st.markdown(controller.build_retrieved_docs_str(message["retrieved_docs"]))
         st.markdown(message["content"])
 
-if prompt := st.chat_input(
-    "Please ask a question. (You can also augment my reply by indicating arxiv paper links) "
-):
-    arxiv_paper_ids = get_id_from_link_prompt(prompt)
-    if arxiv_paper_ids:
-        st.write(arxiv_paper_ids)
-
+if prompt := st.chat_input("Please ask a question."):
     st.chat_message("user").markdown(prompt)
     with st.spinner("Thinking..."):
         stream, retrieved_docs = controller.inference(st.session_state.messages, prompt)
 
     st.session_state.messages.append({"role": "user", "content": prompt})
 
+    if len(retrieved_docs) > 0:
+        with st.chat_message("rag", avatar=":material/article:"):
+            st.write(
+                controller.build_retrieved_docs_html(retrieved_docs),
+                unsafe_allow_html=True,
+            )
     with st.chat_message("assistant"):
-        if len(retrieved_docs) > 0:
-            st.markdown(controller.build_retrieved_docs_str(retrieved_docs))
         response = st.write_stream(stream)
 
     st.session_state.messages.append(
