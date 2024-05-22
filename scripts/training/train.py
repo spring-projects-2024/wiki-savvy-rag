@@ -80,11 +80,12 @@ def main():
     criterion = RagCriterion()
     num_training_steps = len(train_loader) * max_epochs
     num_warmup_steps = int(0.1 * num_training_steps)
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer=optimizer,
-        num_warmup_steps=num_warmup_steps,
-        num_training_steps=num_training_steps,
-    )
+    # scheduler = get_linear_schedule_with_warmup(
+    #     optimizer=optimizer,
+    #     num_warmup_steps=num_warmup_steps,
+    #     num_training_steps=num_training_steps,
+    # )
+    scheduler = None
 
     train_config = {
         "model": rag_handler,
