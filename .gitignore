@@ -180,3 +180,9 @@ backend/vector_database/data/*
 scripts/dataset/data/*
 scripts/vector_database/data/flat.index
 scripts/vector_database/data/default.index
+paper/reference/*
+paper/wiki-savvy-rag.aux
+paper/wiki-savvy-rag.out
+paper/wiki-savvy-rag.synctex.gz
+paper/wiki-savvy-rag.pdf
+paper/wiki-savvy-rag.blg
