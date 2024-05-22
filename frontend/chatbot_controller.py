@@ -1,5 +1,4 @@
 import os
-from typing import List
 import json
 import time
 from typing import Dict, List
@@ -178,39 +177,14 @@ class ChatbotController:
         query: str,
     ):
         """Return a mock response instead of performing an inference. Used for testing purposes."""
-        response = 'Sure, here\'s an example of how you could write well formatted Markdown text:\n```markdown\n## Chunk 1: *Banana > Banana and dragonfruit salad > Banana and dragonfruit pie*\nI am a mock response.\n```\n\nThis will create a list of three chunks that are related to the topic of "Banana". Each chunk is separated by a line break, which makes it easier for readers to read and understand the content of each chunk. The first chunk is a brief introduction to the topic, followed by three examples of different ways to make banana and dragonfruit salads. The second chunk provides a recipe for a banana split, and the third chunk includes information about the ingredients needed to make banana pudding.'
-        retrieved_docs = [
-            (
-                {
-                    "titles": '["Banana", "Banana and dragonfruit salad", "Banana and dragonfruit pie"]'
-                },
-                1,
-            ),
-            (
-                {
-                    "titles": '["Pina colada", "Pina colada recipe", "Pina colada ingredients"]'
-                },
-                1,
-            ),
-            (
-                {
-                    "titles": '["Banana split", "Banana split recipe", "Banana split ingredients"]'
-                },
-                1,
-            ),
-            (
-                {
-                    "titles": '["Banana bread", "Banana bread recipe", "Banana bread ingredients"]'
-                },
-                1,
-            ),
-            (
-                {
-                    "titles": '["Banana pudding", "Banana pudding recipe", "Banana pudding ingredients"]'
-                },
-                1,
-            ),
-        ]
+
+        response = self.mock_responses[len(history) % len(self.mock_responses)]
+        retrieved_docs = (
+            self.mock_docs[: self.configs["retrieved_docs"]]
+            if self.real_use_rag()
+            else []
+        )
+
         return self._string_generator(response), retrieved_docs
 
     def _post_process_titles(self, text: str):
@@ -223,12 +197,83 @@ class ChatbotController:
             .replace("']", '"]')
         )
 
-    def build_retrieved_docs_str(self, retrieved_docs: List[Dict]):
-        """Build a string representation of the retrieved documents. It includes the titles of the documents and the score."""
-        retrieved_docs_str = ""
+    def build_retrieved_docs_html(self, retrieved_docs: List[Dict]):
+        """Builds the HTML string for the retrieved documents to be displayed in the frontend.
+        It includes the titles of the documents and the score."""
+        retrieved_docs_str = "<p style='font-size: 0.9em; color: rgb(75, 85, 99); background-color: #f9fafb; padding: 0.8rem; border-radius: 8px'>"
         for i, (doc, score) in enumerate(retrieved_docs):
             titles = " > ".join(json.loads(self._post_process_titles(doc["titles"])))
             retrieved_docs_str += f"""  
-            **Chunk {i+1}**: *{titles}* (score: {score})"""
-        retrieved_docs_str += f"\n\n"
+            <strong>Chunk {i+1}</strong>: {titles} (score: {score:.2f})</br>"""
+        retrieved_docs_str += "</p>"
         return retrieved_docs_str
+
+    mock_responses = [
+        "Banana and dragonfruit salad is a delicious and healthy dish that you can make in minutes.",
+        "Pina colada is a refreshing cocktail that is perfect for a hot summer day.",
+        "Banana split is a classic dessert that is loved by people of all ages.",
+        "Banana bread is a simple and delicious treat that you can enjoy for breakfast or as a snack.",
+    ]
+
+    mock_docs = [
+        (
+            {
+                "titles": '["Banana", "Banana and dragonfruit salad", "Banana and dragonfruit pie"]'
+            },
+            1,
+        ),
+        (
+            {
+                "titles": '["Pina colada", "Pina colada recipe", "Pina colada ingredients"]'
+            },
+            1,
+        ),
+        (
+            {
+                "titles": '["Banana split", "Banana split recipe", "Banana split ingredients"]'
+            },
+            1,
+        ),
+        (
+            {
+                "titles": '["Banana bread", "Banana bread recipe", "Banana bread ingredients"]'
+            },
+            1,
+        ),
+        (
+            {
+                "titles": '["Banana pudding", "Banana pudding recipe", "Banana pudding ingredients"]'
+            },
+            1,
+        ),
+        (
+            {
+                "titles": '["Banana cake", "Banana cake recipe", "Banana cake ingredients"]'
+            },
+            1,
+        ),
+        (
+            {
+                "titles": '["Banana muffin", "Banana muffin recipe", "Banana muffin ingredients"]'
+            },
+            1,
+        ),
+        (
+            {
+                "titles": '["Banana smoothie", "Banana smoothie recipe", "Banana smoothie ingredients"]'
+            },
+            1,
+        ),
+        (
+            {
+                "titles": '["Banana chips", "Banana chips recipe", "Banana chips ingredients"]'
+            },
+            1,
+        ),
+        (
+            {
+                "titles": '["Banana split", "Banana split recipe", "Banana split ingredients"]'
+            },
+            1,
+        ),
+    ]

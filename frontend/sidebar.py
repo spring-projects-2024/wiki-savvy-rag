@@ -97,7 +97,7 @@ def build_sidebar():
             """
             )
 
-        with st.form("configs_form", border=False) as form:
+        with st.form("configs_form", border=False):
             st.markdown("## Edit Configurations")
             new_device = st.selectbox(
                 "Device",
@@ -128,7 +128,7 @@ def build_sidebar():
             new_inference_type = st.selectbox(
                 "Inference Type",
                 INFERENCE_TYPES,
-                index=INFERENCE_TYPES.index("naive"),
+                index=INFERENCE_TYPES.index(configs["inference_type"]),
                 format_func=lambda x: INFERENCE_TYPE_MAP[x],
             )
             new_retrieved_docs = st.number_input(
