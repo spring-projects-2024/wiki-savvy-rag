@@ -16,7 +16,7 @@ from chatbot_controller import (
 
 INFERENCE_TYPE_MAP = {
     "naive": "Naive",
-    "autoregressive": "Autoregressive (REPLUG)",
+    "replug": "REPLUG",
     "mock": "Mock (testing purposes)",
 }
 

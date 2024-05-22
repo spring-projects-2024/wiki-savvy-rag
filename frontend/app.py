@@ -6,6 +6,8 @@ import os
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
+st.set_page_config("Wikipedia Savvy", page_icon=":books:")
+
 build_sidebar()
 configs = st.session_state["configs"]
 
@@ -14,7 +16,7 @@ controller = load_controller()
 with st.spinner("Loading/Updating the Chatbot. It could take a while..."):
     controller.update_configs(configs)
 
-st.title("Wikipedia Savvy")
+st.title(":books: Wikipedia Savvy")
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = []

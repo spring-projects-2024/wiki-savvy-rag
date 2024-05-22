@@ -15,13 +15,13 @@ MODELS = [
         "use_qlora": False,
     },
     {
-        "name": "Microsoft Phi-3 Mini 128k Instruct (QLoRA)",
+        "name": "Microsoft Phi-3 Mini 128k Instruct",
         "model": "microsoft/phi-3-mini-128k-instruct",
-        "use_qlora": True,
+        "use_qlora": False,
     },
 ]
 
-INFERENCE_TYPES = ["naive", "autoregressive", "mock"]
+INFERENCE_TYPES = ["naive", "replug", "mock"]
 
 MODEL_DEFAULT = 0
 DB_PATH_DEFAULT = "./scripts/dataset/data/dataset.db"
@@ -50,7 +50,7 @@ class ChatbotController:
             - index_path: str - the path to the Faiss index file (default: "./scripts/vector_database/data/default.index")
             - device: str - the device to run the model on (default: "cpu")
             - use_rag: bool - whether to enhance the query with retrieved documents (default: True)
-        - inference_type: str - the type of inference to perform. It can be "naive", "autoregressive", or "mock" (default: "naive")
+        - inference_type: str - the type of inference to perform. It can be "naive", "replug", or "mock" (default: "naive")
         - retrieved_docs: int - the number of retrieved documents to use in the inference process (default: 5)
         - decoding_strategy: str - the decoding strategy to use in the inference process. It can be "top_k", "top_p", or "greedy" (default: "top_k")
     - rag: RagHandler - an instance of the RagHandler class that handles the RAG model
@@ -129,7 +129,7 @@ class ChatbotController:
             return self._mock_inference(history, query)
         if not self.real_use_rag() or self.configs["inference_type"] == "naive":
             return self._naive_inference(history, query)
-        return self._autoregressive_inference(history, query)
+        return self._replug_inference(history, query)
 
     def _naive_inference(
         self,
@@ -158,13 +158,13 @@ class ChatbotController:
 
         return self._string_generator(response), retrieved_docs
 
-    def _autoregressive_inference(
+    def _replug_inference(
         self,
         history: List[Dict],
         query: str,
     ):
-        """Perform an autoregressive inference using the RAG model. See RagHandler.autoregressive_inference for more details."""
-        return self.rag.autoregressive_inference(
+        """Perform inference with the REPLUG method using the RAG model. See RagHandler.replug_inference for more details."""
+        return self.rag.replug_inference(
             query=query,
             n_docs=self.configs["retrieved_docs"],
             return_generator=True,
