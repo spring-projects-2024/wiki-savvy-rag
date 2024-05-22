@@ -98,8 +98,6 @@ class RagHandler(nn.Module):
         if llm_generation_config is not None:
             self.llm_generation_config.update(llm_generation_config)
 
-        # to make wandb.watch track the model
-        self.idea_zozza_ma_brillante_di_dario = self.llm.model
 
     def forward(self, batch: dict) -> dict:
         # for use with RagTrainer
