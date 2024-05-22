@@ -4,6 +4,13 @@ pandas
 spacy
 torch
 transformers
+datasets
 matplotlib
 faiss-cpu
-datasets
+accelerate
+streamlit
+refextract
+libmagic
+arxiv
+peft
+bitsandbytes

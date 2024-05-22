@@ -1,9 +1,10 @@
 import time
 import json
-from backend.benchmark.utils import format_question, craft_query, load_mmlu
+from backend.benchmark.utils import craft_query, load_mmlu
 import argparse
 import yaml
 import datasets
+import os
 from backend.model.rag_handler import RagHandler
 
 
@@ -37,22 +38,12 @@ def evaluate(
             craft_query(question, chat=True, examples=examples) for question in batch
         ]
         histories = [[] for _ in range(batch_size)]
-        responses = rag_handler.inference(
+        responses, _ = rag_handler.naive_inference(
             histories,
             queries,
         )
         for question, response in zip(batch, responses):
-            assert type(response) == list
-            response = response[0]  # extract the first mysterious dictionary
-            assert type(response) == dict
-            response = response["generated_text"]
-            assert type(response) == list
-            response = response[-1]  # extract the last message of the conversation
-            assert type(response) == dict
-            assert response["role"] == "assistant"
-            response = response["content"]
-            assert type(response) == str
-
+            response = response.strip()
             complete_response = response
 
             response = response[0].lower()  # extract first character
@@ -110,8 +101,8 @@ def main():
         model_name=model_name,
         device=device,
         use_rag=args.use_rag,
-        llm_config=rag_kwargs,
-        model_kwargs=model_kwargs,
+        llm_generation_config=rag_kwargs,
+        llm_kwargs=model_kwargs,
         tokenizer_kwargs=tokenizer_kwargs,
         faiss_kwargs=faiss_kwargs,
     )
@@ -130,7 +121,8 @@ def main():
     if args.output:
         output = args.output
     else:
-        output = f"scripts/benchmark/mmlu_{time.strftime('%Y-%m-%d-%H-%M-%S')}.json"
+        os.makedirs("scripts/benchmark/out", exist_ok=True)
+        output = f"scripts/benchmark/out/mmlu_{time.strftime('%Y-%m-%d-%H-%M-%S')}.json"
 
     result = {
         "metrics": metrics,

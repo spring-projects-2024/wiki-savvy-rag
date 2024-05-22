@@ -3,12 +3,21 @@ import os
 
 from tqdm import tqdm
 from backend.data_cleaning import utils
-from backend.vector_database.dataset import Dataset
+from backend.vector_database.dataset import DatasetSQL
 
 INPUT_FILE_DEFAULT = "wikidump_processing/data/subsample_chunkeder.xml"
 DB_DIR_DEFAULT = "scripts/dataset/data"
 DB_NAME_DEFAULT = "dataset"
 PAGES_TO_PROCESS_DEFAULT = utils.N_PAGES
+
+
+# This script populates the dataset database with the chunks extracted from the subsample_chunkeder.xml file.
+# The command line arguments are:
+# --input: Location of the subsample_chunkeder.xml file
+# --db_dir: Directory where the database is/will be located
+# --db_name: Name of the database
+# --pages: Maximum amount of pages to insert in database
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -44,7 +53,7 @@ if __name__ == "__main__":
         print("Specified directory doesn't exist. Creating it...")
         os.mkdir(args.db_dir)
 
-    dataset = Dataset(db_path=os.path.join(args.db_dir, args.db_name + ".db"))
+    dataset = DatasetSQL(db_path=os.path.join(args.db_dir, args.db_name + ".db"))
 
     print("Resetting the database...")
     dataset.drop_tables()

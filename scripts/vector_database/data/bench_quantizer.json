@@ -1,0 +1,270 @@
+{
+    "index": "SQ4",
+    "ranks": {
+        "rank_1": 0.72,
+        "rank_10": 0.832,
+        "rank_50": 0.8476666666666667,
+        "rank_100": 0.8558
+    },
+    "elapsed_time": "00:03:53.59",
+    "size_on_disk": 2609777937,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "SQ8",
+    "ranks": {
+        "rank_1": 0.99,
+        "rank_10": 0.9873333333333333,
+        "rank_50": 0.9885333333333334,
+        "rank_100": 0.9892
+    },
+    "elapsed_time": "00:03:29.50",
+    "size_on_disk": 5219552721,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "PQ64",
+    "ranks": {
+        "rank_1": 0.4166666666666667,
+        "rank_10": 0.535,
+        "rank_50": 0.5798,
+        "rank_100": 0.5919333333333333
+    },
+    "elapsed_time": "00:00:52.62",
+    "size_on_disk": 870318230,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "PQ128",
+    "ranks": {
+        "rank_1": 0.63,
+        "rank_10": 0.781,
+        "rank_50": 0.8038,
+        "rank_100": 0.8144333333333333
+    },
+    "elapsed_time": "00:01:55.76",
+    "size_on_disk": 1740243158,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "OPQ64_256,IVF1000_HNSW32,PQ64x4fsr",
+    "ranks": {
+        "rank_1": 0.18,
+        "rank_10": 0.2613333333333333,
+        "rank_50": 0.2796666666666667,
+        "rank_100": 0.2834333333333333
+    },
+    "elapsed_time": "00:00:00.11",
+    "size_on_disk": 545916084,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "OPQ64_256,IVF2000_HNSW32,PQ64x4fsr",
+    "ranks": {
+        "rank_1": 0.14,
+        "rank_10": 0.24933333333333332,
+        "rank_50": 0.2694,
+        "rank_100": 0.27553333333333335
+    },
+    "elapsed_time": "00:00:00.01",
+    "size_on_disk": 547695892,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "OPQ64_256,IVF5000_HNSW32,PQ64x4fsr",
+    "ranks": {
+        "rank_1": 0.14333333333333334,
+        "rank_10": 0.247,
+        "rank_50": 0.2717333333333333,
+        "rank_100": 0.27143333333333336
+    },
+    "elapsed_time": "00:00:00.01",
+    "size_on_disk": 553176884,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "OPQ128_512,IVF1000_HNSW32,PQ128x4fsr",
+    "ranks": {
+        "rank_1": 0.2866666666666667,
+        "rank_10": 0.368,
+        "rank_50": 0.38493333333333335,
+        "rank_100": 0.38293333333333335
+    },
+    "elapsed_time": "00:00:00.01",
+    "size_on_disk": 982815924,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "OPQ128_512,IVF2000_HNSW32,PQ128x4fsr",
+    "ranks": {
+        "rank_1": 0.2966666666666667,
+        "rank_10": 0.3433333333333333,
+        "rank_50": 0.36533333333333334,
+        "rank_100": 0.3656
+    },
+    "elapsed_time": "00:00:00.01",
+    "size_on_disk": 986153236,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "OPQ128_512,IVF5000_HNSW32,PQ128x4fsr",
+    "ranks": {
+        "rank_1": 0.25,
+        "rank_10": 0.3233333333333333,
+        "rank_50": 0.34086666666666665,
+        "rank_100": 0.33403333333333335
+    },
+    "elapsed_time": "00:00:00.01",
+    "size_on_disk": 996253492,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "OPQ256_1024,IVF1000_HNSW32,PQ256x4fsr",
+    "ranks": {
+        "rank_1": 0.4066666666666667,
+        "rank_10": 0.4643333333333333,
+        "rank_50": 0.47373333333333334,
+        "rank_100": 0.4730333333333333
+    },
+    "elapsed_time": "00:00:00.03",
+    "size_on_disk": 1856656564,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "OPQ256_1024,IVF2000_HNSW32,PQ256x4fsr",
+    "ranks": {
+        "rank_1": 0.38333333333333336,
+        "rank_10": 0.438,
+        "rank_50": 0.4434666666666667,
+        "rank_100": 0.439
+    },
+    "elapsed_time": "00:00:00.02",
+    "size_on_disk": 1862908180,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "OPQ256_1024,IVF5000_HNSW32,PQ256x4fsr",
+    "ranks": {
+        "rank_1": 0.3466666666666667,
+        "rank_10": 0.388,
+        "rank_50": 0.3802,
+        "rank_100": 0.3666
+    },
+    "elapsed_time": "00:00:00.02",
+    "size_on_disk": 1882214196,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "HNSW16_SQ4",
+    "ranks": {
+        "rank_1": 0.5933333333333334,
+        "rank_10": 0.661,
+        "rank_50": 0.5829333333333333,
+        "rank_100": 0.4871666666666667
+    },
+    "elapsed_time": "00:00:00.11",
+    "size_on_disk": 4570780394,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false   
+},
+{
+    "index": "HNSW16_PQ12",
+    "ranks": {
+        "rank_1": 0.0,
+        "rank_10": 0.0036666666666666666,
+        "rank_50": 0.0054666666666666665,
+        "rank_100": 0.005033333333333333
+    },
+    "elapsed_time": "00:00:00.01",
+    "size_on_disk": 2124506683,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "HNSW16_PQ24",
+    "ranks": {
+        "rank_1": 0.0,
+        "rank_10": 0.002,
+        "rank_50": 0.0021333333333333334,
+        "rank_100": 0.0020666666666666667
+    },
+    "elapsed_time": "00:00:00.01",
+    "size_on_disk": 2287617607,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "HNSW32_PQ12",
+    "ranks": {
+        "rank_1": 0.03333333333333333,
+        "rank_10": 0.07333333333333333,
+        "rank_50": 0.10013333333333334,
+        "rank_100": 0.10966666666666666
+    },
+    "elapsed_time": "00:00:00.02",
+    "size_on_disk": 3862425891,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},
+{
+    "index": "HNSW32_PQ24",
+    "ranks": {
+        "rank_1": 0.24,
+        "rank_10": 0.31933333333333336,
+        "rank_50": 0.353,
+        "rank_100": 0.34863333333333335
+    },
+    "elapsed_time": "00:00:00.04",
+    "size_on_disk": 4025536815,
+    "mmul_sample_size": 300,
+    "nprobe": 32,
+    "training_size": 0.01,
+    "train_on_gpu": false
+},

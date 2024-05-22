@@ -7,23 +7,35 @@ import tarfile
 import time
 from typing import List
 from urllib.request import urlretrieve
-import backend.arxiv.utils as utils
-import tqdm
+import arxiv
 from refextract import extract_references_from_url
+import re
+
+arx_client = arxiv.Client(delay_seconds=0.0)
 
 
-arx_client = utils.Client(delay_seconds=0.0)
+def get_id_from_link_prompt(query: str) -> List[str]:
+    """
+    Takes the query for the LLM, from the user and checks if it contains a link to archive paper.
+    If that is the case, returns paper ids from the link, otherwise returns None
+    """
+
+    pattern = r"https:\/\/arxiv\.org\/abs\/([0-9]{4}\.[0-9]{5})"
+    ret_ids = re.findall(pattern, query)
+    if len(ret_ids) != 0:
+        return set(ret_ids)
+    return None
 
 
-def get_info_from_title(title: str, client: utils.Client = arx_client) -> utils.Result:
+def get_info_from_title(title: str, client: arxiv.Client = arx_client) -> arxiv.Result:
     """
     Get info from a paper given its title.
     :raises Exception if no paper is found
     """
-    search = utils.Search(
+    search = arxiv.Search(
         query=title,
         max_results=20,
-        sort_by=utils.SortCriterion.Relevance,
+        sort_by=arxiv.SortCriterion.Relevance,
     )
 
     results = client.results(search)
@@ -37,12 +49,12 @@ def get_info_from_title(title: str, client: utils.Client = arx_client) -> utils.
     raise Exception(f"No papers with title {title} found")
 
 
-def get_title_from_id(id: str, client: utils.Client) -> str:
+def get_title_from_id(id: str, client: arxiv.Client) -> str:
     """
     Get the title from the id.
     :raises exception if no paper is found
     """
-    search = utils.Search(
+    search = arxiv.Search(
         query=id,
         max_results=1,
     )
@@ -159,6 +171,10 @@ def parse_references(references):
 
 if __name__ == "__main__":
     title = "Supersymmetric Quantum Mechanics, multiphoton algebras and coherent states"
+    x = get_id_from_link_prompt(
+        "i have two papers here https://arxiv.org/abs/2005.11401  and also https://arxiv.org/abs/2405.10302 https://arxiv.org/abs/12345678 https://arxiv.org/src/87654321/supplementary.zip"
+    )
+    print(x)
 
     id = get_info_from_title(title, arx_client).get_short_id()
     print(f"{id=}")

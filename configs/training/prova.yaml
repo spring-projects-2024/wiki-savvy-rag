@@ -1,0 +1,24 @@
+{
+  device: cuda,
+  use_qlora: true,
+  log_to_wandb: true,
+  wandb_project: "rag",
+  seed: 42,
+  model_name: Qwen/Qwen1.5-0.5B-Chat,
+  model_kwargs: { torch_dtype: auto },
+  tokenizer_kwargs: {},
+  faiss_kwargs:
+    {
+      index_path: scripts/vector_database/data/PQ128.index,
+      embedder: null,
+      dataset: "scripts/dataset/data/dataset.db",
+    },
+  llm_generation_config: null,
+  llm_kwargs: null,
+  optimizer_params: { lr: 0.0002, weight_decay: 0.001 },
+  max_epochs: 1,
+  batch_size: 1,
+  gradient_accumulation_steps: 4,
+  log_interval: 10,
+  checkpoint_interval_steps: 5000,
+}

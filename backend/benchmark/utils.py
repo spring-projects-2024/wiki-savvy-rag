@@ -1,15 +1,19 @@
 import datasets
 from datasets import load_dataset
 from typing import Union, Optional
-from backend.benchmark.constants import stem_subcategories
+from backend.benchmark.constants import stem_subcategories, yahoo_stem_categories
 
 
-def load_mmlu(split: str = "test", subset: Union[list, str, None] = "stem") -> datasets.Dataset:
+def load_mmlu(
+    split: str = "test", subset: Union[list, str, None] = "stem"
+) -> datasets.Dataset:
     """
-    :param split: one of test, validation, dev, auxiliary_train
-    :param subset: one of None, 'stem', or a list of strings. If None,
-    return the entire dataset. If 'stem', return only the STEM subcategories.
-    If a list of strings, return only the subcategories in the list.
+    Function to load the MMLU dataset.
+    :param split: specifies the type of dataset split to be returned. Acceptable values are 'test', 'validation', 'dev', and 'auxiliary_train'.
+    :param subset: determines the subset of the dataset to be returned. Acceptable values are None, 'stem', or a list of strings.
+    If None, the function will return the entire dataset.
+    If 'stem', the function will return only the subcategories related to Science, Technology, Engineering, and Mathematics (STEM).
+    If a list of strings is provided, the function will return only the subcategories specified in the list.
     """
     dataset = load_dataset("cais/mmlu", "all")
     dataset = dataset[split]
@@ -23,7 +27,28 @@ def load_mmlu(split: str = "test", subset: Union[list, str, None] = "stem") -> d
     return dataset
 
 
-def format_question(question: dict, include_answer: bool = False) -> str:
+def load_yahoo_answers(subset: Union[list, str, None] = "stem") -> datasets.Dataset:
+    """
+    Function to load the Yahoo Answers QA dataset.
+    :param subset: determines the subset of the dataset to be returned. Acceptable values are None, 'stem', or a list of strings.
+    If None, the function will return the entire dataset.
+    If 'stem', the function will return only the subcategories related to Science, Technology, Engineering, and Mathematics (STEM).
+    If a list of strings is provided, the function will return only the subcategories specified in the list.
+    """
+    dataset = load_dataset("yahoo_answers_qa")
+    dataset = dataset["train"]
+    if subset is None:
+        return dataset
+    if isinstance(subset, str):
+        if subset != "stem":
+            raise ValueError("subset must be a list of strings, None, or 'stem'")
+        subset = yahoo_stem_categories
+    dataset = dataset.filter(lambda x: x["main_category"] in subset)
+    dataset = dataset.rename_column("question", "query")
+    return dataset
+
+
+def _format_question(question: dict, include_answer: bool = False) -> str:
     prompt = f"Question: {question['question']}\n"
     for i, choice in enumerate(question["choices"]):
         prompt += f"{chr(65 + i)}. {choice}\n"
@@ -54,17 +79,16 @@ def craft_query(
     prompt += "\n"
     if examples:
         for example in examples:
-            prompt += format_question(example, include_answer=True)
+            prompt += _format_question(example, include_answer=True)
             prompt += "\n\n"
-    prompt += format_question(question, include_answer=False)
+    prompt += _format_question(question, include_answer=False)
+
+    prompt += "\n\nAnswer (only the letter):\n"
     return prompt
 
 
 if __name__ == "__main__":
-    dataset = load_mmlu(split="test", subset="stem")
-    question = dataset[5]
-    examples = [dataset[i] for i in range(5)]
-    prompt = craft_query(question, chat=True, examples=examples)
-    print(prompt)
-    a = {}
-    a.update({"a": 1})
+    dataset = load_yahoo_answers("stem")
+
+    question = dataset[0]
+    print(question)
