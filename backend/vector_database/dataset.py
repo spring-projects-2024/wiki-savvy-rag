@@ -182,7 +182,7 @@ class MockDataset:
     def __init__(self, chunks: list):
         self.chunks = chunks
 
-    def search_chunk(self, id):
+    def search_chunk(self, id) ->  str:
         return self.chunks[id]
 
     def search_chunks(self, ids: list):

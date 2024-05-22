@@ -4,6 +4,7 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 
 from backend.benchmark.utils import load_yahoo_answers, load_mmlu
+from backend.vector_database.dataset import MockDataset
 from jepa.trainer.trainer import Trainer
 from backend.model.rag_handler import RagHandler
 import torch
@@ -129,6 +130,8 @@ def prepare_for_qlora(model: AutoModelForCausalLM) -> AutoModelForCausalLM:
 if __name__ == "__main__":
     print(torch.cuda.is_available())
 
+    md = MockDataset(["ciao"])
+    faiss_kwargs = {"embedder": None, "dataset": md, "index_str": "Flat"}
     rag_handler = RagHandler(
         model_name="Minami-su/Qwen1.5-0.5B-Chat_llamafy",
         device="cpu",
@@ -136,8 +139,11 @@ if __name__ == "__main__":
         llm_generation_config=None,
         llm_kwargs=None,
         # tokenizer_kwargs=tokenizer_kwargs,
-        # faiss_kwargs=faiss_kwargs,
+        faiss_kwargs=faiss_kwargs,
     )
+
+    rag_handler.faiss.train_from_text("ciao")
+    rag_handler.faiss.add_text("ciao")
 
     batch_size = 1
 
@@ -151,7 +157,10 @@ if __name__ == "__main__":
         "num_samples": len(train_data),
     }
 
-    optimizer = AdamW(rag_handler.llm.model.parameters())
+    optimizer = AdamW(rag_handler.parameters(recurse=True), lr=1e-5)
+
+    # get parameters to optimize
+
     criterion = RagCriterion()
     num_training_steps = 20_000  # todo: change
     num_warmup_steps = int(0.1 * num_training_steps)
@@ -185,15 +194,16 @@ if __name__ == "__main__":
 
     rag_trainer = RagTrainer(**train_config)
 
-    print("Saving...")
-    rag_trainer.model.llm.save_weights("modello_salvato")
+    # print("Saving...")
+    # rag_trainer.model.llm.save_weights("modello_salvato")
     # rag_trainer.train()
+    #
+    # print("Loading")
 
-    rag_handler = RagHandler(
-        model_name=None,
-        device="cpu",
-        use_qlora=False,
-        llm_generation_config=None,
-        llm_kwargs=None,
-        pretrained_model_path="modello_salvato",
-    )
+
+    rag_trainer.train_step(next(iter(train_loader)))
+
+    for param in rag_trainer.model.llm.model.parameters():
+        print(param.requires_grad)
+        if param.requires_grad:
+            print(param.grad)

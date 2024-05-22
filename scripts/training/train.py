@@ -53,7 +53,8 @@ def main():
     )
 
     # todo: check if this is necessary when reading from disk an already quantized model
-    rag_handler.llm.model = prepare_for_qlora(rag_handler.llm.model)
+    if use_qlora:
+        rag_handler.llm.model = prepare_for_qlora(rag_handler.llm.model)
 
     print("Preparing data...")
 
@@ -106,6 +107,9 @@ def main():
     }
 
     print("Training...")
+
+    for name, param in rag_handler.named_parameters():
+        print(name, param.requires_grad)
 
     rag_trainer = RagTrainer(**train_config)
     rag_trainer.train()

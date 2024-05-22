@@ -7,11 +7,12 @@ from transformers import (
     pipeline,
 )
 from transformers.utils import ModelOutput
+from torch import nn
 
 DEFAULT_MODEL = "microsoft/phi-3-mini-128k-instruct"
 
 
-class LLMHandler:
+class LLMHandler(nn.Module):
     """
     Handler for a language model.
 
@@ -42,6 +43,7 @@ class LLMHandler:
         :param tokenizer_kwargs:
         :param use_qlora:
         """
+        super().__init__()
         self.device = device
         if llm_kwargs is None:
             llm_kwargs = {}
@@ -60,8 +62,10 @@ class LLMHandler:
 
         self.quantization_config = quantization_config
 
+        print(pretrained_model_path)
+
         if pretrained_model_path is not None:
-            self.model = AutoModelForCausalLM.from_pretrained(pretrained_model_path)
+            self.model = AutoModelForCausalLM.from_pretrained(pretrained_model_path, local_files_only=True)
         else:
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_name,
@@ -72,6 +76,7 @@ class LLMHandler:
             )
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, **tokenizer_kwargs)
+
         self.pipe = pipeline(
             "text-generation",
             model=self.model,
