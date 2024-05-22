@@ -77,7 +77,7 @@ class RagTrainer(Trainer):
         # torch.compile(model.llm.model)  # artigianale. commentalo per spegnerlo
 
     def train_step(self, batch: dict) -> dict:
-        if self.step % self.checkpoint_interval_steps == 0:
+        if self.step != 0 and self.step % self.checkpoint_interval_steps == 0:
             self.make_checkpoint()
         answers = batch["answer"]
         tokenized_answers: BatchEncoding = self.model.llm.tokenizer(
@@ -199,7 +199,6 @@ if __name__ == "__main__":
     # rag_trainer.train()
     #
     # print("Loading")
-
 
     rag_trainer.train_step(next(iter(train_loader)))
 
