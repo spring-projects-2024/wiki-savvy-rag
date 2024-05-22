@@ -16,7 +16,6 @@ from scripts.vector_database.utils import embeddings_iterator, train_vector_db
 
 INPUT_DIR_DEFAULT = "scripts/embeddings/data/"
 OUTPUT_DIR_DEFAULT = "scripts/vector_database/data/"
-CENTROIDS_DEFAULT = 5  # 131072
 DEVICE = "cpu"
 KNN_NEIGHBORS_DEFAULT = 100
 MMLU_SAMPLE_SIZE_DEFAULT = 10
@@ -30,7 +29,6 @@ NPROBE_DEFAULT = 10
 # for the memory usage).
 #
 # The command line arguments are:
-# --centroids: Number of centroids for the IVF quantizer
 # --knn_neighbors: Max number of neighbors for computing recall
 # --nprobe: Number of probes for the IVF quantizer
 # --training_size: Fraction of the dataset to use for training
@@ -109,6 +107,7 @@ def benchmark(
     results["ranks"] = {
         f"rank_{rank}": knn_intersection_measure(I[:, :rank], I_base[:, :rank])
         for rank in [1, 10, 50, 100]
+        if rank <= n_neighbors
     }
 
     # measure the elapsed time
@@ -120,15 +119,15 @@ def benchmark(
     # save the size of the index on disk
     results["size_on_disk"] = size_on_disk
 
-    results["mmul_sample_size"] = mmlu_embds.shape[0]
+    results["mmlu_sample_size"] = mmlu_embds.shape[0]
     results["nprobe"] = nprobe
     results["training_size"] = training_size
     results["train_on_gpu"] = train_on_gpu
-    results["mmul_sample_size"] = mmlu_embds.shape[0]
+    results["mmlu_sample_size"] = mmlu_embds.shape[0]
 
     # save checkpoint of results
     with open(
-        os.path.join(output_dir, "bench_quantizer.json"), "a", encoding="utf-8"
+        os.path.join(output_dir, "benchmark_faiss.json"), "a", encoding="utf-8"
     ) as f:
         json.dump(results, f, indent=4)
         f.write(",\n")
@@ -138,12 +137,6 @@ def benchmark(
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--centroids",
-        type=int,
-        default=CENTROIDS_DEFAULT,
-        help="Number of centroids for the IVF quantizer",
-    )
     parser.add_argument(
         "--knn_neighbors",
         type=int,
@@ -213,8 +206,36 @@ def main():
         np.save(d_path, D_base)
         np.save(i_path, I_base)
 
+    # scalar quantizer
+    for sq in [4, 8]:
+        index_str = f"SQ{sq}"
+        benchmark(
+            index_str,
+            mmlu_embds,
+            I_base,
+            args.training_size,
+            args.train_on_gpu,
+            args.output_dir,
+            args.nprobe,
+            args.knn_neighbors,
+        )
+
+    # product quantizer
+    for pq in [64, 128]:
+        index_str = f"PQ{pq}"
+        benchmark(
+            index_str,
+            mmlu_embds,
+            I_base,
+            args.training_size,
+            args.train_on_gpu,
+            args.output_dir,
+            args.nprobe,
+            args.knn_neighbors,
+        )
+
     # hierarchical indexes, product quantizer
-    for nn in [16, 32, 64]:
+    for nn in [16, 32]:
         for pq in [12, 24]:
             index_str = f"HNSW{nn}_PQ{pq}"
             benchmark(
@@ -229,7 +250,7 @@ def main():
             )
 
     # hierarchical indexes, scalar quantizer
-    for sq in [4, 8]:
+    for sq in [4]:
         for sw_size in [16]:
             index_str = f"HNSW{sw_size}_SQ{sq}"
             benchmark(
@@ -244,9 +265,9 @@ def main():
             )
 
     # IVF indexes, product quantizer
-    for M in [64, 128, 256]:
+    for sq in [64, 128, 256]:
         for centroids in [1000, 2000, 5000]:
-            index_str = f"OPQ{M}_{M * 4},IVF{centroids}_HNSW32,PQ{M}x4fsr"
+            index_str = f"OPQ{sq}_{sq * 4},IVF{centroids}_HNSW32,PQ{sq}x4fsr"
             benchmark(
                 index_str,
                 mmlu_embds,

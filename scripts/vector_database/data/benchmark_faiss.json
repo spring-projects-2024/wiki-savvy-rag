@@ -8,7 +8,7 @@
     },
     "elapsed_time": "00:03:53.59",
     "size_on_disk": 2609777937,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -23,7 +23,7 @@
     },
     "elapsed_time": "00:03:29.50",
     "size_on_disk": 5219552721,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -38,7 +38,7 @@
     },
     "elapsed_time": "00:00:52.62",
     "size_on_disk": 870318230,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -53,7 +53,7 @@
     },
     "elapsed_time": "00:01:55.76",
     "size_on_disk": 1740243158,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -68,7 +68,7 @@
     },
     "elapsed_time": "00:00:00.11",
     "size_on_disk": 545916084,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -83,7 +83,7 @@
     },
     "elapsed_time": "00:00:00.01",
     "size_on_disk": 547695892,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -98,7 +98,7 @@
     },
     "elapsed_time": "00:00:00.01",
     "size_on_disk": 553176884,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -113,7 +113,7 @@
     },
     "elapsed_time": "00:00:00.01",
     "size_on_disk": 982815924,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -128,7 +128,7 @@
     },
     "elapsed_time": "00:00:00.01",
     "size_on_disk": 986153236,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -143,7 +143,7 @@
     },
     "elapsed_time": "00:00:00.01",
     "size_on_disk": 996253492,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -158,7 +158,7 @@
     },
     "elapsed_time": "00:00:00.03",
     "size_on_disk": 1856656564,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -173,7 +173,7 @@
     },
     "elapsed_time": "00:00:00.02",
     "size_on_disk": 1862908180,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -188,7 +188,7 @@
     },
     "elapsed_time": "00:00:00.02",
     "size_on_disk": 1882214196,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -203,10 +203,10 @@
     },
     "elapsed_time": "00:00:00.11",
     "size_on_disk": 4570780394,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
-    "train_on_gpu": false   
+    "train_on_gpu": false
 },
 {
     "index": "HNSW16_PQ12",
@@ -218,7 +218,7 @@
     },
     "elapsed_time": "00:00:00.01",
     "size_on_disk": 2124506683,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -233,7 +233,7 @@
     },
     "elapsed_time": "00:00:00.01",
     "size_on_disk": 2287617607,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -248,7 +248,7 @@
     },
     "elapsed_time": "00:00:00.02",
     "size_on_disk": 3862425891,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false
@@ -263,7 +263,7 @@
     },
     "elapsed_time": "00:00:00.04",
     "size_on_disk": 4025536815,
-    "mmul_sample_size": 300,
+    "mmlu_sample_size": 300,
     "nprobe": 32,
     "training_size": 0.01,
     "train_on_gpu": false

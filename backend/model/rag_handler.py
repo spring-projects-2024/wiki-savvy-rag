@@ -14,7 +14,7 @@ from backend.model.prompt_utils import (
     join_messages_query_rag,
 )
 
-AUTOREGRESSIVE_GEN_MAX_LENGTH = 1000
+REPLUG_GEN_MAX_LENGTH = 1000
 DECODING_STRATEGIES = ["greedy", "top_k", "top_p"]
 TOP_K = 50
 TOP_P = 0.9
@@ -97,7 +97,6 @@ class RagHandler(nn.Module):
         self.llm_generation_config = self.get_default_llm_config()
         if llm_generation_config is not None:
             self.llm_generation_config.update(llm_generation_config)
-
 
     def forward(self, batch: dict) -> dict:
         # for use with RagTrainer
@@ -235,7 +234,7 @@ class RagHandler(nn.Module):
         return next_token
 
     @torch.no_grad()
-    def autoregressive_inference(
+    def replug_inference(
         self,
         query: str,
         n_docs: int = 10,
@@ -243,11 +242,11 @@ class RagHandler(nn.Module):
         return_generator: bool = False,
     ) -> Tuple[Iterable[str], List[Tuple[str, float]]]:
         """
-        This method performs autoregressive generation. It operates as follows:
+        This method performs autoregressive generation using the RePlug method. It operates as follows:
 
         1. Accepts a query as input.
         2. It retrieves relevant passages based on the query.
-        3. For each passage, calculates the probability of the next token based on the query and the passage.
+        3. For each passage separately, calculates the probability of the next token based on the query and the passage.
         4. It then computes the average of the probabilities weighted by the scores of the retrieved documents.
         6. It then applies a decoding strategy to determine the next token based on these probabilities.
         7. This process continues until either the maximum sequence length is reached or an end-of-sequence token is encountered.
@@ -305,7 +304,7 @@ class RagHandler(nn.Module):
         @torch.no_grad()
         def generator():
             answer = []
-            while len(answer) < AUTOREGRESSIVE_GEN_MAX_LENGTH:
+            while len(answer) < REPLUG_GEN_MAX_LENGTH:
                 all_logits = []
 
                 for state in autoregressive_state:
@@ -369,7 +368,7 @@ class RagHandler(nn.Module):
         4. Generates text based on the prompt.
 
         This method leverages the pipeline method of the Transformers library to perform inference.
-        It is inserted here for comparison purposes with the autoregressive generation method.
+        It is inserted here for comparison purposes with the REPLUG generation method.
 
         We are assuming that queries and histories are coherent in type.
         We support both batch inference and single queries, but we assume that if queries is a string then histories
