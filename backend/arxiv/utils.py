@@ -174,7 +174,7 @@ if __name__ == "__main__":
     x = get_id_from_link_prompt(
         "i have two papers here https://arxiv.org/abs/2005.11401  and also https://arxiv.org/abs/2405.10302 https://arxiv.org/abs/12345678 https://arxiv.org/src/87654321/supplementary.zip"
     )
-    print(x)
+    print(get_id_from_link_prompt(x))
 
     id = get_info_from_title(title, arx_client).get_short_id()
     print(f"{id=}")
