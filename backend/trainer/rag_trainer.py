@@ -184,7 +184,8 @@ def debug():
 
     print("Training...")
     rag_trainer = RagTrainer(**train_config)
-    rag_trainer.train_step(next(iter(train_loader)))
+    # rag_trainer.train_step(next(iter(train_loader)))
+    rag_trainer.test_step(next(iter(test_loader)))
 
 
 if __name__ == "__main__":

@@ -30,8 +30,15 @@ def load_mmlu(
 def load_mmlu_for_training(
     split: str = "test", subset: Union[list, str, None] = "stem"
 ) -> datasets.Dataset:
-    dataset = load_mmlu(split=split, subset=subset)
-    dataset = dataset.rename_column("question", "query")
+    dataset: datasets.Dataset = load_mmlu(split=split, subset=subset)
+
+    def write_answer(example):
+        example["answer_new"] = example["choices"][example["answer"]]
+        return example
+
+    dataset = dataset.map(write_answer)
+    dataset = dataset.remove_columns("answer")
+    dataset = dataset.rename_column("answer_new", "answer")
     return dataset
 
 
@@ -100,3 +107,7 @@ if __name__ == "__main__":
 
     question = dataset[0]
     print(question)
+
+
+if __name__ == "__main__":
+    dataset = load_mmlu_for_training("test", None)
