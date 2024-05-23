@@ -240,7 +240,7 @@ class RagHandler(nn.Module):
         n_docs: int = 10,
         decoding_strategy: str = "greedy",
         return_generator: bool = False,
-    ) -> Tuple[Iterable[str], List[Tuple[str, float]]]:
+    ) -> Tuple[Iterable[str] | str, List[Tuple[str, float]]]:
         """
         This method performs autoregressive generation using the RePlug method. It operates as follows:
 
