@@ -20,27 +20,6 @@ from peft import LoraConfig, TaskType, get_peft_model
 from peft.utils import prepare_model_for_kbit_training
 
 
-# class RagCriterionOld(nn.Module):
-#     """
-#     For use with forward_single_query_multiple_docs and compute_probabilities_for_training.
-#     """
-
-#     def __init__(self):
-#         super().__init__()
-#         self.cross_entropy_from_log_proba = nn.NLLLoss(reduction="mean")
-
-#     def forward(self, output: dict, batch: dict) -> dict:
-#         """
-#         :param output: dict with keys "probas", "answer_mask"
-#         :param batch: dict with keys "answer_tokens"
-#         """
-#         probas = output["probas"]
-#         log_probas = torch.log(probas)
-#         target = batch["answer_tokens"]
-#         loss = self.cross_entropy_from_log_proba(log_probas, target)  # TODO: check
-#         return {"loss": loss}
-
-
 class RagCriterion(nn.Module):
     def __init__(self):
         super().__init__()
