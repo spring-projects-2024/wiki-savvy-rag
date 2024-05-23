@@ -106,9 +106,9 @@ def prepare_for_qlora(model: AutoModelForCausalLM) -> AutoModelForCausalLM:
     return model
 
 
-if __name__ == "__main__":
-    print(torch.cuda.is_available())
+def debug():
 
+    print(torch.cuda.is_available())
     md = MockDataset(["ciao"])
     faiss_kwargs = {"embedder": None, "dataset": md, "index_str": "Flat"}
     rag_handler = RagHandler(
@@ -137,8 +137,6 @@ if __name__ == "__main__":
     }
 
     optimizer = AdamW(rag_handler.parameters(recurse=True), lr=1e-5)
-
-    # get parameters to optimize
 
     criterion = RagCriterion()
     num_training_steps = 20_000  # todo: change
@@ -170,18 +168,9 @@ if __name__ == "__main__":
     }
 
     print("Training...")
-
     rag_trainer = RagTrainer(**train_config)
-
-    # print("Saving...")
-    # rag_trainer.model.llm.save_weights("modello_salvato")
-    # rag_trainer.train()
-    #
-    # print("Loading")
-
     rag_trainer.train_step(next(iter(train_loader)))
 
-    for param in rag_trainer.model.llm.model.parameters():
-        print(param.requires_grad)
-        if param.requires_grad:
-            print(param.grad)
+
+if __name__ == "__main__":
+    debug()
