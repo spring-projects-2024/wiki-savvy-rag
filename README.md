@@ -42,6 +42,12 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
+These commands are neatly packaged in a shell script. You can simply run, from the root:
+
+```
+bash bash_scripts/installation.sh
+```
+
 ### Download the Wikipedia Dump
 
 The Wikipedia Dump can be downloaded from [WikiMedia](https://meta.wikimedia.org/wiki/Data_dump_torrents#English_Wikipedia).

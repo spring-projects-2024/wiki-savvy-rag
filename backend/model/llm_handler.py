@@ -62,8 +62,6 @@ class LLMHandler(nn.Module):
 
         self.quantization_config = quantization_config
 
-        print(pretrained_model_path)
-
         if pretrained_model_path is not None:
             self.model = AutoModelForCausalLM.from_pretrained(pretrained_model_path, local_files_only=True)
         else:

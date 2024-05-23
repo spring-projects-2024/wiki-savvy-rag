@@ -1,4 +1,5 @@
 import os
+import random
 from typing import Optional
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
@@ -18,27 +19,6 @@ from transformers import (
 )
 from peft import LoraConfig, TaskType, get_peft_model
 from peft.utils import prepare_model_for_kbit_training
-
-
-# class RagCriterionOld(nn.Module):
-#     """
-#     For use with forward_single_query_multiple_docs and compute_probabilities_for_training.
-#     """
-
-#     def __init__(self):
-#         super().__init__()
-#         self.cross_entropy_from_log_proba = nn.NLLLoss(reduction="mean")
-
-#     def forward(self, output: dict, batch: dict) -> dict:
-#         """
-#         :param output: dict with keys "probas", "answer_mask"
-#         :param batch: dict with keys "answer_tokens"
-#         """
-#         probas = output["probas"]
-#         log_probas = torch.log(probas)
-#         target = batch["answer_tokens"]
-#         loss = self.cross_entropy_from_log_proba(log_probas, target)  # TODO: check
-#         return {"loss": loss}
 
 
 class RagCriterion(nn.Module):
@@ -74,11 +54,32 @@ class RagTrainer(Trainer):
     ):
         self.checkpoint_interval_steps = checkpoint_interval_steps
         super().__init__(model, **kwargs)
-        # torch.compile(model.llm.model)  # artigianale. commentalo per spegnerlo
+        # torch.compile(model.llm.model)  # not compatible with python 3.12...
 
     def train_step(self, batch: dict) -> dict:
         if self.step != 0 and self.step % self.checkpoint_interval_steps == 0:
             self.make_checkpoint()
+        batch = self.condimento_batch(batch)
+        return super().train_step(batch)
+
+    def test_step(self, batch: dict) -> dict:
+        batch = self.condimento_batch(batch)
+        return super().test_step(batch)
+
+    @torch.no_grad()
+    def test_epoch(self) -> float:
+        dataset = self.test_loader.dataset
+        idxs = [random.randint(0, len(dataset) - 1) for _ in range(3)]
+        for idx in idxs:
+            batch = dataset[idx]
+            predicted_answer, retrieved_docs = self.model.replug_inference(
+                batch["query"], n_docs=1
+            )
+            text = f"Context: {retrieved_docs[0]}\n\nQuery: {batch['query']}\n\Predicted Answer: {predicted_answer}"
+            self.logger.log_text(text, "Q&A")
+        return super().test_epoch()
+    
+    def condimento_batch(self, batch: dict) -> dict:
         answers = batch["answer"]
         tokenized_answers: BatchEncoding = self.model.llm.tokenizer(
             answers, padding=False, return_tensors="pt"
@@ -88,8 +89,8 @@ class RagTrainer(Trainer):
             "attention_mask": tokenized_answers["attention_mask"],
         }
         batch["targets"] = targets
-        return super().train_step(batch)
-
+        return batch
+    
     def make_checkpoint(self):
         """
         We override this method because we are using qlora and we want to
@@ -97,6 +98,7 @@ class RagTrainer(Trainer):
         """
         chkpt_dir = os.path.join(
             self.checkpoint_root_dir,
+            self.run_id,
             "step" + str(self.step),
         )
         self.model.llm.save_weights(chkpt_dir)
@@ -127,9 +129,9 @@ def prepare_for_qlora(model: AutoModelForCausalLM) -> AutoModelForCausalLM:
     return model
 
 
-if __name__ == "__main__":
-    print(torch.cuda.is_available())
+def debug():
 
+    print(torch.cuda.is_available())
     md = MockDataset(["ciao"])
     faiss_kwargs = {"embedder": None, "dataset": md, "index_str": "Flat"}
     rag_handler = RagHandler(
@@ -158,8 +160,6 @@ if __name__ == "__main__":
     }
 
     optimizer = AdamW(rag_handler.parameters(recurse=True), lr=1e-5)
-
-    # get parameters to optimize
 
     criterion = RagCriterion()
     num_training_steps = 20_000  # todo: change
@@ -191,18 +191,10 @@ if __name__ == "__main__":
     }
 
     print("Training...")
-
     rag_trainer = RagTrainer(**train_config)
+    # rag_trainer.train_step(next(iter(train_loader)))
+    rag_trainer.test_step(next(iter(test_loader)))
 
-    # print("Saving...")
-    # rag_trainer.model.llm.save_weights("modello_salvato")
-    # rag_trainer.train()
-    #
-    # print("Loading")
 
-    rag_trainer.train_step(next(iter(train_loader)))
-
-    for param in rag_trainer.model.llm.model.parameters():
-        print(param.requires_grad)
-        if param.requires_grad:
-            print(param.grad)
+if __name__ == "__main__":
+    debug()
