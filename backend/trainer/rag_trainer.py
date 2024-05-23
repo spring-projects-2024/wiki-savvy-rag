@@ -1,4 +1,5 @@
 import os
+import random
 from typing import Optional
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
@@ -53,7 +54,7 @@ class RagTrainer(Trainer):
     ):
         self.checkpoint_interval_steps = checkpoint_interval_steps
         super().__init__(model, **kwargs)
-        # torch.compile(model.llm.model)  # artigianale. commentalo per spegnerlo
+        # torch.compile(model.llm.model)  # not compatible with python 3.12...
 
     def train_step(self, batch: dict) -> dict:
         if self.step != 0 and self.step % self.checkpoint_interval_steps == 0:
@@ -69,6 +70,19 @@ class RagTrainer(Trainer):
         batch["targets"] = targets
         return super().train_step(batch)
 
+    @torch.no_grad()
+    def test_epoch(self) -> float:
+        dataset = self.test_loader.dataset
+        idxs = [random.randint(0, len(dataset) - 1) for _ in range(3)]
+        for idx in idxs:
+            batch = dataset[idx]
+            predicted_answer, retrieved_docs = self.model.replug_inference(
+                batch["query"], n_docs=1
+            )
+            text = f"Context: {retrieved_docs[0]}\n\nQuery: {batch["query"]}\n\Predicted Answer: {predicted_answer}"
+            self.logger.log_text(text, "Q&A")
+        return super().test_epoch()
+
     def make_checkpoint(self):
         """
         We override this method because we are using qlora and we want to
@@ -76,6 +90,7 @@ class RagTrainer(Trainer):
         """
         chkpt_dir = os.path.join(
             self.checkpoint_root_dir,
+            self.run_id,
             "step" + str(self.step),
         )
         self.model.llm.save_weights(chkpt_dir)
