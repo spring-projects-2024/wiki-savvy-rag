@@ -2,6 +2,7 @@
 err
 out
 test_slurm
+wandb
 
 JEPA
 wikidump_processing/data/*

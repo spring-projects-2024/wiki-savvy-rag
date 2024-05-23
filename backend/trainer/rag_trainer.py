@@ -59,16 +59,12 @@ class RagTrainer(Trainer):
     def train_step(self, batch: dict) -> dict:
         if self.step != 0 and self.step % self.checkpoint_interval_steps == 0:
             self.make_checkpoint()
-        answers = batch["answer"]
-        tokenized_answers: BatchEncoding = self.model.llm.tokenizer(
-            answers, padding=False, return_tensors="pt"
-        )
-        targets = {
-            "input_ids": tokenized_answers["input_ids"],
-            "attention_mask": tokenized_answers["attention_mask"],
-        }
-        batch["targets"] = targets
+        batch = self.condimento_batch(batch)
         return super().train_step(batch)
+
+    def test_step(self, batch: dict) -> dict:
+        batch = self.condimento_batch(batch)
+        return super().test_step(batch)
 
     @torch.no_grad()
     def test_epoch(self) -> float:
@@ -82,7 +78,19 @@ class RagTrainer(Trainer):
             text = f"Context: {retrieved_docs[0]}\n\nQuery: {batch['query']}\n\Predicted Answer: {predicted_answer}"
             self.logger.log_text(text, "Q&A")
         return super().test_epoch()
-
+    
+    def condimento_batch(self, batch: dict) -> dict:
+        answers = batch["answer"]
+        tokenized_answers: BatchEncoding = self.model.llm.tokenizer(
+            answers, padding=False, return_tensors="pt"
+        )
+        targets = {
+            "input_ids": tokenized_answers["input_ids"],
+            "attention_mask": tokenized_answers["attention_mask"],
+        }
+        batch["targets"] = targets
+        return batch
+    
     def make_checkpoint(self):
         """
         We override this method because we are using qlora and we want to
