@@ -36,6 +36,7 @@ def main():
     checkpoint_interval_steps = config["checkpoint_interval_steps"]
     seed = config["seed"]
     wandb_project = config["wandb_project"]
+    validation_interval = config["validation_interval"]
 
     llm_generation_config = config.get("llm_generation_config", {})
     llm_kwargs = config.get("llm_kwargs", None)
@@ -109,6 +110,7 @@ def main():
         "compile_model": False,
         "gradient_accumulation_steps": gradient_accumulation_steps,
         "checkpoint_interval_steps": checkpoint_interval_steps,
+        "validation_interval": validation_interval,
     }
 
     print("Training...")
