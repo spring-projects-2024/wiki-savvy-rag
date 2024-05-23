@@ -25,129 +25,195 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-This document is a supplement to the general instructions for *ACL authors. It contains instructions for using the \LaTeX{} style file for ACL 2023.
-The document itself conforms to its own specifications, and is, therefore, an example of what your manuscript should look like.
-These instructions should be used both for papers submitted for review and for final versions of accepted papers.
+We present Wikipedia-Savvy-RAG, a Retrieval-Augmented Generation (RAG) system 
+fine-tuned for STEM domain discussions. Our system features a chat interface that 
+enhances responses using retrieved Wikipedia passages.  
+We assessed the system using STEM question-answering benchmarks from the MMLU dataset, 
+fine-tuning the LLM for improved performance. 
+
 \end{abstract}
 
 \section{Introduction}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
+\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
 nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
 suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
 Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia
 Curae; Pellentesque suscipit tincidunt magna non mollis. Fusce tempus, nulla non
-molestie luctus, metus libero euismod augue, a mollis lacus purus ac ex.
+molestie luctus, metus libero euismod augue, a mollis lacus purus ac ex.}
 
 \section{Related Works}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
+\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
 nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
 suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
 Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia
 Curae; Pellentesque suscipit tincidunt magna non mollis. Fusce tempus, nulla non
-molestie luctus, metus libero euismod augue, a mollis lacus purus ac ex.
+molestie luctus, metus libero euismod augue, a mollis lacus purus ac ex.}
 
 \section{Vector Database}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+One of the main components of most of retrieval-based systems is the vector database.
+In our case, we built a vector database of Wikipedia passages to be used by the RAG model.
 
 \subsection{Cleaning Wikipedia}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+\textit{Remember to talk about SQLite database}
 
 \subsection{Embeddings}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
+\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
 nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
 
 \subsection{Faiss}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+To handle efficiently the retrieval of the 13 million embedded chunks, we used the Faiss library. 
+Faiss is a library for efficient similarity search and clustering of dense vectors. 
+It offers different indexing methods. Flat uses simple brute-force search, 
+IVF uses clustering to reduce the number of comparisons,
+and HNSW creates a multi-layered graph structure where each layer is a simplified, 
+navigable small world network. 
+
+Faiss also offers different quantization techniques to reduce the memory usage of the embeddings, 
+the two we considered are the product quantization and the scalar quantization. 
+The product quantization splits the vectors into sub-vectors and quantizes each sub-vector separately,
+while the scalar quantization quantizes each dimension of the vectors separately.
 
 \section{RAG}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
+\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
 nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
 
 \subsection{LLM}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
+\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
 nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
 
 \subsection{Generation}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+\textit{Talk about the two ways to generate the answer: naive and REPLUG}
 
 \section{Finetuning}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
+\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
 nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
 
 \subsection{Data}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
+\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
 nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
 
 \subsection{Training}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
+\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
 nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
 
 \section{Demo}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
-
-\subsection{Streamlit}
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+To demonstrate the capabilities of our system, we have developed a Streamlit web application
+that allows users to interact with the model in real-time with a chat-like interface. 
+The application lets users ask questions about STEM subjects, and the model will provide answers 
+based on the Wikipedia passages it retrieves from its knowledge base. 
+The user can decide the number of passages to retrieve, the decoding strategy (greedy, top-k, top-p), 
+the inference type (naive or REPLUG) and other configuration parameters.
+Refer to our GitHub repository for more information on the application.
 
 \subsection{Arxiv}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+\textit{???????????????????????????}
 
 \section{Benchmark}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
+\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
 nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
+
+\subsection{Faiss index}
+
+To choose the best Faiss index for our system, we compared the performance of 
+different indexes. The task was to retrieve the K most similar passages to a
+given query coming from the MMLU dataset.
+The parameters we considered were the recall, the query time, 
+and the memory usage. 
+The recall was computed as the intersection measure between the retrieved 
+passages and the ground truth. 
+The variations we considered were the index type (Flat, IVF, HNSW), the number 
+of clusters for the IVF index, the quantization technique (product, scalar), and
+the amount of quantization bits.
+
+\subsection{MMLU}
 
 \section{Results}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
+\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
 nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
 
 \subsection{Training}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
+\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
 nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
 
-\subsection{Benchmark}
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
+\subsection{Faiss indexes}
+
+We measured the recall of the indexes on k=1, 10, 50 and 100. The query time was 
+the time it took to retrieve the 100 most similar passages for each one of the first 300
+queries in the MMLU dataset with STEM subject. 
+For the memory usage, we considered the size of the index in disk, which acts as a lower
+bound for the memory usage.
+The most interesting results are shown in Table \ref{tab:faiss-index}, where the indexes 
+are the following:
+
+% ordered list with numbers
+\begin{enumerate}
+    \item Flat index with 4 bits scalar quantization.
+    \item Flat index with 8 bits scalar quantization.
+    \item Flat index with 128 bits product quantization.
+    \item Index with 256 bits product quantization, IVF with 1000 centroids
+    and HNSW32 as coarse quantizer.
+    \item HNSW index with 16 bits scalar quantization.
+\end{enumerate}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+Index & Recall & Query Time & Memory \\
+\hline
+1 & 0.832 & 03:53.59 & 2,609 \\
+2 & 0.9873 & 03:29.50 & 5,219 \\
+3 & 0.781 & 01:55.76 & 1,740 \\
+4 & 0.4643 & 00:00.03 & 1,856 \\
+5 & 0.661 & 00:00.11 & 4,570 \\
+\hline
+\end{tabular}
+\caption{Faiss index comparison}
+\label{tab:faiss-index}
+\end{table}
+
+\subsection{MMLU}
+\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
 nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
+suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
+
+\section{Conclusion}
+We developed, fine-tuned, and evaluated a Retrieval-Augmented Generation (RAG) 
+system for STEM domain discussions. Our application features a chat interface 
+that enhances responses using retrieved Wikipedia passages. We processed the 
+English Wikipedia to build a vector database of STEM-focused semantic 
+embeddings. 
+We assessed the system using STEM question-answering benchmarks from the MMLU 
+dataset, fine-tuning the LLM for improved performance. Evaluations compared 
+performance with and without RAG, before and after fine-tuning.
+Results show significant accuracy improvements, highlighting RAG's potential 
+in specialized domains like STEM.
 
 \bibliography{wiki-savvy-rag}
 \bibliographystyle{acl_natbib}

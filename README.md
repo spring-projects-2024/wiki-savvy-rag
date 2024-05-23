@@ -180,10 +180,10 @@ python3 scripts/vector_database/bench_quantizer.py
     --knn_neighbors 100 
     --nprobe 32 
     --training_size 0.01 
-    --mmlu_sample_size 3000
+    --mmlu_sample_size 300
 ```
 
-In our evaluation, we trained our indexes on 1% of Wikipedia data and assessed the intersection measure for 1, 10, 50, and 100 results (with `knn_neighbors` specifying the maximum number of neighbors to retrieve). We evaluated 3000 questions from the MMLU dataset and set the number of centroids for the IVF indexes to 32 (`nprobe`, for more details, refer to the [FAISS documentation](https://github.com/facebookresearch/faiss)).
+In our evaluation, we trained our indexes on 1% of Wikipedia data and assessed the intersection measure for 1, 10, 50, and 100 results (with `knn_neighbors` specifying the maximum number of neighbors to retrieve). We evaluated 300 questions from the MMLU dataset and set the number of centroids for the IVF indexes to 32 (`nprobe`, for more details, refer to the [FAISS documentation](https://github.com/facebookresearch/faiss)).
 
 Here is a table summarizing our results:
 

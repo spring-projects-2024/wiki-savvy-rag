@@ -19,6 +19,6 @@ source activate base
 
 conda info --envs
 
-python3 scripts/vector_database/bench_quantizer.py --knn_neighbors 100 --nprobe 32 --training_size 0.01 --mmlu_sample_size 3000
+python3 scripts/vector_database/bench_quantizer.py --knn_neighbors 100 --nprobe 32 --training_size 0.01 --mmlu_sample_size 300
 
 conda deactivate
