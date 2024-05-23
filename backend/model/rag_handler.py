@@ -166,7 +166,7 @@ class RagHandler(nn.Module):
         else:
             tokenized_answers = self.llm.tokenizer(
                 answers, padding=False, return_tensors="pt"
-            )
+            ).to(self.llm.device)
 
         answer_lengths = [
             len(tokenized_answer) for tokenized_answer in tokenized_answers["input_ids"]
