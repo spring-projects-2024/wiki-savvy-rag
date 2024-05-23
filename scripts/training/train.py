@@ -19,7 +19,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--config_path", type=str, default="configs/training/prova.yaml"
+        "--config_path", type=str, default="configs/training/final.yaml"
     )
     args = parser.parse_args()
 

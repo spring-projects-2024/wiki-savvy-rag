@@ -79,7 +79,7 @@ class RagTrainer(Trainer):
             predicted_answer, retrieved_docs = self.model.replug_inference(
                 batch["query"], n_docs=1
             )
-            text = f"Context: {retrieved_docs[0]}\n\nQuery: {batch["query"]}\n\Predicted Answer: {predicted_answer}"
+            text = f"Context: {retrieved_docs[0]}\n\nQuery: {batch['query']}\n\Predicted Answer: {predicted_answer}"
             self.logger.log_text(text, "Q&A")
         return super().test_epoch()
 
