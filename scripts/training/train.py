@@ -7,11 +7,13 @@ from torch import nn
 from torch.utils.data import DataLoader
 import yaml
 from torch.optim import AdamW
-from backend.benchmark.utils import load_yahoo_answers, load_mmlu
+from backend.benchmark.utils import load_yahoo_answers, load_mmlu_for_training
 from transformers import get_linear_schedule_with_warmup
 
 import sys
+
 sys.stdout = sys.stderr
+
 
 def main():
 
@@ -55,7 +57,7 @@ def main():
         faiss_kwargs=faiss_kwargs,
     )
 
-    # todo: check if this is necessary when reading from disk an already quantized model
+    # TODO: check if this is necessary when reading from disk an already quantized model
     if use_qlora:
         rag_handler.llm.model = prepare_for_qlora(rag_handler.llm.model)
 
@@ -65,7 +67,7 @@ def main():
     # the collate_fn in the DataLoader should be modified to pad the sequences.
     train_data = load_yahoo_answers(subset="stem")
     train_loader = DataLoader(train_data, batch_size=batch_size)
-    test_data = load_mmlu(split="validation", subset="stem")
+    test_data = load_mmlu_for_training(split="validation", subset="stem")
     test_loader = DataLoader(test_data, batch_size=batch_size)
     train_metadata = {
         "id": "yahoo_answers",
@@ -80,17 +82,15 @@ def main():
     print("Preparing training...")
 
     optimizer = AdamW(rag_handler.llm.model.parameters(), **optimizer_params)
-
-
     criterion = RagCriterion()
     num_training_steps = len(train_loader) * max_epochs
-    num_warmup_steps = int(0.1 * num_training_steps)
+    scheduler = None
+    # num_warmup_steps = int(0.1 * num_training_steps)
     # scheduler = get_linear_schedule_with_warmup(
     #     optimizer=optimizer,
     #     num_warmup_steps=num_warmup_steps,
     #     num_training_steps=num_training_steps,
     # )
-    scheduler = None
 
     train_config = {
         "model": rag_handler,

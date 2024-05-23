@@ -27,6 +27,14 @@ def load_mmlu(
     return dataset
 
 
+def load_mmlu_for_training(
+    split: str = "test", subset: Union[list, str, None] = "stem"
+) -> datasets.Dataset:
+    dataset = load_mmlu(split=split, subset=subset)
+    dataset = dataset.rename_column("question", "query")
+    return dataset
+
+
 def load_yahoo_answers(subset: Union[list, str, None] = "stem") -> datasets.Dataset:
     """
     Function to load the Yahoo Answers QA dataset.
