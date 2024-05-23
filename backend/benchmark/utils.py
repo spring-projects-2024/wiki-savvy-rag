@@ -39,6 +39,7 @@ def load_mmlu_for_training(
     dataset = dataset.map(write_answer)
     dataset = dataset.remove_columns("answer")
     dataset = dataset.rename_column("answer_new", "answer")
+    dataset = dataset.rename_column("question", "query")
     return dataset
 
 
