@@ -35,38 +35,98 @@ fine-tuning the LLM for improved performance.
 
 \section{Introduction}
 
-\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
-Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia
-Curae; Pellentesque suscipit tincidunt magna non mollis. Fusce tempus, nulla non
-molestie luctus, metus libero euismod augue, a mollis lacus purus ac ex.}
+In recent years, the field of natural language processing has seen a surge in
+the development of large language models (LLMs) that can generate human-like text.
+These models have been used in a variety of applications, such as chatbots,
+question-answering systems, and text summarization. However, LLMs often struggle
+with generating accurate and informative responses, especially in specialized
+domains like science, technology, engineering, and mathematics (STEM).
+
+One way to address this issue is to combine the strengths of LLMs with the
+retrieval of relevant information from a knowledge base. The Retrieval-Augmented
+Generation (RAG) model is a recent approach that does just that. RAG uses a
+retrieval mechanism to find relevant passages from a knowledge base and then
+incorporates this information into the generation process. This allows the model
+to generate more accurate and informative responses.
+
+In this paper, we present Wikipedia-Savvy-RAG, a RAG system fine-tuned for STEM
+domain discussions. Our system features a chat interface that allows users to
+interact with the model in real-time. Users can ask questions about STEM
+subjects, and the model will provide answers based on the Wikipedia passages it
+retrieves from its knowledge base. 
+
+We evaluated our system using STEM question-answering benchmarks from the MMLU
+dataset. We fine-tuned the LLM for improved performance, comparing the accuracy
+of our system with and without RAG, before and after fine-tuning.
+
+This report will outline the steps we took to build our system, the motivation
+behind our choices, and the results of our evaluation. 
+One note on this is that we tried to implement some of the components from scratch
+to have a better understanding of the system and to have more control over the
+implementation.
+This choice wasn't always the most efficient, but it allowed us to learn a lot
+about the inner workings of the system. 
+We think that this work demonstrates the potential of RAG systems in specialized 
+domains like STEM and provived us with valuable insights about the best practices 
+to follow when building such systems.
 
 \section{Related Works}
 
-\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.
-Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia
-Curae; Pellentesque suscipit tincidunt magna non mollis. Fusce tempus, nulla non
-molestie luctus, metus libero euismod augue, a mollis lacus purus ac ex.}
+From the publication of the original RAG paper by Lewis et al. in 2020 \textit{(cite)},
+different works have been developed to improve the RAG model: these are extensively
+reviewed in the work by \textit{cite}.
 
-\section{Vector Database}
+One of the most relevant works is the one by \textit{cite}, where the authors
+introduce REPLUG, a new paradigm in which the language model is treated as a
+black box. The retrieval component first retrieves the top-k passages from the
+knowledge base, and then the concatenation of each single passage with the
+query is fed to the language model separately. The final answer is then generated
+by ensembling the predicted probabilities of each passage.
 
-One of the main components of most of retrieval-based systems is the vector database.
+Another work that is worth mentioning, but not directly related to RAG, is the
+one by \textit{cite}, where the authors introduce QLORA, a lightweight method 
+to finetune LLM which uses 4-bit quantization of the original weights and backpropagates   
+gradient through Low Rank Adapters (LoRA).
+
+\section{System Overview}
+Our system is composed of four main components.
+An SQLite database stores the Wikipedia passages for faster reading.
+An encoder-only model, commonly referred to as embedder, processes the queries and the Wikipedia passages to
+obtain a dense representation of them; in this way, similarity between the queries and the passages can be computed
+by simple dot products.
+A vector database stores the embeddings for fast similarity search.
+A RAG handler generates the answers using a LLM and the retrieved passages.
+
+
+\section{Knowledge Base}
+
+One of the main components of most of retrieval-based systems is the knowledge base.
 In our case, we built a vector database of Wikipedia passages to be used by the RAG model.
 
 \subsection{Cleaning Wikipedia}
 
-\textit{Remember to talk about SQLite database}
+The first step in building our knowledge base was to download and clean the English
+Wikipedia dump. We downloaded the dump dated 20 December 2023 from WikiMedia \textit{cite} 
+and extracted the categories that are related to STEM subjects. 
+We then retrieved all the articles that belong to these categories and cleaned the text
+by removing everything that wasn't plain text, such as XML tags, tables, and references.
+
+Then we proceeded in splitting the articles into the different sections to obtain the chunks 
+that will be used by the RAG model. 
+In the end we obtained a total of 13 million chunks, with an average length of about 230 words.
+We stored all of these, together with their titles, in an SQLite database.
 
 \subsection{Embeddings}
 
-\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
+Once we had the cleaned Wikipedia passages, we processed them with an embedder to obtain the embeddings.
+We used the BAAI/bge-small-en-v1.5 model \textit{link}, available on the Hugging Face model hub, 
+which was a good compromise between performance and computational resources. 
+\textit{maybe Mattia can explain a little better}
 
-\subsection{Faiss}
+The embedder is a BERT-like model with 33.4M parameters which outputs 384-dimensional vectors.
+
+
+\subsection{Vector Database}
 
 To handle efficiently the retrieval of the 13 million embedded chunks, we used the Faiss library. 
 Faiss is a library for efficient similarity search and clustering of dense vectors. 
@@ -76,9 +136,14 @@ and HNSW creates a multi-layered graph structure where each layer is a simplifie
 navigable small world network. 
 
 Faiss also offers different quantization techniques to reduce the memory usage of the embeddings, 
-the two we considered are the product quantization and the scalar quantization. 
-The product quantization splits the vectors into sub-vectors and quantizes each sub-vector separately,
-while the scalar quantization quantizes each dimension of the vectors separately.
+the two we considered are the scalar quantization and the product quantization. 
+The scalar quantization quantizes each dimension of the vector independently in a linear
+range, while the product quantization splits the vector into subvectors and quantizes each
+subvector independently.
+
+We compared the performance of different indexes and quantization techniques to choose the best
+configuration for our system. See the Benchmark section for more details.
+We eventually chose the Flat index with 128 subvectors product quantization.
 
 \section{RAG}
 
@@ -116,7 +181,7 @@ suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
 
 \section{Demo}
 
-To demonstrate the capabilities of our system, we have developed a Streamlit web application
+To demonstrate the capabilities of our system, we developed a Streamlit web application
 that allows users to interact with the model in real-time with a chat-like interface. 
 The application lets users ask questions about STEM subjects, and the model will provide answers 
 based on the Wikipedia passages it retrieves from its knowledge base. 
@@ -175,8 +240,8 @@ are the following:
 \begin{enumerate}
     \item Flat index with 4 bits scalar quantization.
     \item Flat index with 8 bits scalar quantization.
-    \item Flat index with 128 bits product quantization.
-    \item Index with 256 bits product quantization, IVF with 1000 centroids
+    \item Flat index with 128 subvectors product quantization. 
+    \item Index with 256 subvectors product quantization, IVF with 1000 centroids
     and HNSW32 as coarse quantizer.
     \item HNSW index with 16 bits scalar quantization.
 \end{enumerate}
