@@ -264,45 +264,30 @@ class RagHandler(nn.Module):
         :return: a tuple with the token generator and the retrieved documents
         """
 
-        if self.use_rag:
-            retrieved_docs = self.faiss.search_text(query, n_neighbors=n_docs)
-            autoregressive_state = [
-                {
-                    "past_key_values": None,
-                    "doc": doc,
-                    "similarity": similarity,
-                    "query": self.craft_autoregressive_query(query, doc),
-                    "tokenized_query": self.llm.tokenizer(
-                        self.craft_autoregressive_query(query, doc),
-                        return_tensors="pt",
-                        padding=False,
-                    )["input_ids"],
-                }
-                for doc, similarity in retrieved_docs
-            ]
+        assert self.use_rag, "This method is only available when using the RAG model."
 
-            similarities = torch.tensor(
-                [state["similarity"] for state in autoregressive_state],
-                device=self.device,
-            )
+        retrieved_docs = self.faiss.search_text(query, n_neighbors=n_docs)
+        autoregressive_state = [
+            {
+                "past_key_values": None,
+                "doc": doc,
+                "similarity": similarity,
+                "query": self.craft_autoregressive_query(query, doc),
+                "tokenized_query": self.llm.tokenizer(
+                    self.craft_autoregressive_query(query, doc),
+                    return_tensors="pt",
+                    padding=False,
+                )["input_ids"],
+            }
+            for doc, similarity in retrieved_docs
+        ]
 
-            similarities /= similarities.sum()
-        else:
-            retrieved_docs = []
-            autoregressive_state = [
-                {
-                    "past_key_values": None,
-                    "doc": None,
-                    "similarity": 1.0,
-                    "query": query,
-                    "tokenized_query": self.llm.tokenizer(
-                        query,
-                        return_tensors="pt",
-                        padding=False,
-                    )["input_ids"],
-                }
-            ]
-            similarities = torch.tensor([1.0], device=self.device)
+        similarities = torch.tensor(
+            [state["similarity"] for state in autoregressive_state],
+            device=self.device,
+        )
+
+        similarities /= similarities.sum()
 
         @torch.no_grad()
         def generator():
