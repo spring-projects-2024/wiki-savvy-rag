@@ -73,12 +73,13 @@ class RagTrainer(Trainer):
         idxs = [random.randint(0, len(dataset) - 1) for _ in range(1)]
         for idx in idxs:
             batch = dataset[idx]
-            predicted_answer, retrieved_docs = self.model.replug_inference(
-                batch["query"], n_docs=1
+            predicted_answer, retrieved_docs, prompt = self.model.replug_inference(
+                batch["query"], n_docs=1, return_prompt=True
             )
             if self.log_to_wandb:
                 self.logger.log_text(retrieved_docs[0], name="context")
                 self.logger.log_text(batch["query"], name="query")
+                self.logger.log_text(prompt, name="prompt")
                 self.logger.log_text(predicted_answer, name="predicted_answer")
         return super().test_epoch()
 
@@ -163,15 +164,8 @@ def debug():
     }
 
     optimizer = AdamW(rag_handler.parameters(recurse=True), lr=1e-5)
-
     criterion = RagCriterion()
-    num_training_steps = 20_000  # todo: change
-    num_warmup_steps = int(0.1 * num_training_steps)
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer=optimizer,
-        num_warmup_steps=num_warmup_steps,
-        num_training_steps=num_training_steps,
-    )
+    scheduler = None
 
     train_config = {
         "model": rag_handler,

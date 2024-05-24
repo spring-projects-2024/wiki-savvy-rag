@@ -240,6 +240,7 @@ class RagHandler(nn.Module):
         n_docs: int = 10,
         decoding_strategy: str = "greedy",
         return_generator: bool = False,
+        return_prompt: bool = False,
     ) -> Tuple[Iterable[str] | str, List[Tuple[str, float]]]:
         """
         This method performs autoregressive generation using the RePlug method. It operates as follows:
@@ -257,6 +258,8 @@ class RagHandler(nn.Module):
         :param n_docs: the number of documents to retrieve
         :param decoding_strategy: the decoding strategy to use. Can be "greedy", "top_k", or "top_p"
         :param return_generator: whether to return a generator or the generated text
+        :param return_prompt: if True, return the prompt used for generation as a third element of the
+        returned tuple
 
         :return: a tuple with the token generator and the retrieved documents
         """
@@ -345,10 +348,10 @@ class RagHandler(nn.Module):
                 answer.append(next_token_str)
                 yield next_token_str
 
-        if return_generator:
-            return generator(), retrieved_docs
-        else:
-            return "".join(generator()), retrieved_docs
+        tokens = generator() if return_generator else "".join(generator())
+        if return_prompt:
+            return tokens, retrieved_docs, autoregressive_state["query"]
+        return tokens, retrieved_docs
 
     def naive_inference(
         self,
