@@ -17,6 +17,6 @@ source /home/3144860/miniconda3/bin/activate nlp
 
 conda info --envs
 
-python scripts/training/train.py --config_path configs/training/final.yaml
+python backend/vector_database/faiss_wrapper.py
 
 conda deactivate

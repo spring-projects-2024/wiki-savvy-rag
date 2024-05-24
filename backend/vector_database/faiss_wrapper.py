@@ -107,8 +107,7 @@ class FaissWrapper:
         :return: The text corresponding to the index.
         """
         retrieved: dict = self.dataset.search_chunk(index)
-        text = f"{retrieved['titles']}\n{retrieved['text']}"
-        return text
+        return retrieved["text"]  # contains titles as well
 
     def search_text(self, text: str, n_neighbors=10) -> List[Tuple[str, float]]:
         """
@@ -184,46 +183,57 @@ class FaissWrapper:
         faiss.write_index(self._index, path)
 
 
-INDEX_PATH = "backend/vector_database/data/default.index"
-
 if __name__ == "__main__":
-    chunks = ["ciao", "sono", "mattia"]
-    dataset = MockDataset(chunks)
-    embedder = EmbedderWrapper("cpu")
+    faiss_kwargs = {
+      "index_path": "scripts/vector_database/data/PQ128.index",
+      "embedder": None,
+      "dataset": "scripts/dataset/data/dataset.db",
+    }
+    faiss = FaissWrapper("cpu", **faiss_kwargs)
+    out = faiss._index_to_text(1002)
+    print(out)
 
-    fw = FaissWrapper(
-        index_str="Flat", dataset=dataset, device="cpu", embedder=embedder
-    )
 
-    fw.train_from_text(chunks)
-    fw.add_text(chunks)
+# INDEX_PATH = "backend/vector_database/data/default.index"
 
-    fw.save_to_disk(INDEX_PATH)
+# if __name__ == "__main__":
+#     chunks = ["ciao", "sono", "mattia"]
+#     dataset = MockDataset(chunks)
+#     embedder = EmbedderWrapper("cpu")
 
-    res = fw.search_text("ciao")
-    print(res)
+#     fw = FaissWrapper(
+#         index_str="Flat", dataset=dataset, device="cpu", embedder=embedder
+#     )
 
-    res = fw.search_text("mattia")
-    print(res)
+#     fw.train_from_text(chunks)
+#     fw.add_text(chunks)
 
-    res = fw.search_text("topo")
-    print(res)
+#     fw.save_to_disk(INDEX_PATH)
 
-    del fw
-    print("--------testing--------")
+#     res = fw.search_text("ciao")
+#     print(res)
 
-    fw = FaissWrapper(
-        index_path=INDEX_PATH,
-        dataset=dataset,
-        device="cpu",
-        embedder=embedder,
-    )
+#     res = fw.search_text("mattia")
+#     print(res)
 
-    res = fw.search_text("ciao")
-    print(res)
+#     res = fw.search_text("topo")
+#     print(res)
 
-    res = fw.search_text("mattia")
-    print(res)
+#     del fw
+#     print("--------testing--------")
 
-    res = fw.search_text("topo")
-    print(res)
+#     fw = FaissWrapper(
+#         index_path=INDEX_PATH,
+#         dataset=dataset,
+#         device="cpu",
+#         embedder=embedder,
+#     )
+
+#     res = fw.search_text("ciao")
+#     print(res)
+
+#     res = fw.search_text("mattia")
+#     print(res)
+
+#     res = fw.search_text("topo")
+#     print(res)
