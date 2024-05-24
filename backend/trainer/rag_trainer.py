@@ -77,9 +77,9 @@ class RagTrainer(Trainer):
                 batch["query"], n_docs=1
             )
             if self.log_to_wandb:
-                self.logger.log_text("context", retrieved_docs[0])
-                self.logger.log_text("query", batch["query"])
-                self.logger.log_text("predicted_answer", predicted_answer)
+                self.logger.log_text(retrieved_docs[0], name="context")
+                self.logger.log_text(batch["query"], name="query")
+                self.logger.log_text(predicted_answer, name="predicted_answer")
         return super().test_epoch()
 
     def condimento_batch(self, batch: dict) -> dict:

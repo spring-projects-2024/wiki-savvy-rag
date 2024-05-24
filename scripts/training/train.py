@@ -83,8 +83,9 @@ def main():
 
     optimizer = AdamW(rag_handler.llm.model.parameters(), **optimizer_params)
     criterion = RagCriterion()
-    num_training_steps = len(train_loader) * max_epochs
     scheduler = None
+    
+    # num_training_steps = len(train_loader) * max_epochs
     # num_warmup_steps = int(0.1 * num_training_steps)
     # scheduler = get_linear_schedule_with_warmup(
     #     optimizer=optimizer,
