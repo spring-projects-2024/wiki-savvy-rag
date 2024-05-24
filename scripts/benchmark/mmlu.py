@@ -12,6 +12,7 @@ def evaluate(
     rag_handler: RagHandler,
     dataset: datasets.Dataset,
     log_answers: bool = False,
+    n_docs_retrieved: int = 10,
     k_shot: int = 0,
     batch_size: int = 1,
     n_samples: int = None,
@@ -37,11 +38,15 @@ def evaluate(
         queries = [
             craft_query(question, chat=True, examples=examples) for question in batch
         ]
-        histories = [[] for _ in range(batch_size)]
-        responses, _ = rag_handler.naive_inference(
-            histories,
-            queries,
-        )
+        responses = [
+            rag_handler.replug_inference(
+                query=query,
+                n_docs_retrieved=n_docs_retrieved,
+                return_generator=False,
+                return_prompt=False,
+            )[0]
+            for query in queries
+        ]
         for question, response in zip(batch, responses):
             response = response.strip()
             complete_response = response
@@ -72,8 +77,8 @@ def main():
     parser.add_argument("--config_path", type=str, default="configs/llm.yaml")
     parser.add_argument("--n_samples", type=int, default=None)
     parser.add_argument("--use_rag", type=bool, default=False)
+    parser.add_argument("--n_docs_retrieved", type=int, default=10)
     parser.add_argument("--log_answers", type=bool, default=False)
-    parser.add_argument("--max_tokens", type=int, default=1)
 
     args = parser.parse_args()
 
@@ -92,9 +97,6 @@ def main():
     faiss_kwargs = config.get("faiss_kwargs", None)
 
     rag_kwargs = config.get("rag_kwargs", {})
-    rag_kwargs["max_new_tokens"] = (
-        args.max_tokens  # this overrides the config file. We only need the first token.
-    )
 
     print("Creating RAGHandler...")
     rag_handler = RagHandler(
@@ -112,6 +114,7 @@ def main():
         rag_handler,
         dataset,
         args.log_answers,
+        n_docs_retrieved=args.n_docs_retrieved,
         k_shot=args.k_shot,
         batch_size=args.batch_size,
         n_samples=args.n_samples,

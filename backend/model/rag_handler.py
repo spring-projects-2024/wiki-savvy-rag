@@ -114,6 +114,27 @@ class RagHandler(nn.Module):
     def set_use_rag(self, use_rag: bool):
         self.use_rag = use_rag
 
+
+    def craft_autoregressive_query_without_doc(self, query: str) -> str:
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant. You are specialized in answering STEM questions. "
+                "You will be provided with a question to answer.",
+            },
+            {
+                "role": "user",
+                "content": f"Question:\n{query}",
+            },
+        ]
+
+        mess_prep: str = self.llm.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
+        return mess_prep
     def craft_autoregressive_query(self, query: str, doc: str) -> str:
         messages = [
             {
@@ -237,7 +258,7 @@ class RagHandler(nn.Module):
     def replug_inference(
         self,
         query: str,
-        n_docs: int = 10,
+        n_docs_retrieved: int = 10,
         decoding_strategy: str = "greedy",
         return_generator: bool = False,
         return_prompt: bool = False,
@@ -264,30 +285,45 @@ class RagHandler(nn.Module):
         :return: a tuple with the token generator and the retrieved documents
         """
 
-        assert self.use_rag, "This method is only available when using the RAG model."
+        if self.use_rag:
+            retrieved_docs = self.faiss.search_text(query, n_neighbors=n_docs_retrieved)
+            autoregressive_state = [
+                {
+                    "past_key_values": None,
+                    "doc": doc,
+                    "similarity": similarity,
+                    "query": self.craft_autoregressive_query(query, doc),
+                    "tokenized_query": self.llm.tokenizer(
+                        self.craft_autoregressive_query(query, doc),
+                        return_tensors="pt",
+                        padding=False,
+                    )["input_ids"],
+                }
+                for doc, similarity in retrieved_docs
+            ]
 
-        retrieved_docs = self.faiss.search_text(query, n_neighbors=n_docs)
-        autoregressive_state = [
-            {
-                "past_key_values": None,
-                "doc": doc,
-                "similarity": similarity,
-                "query": self.craft_autoregressive_query(query, doc),
-                "tokenized_query": self.llm.tokenizer(
-                    self.craft_autoregressive_query(query, doc),
-                    return_tensors="pt",
-                    padding=False,
-                )["input_ids"],
-            }
-            for doc, similarity in retrieved_docs
-        ]
+            similarities = torch.tensor(
+                [state["similarity"] for state in autoregressive_state],
+                device=self.device,
+            )
 
-        similarities = torch.tensor(
-            [state["similarity"] for state in autoregressive_state],
-            device=self.device,
-        )
-
-        similarities /= similarities.sum()
+            similarities /= similarities.sum()
+        else:
+            retrieved_docs = []
+            autoregressive_state = [
+                {
+                    "past_key_values": None,
+                    "doc": None,
+                    "similarity": 1.0,
+                    "query": self.craft_autoregressive_query_without_doc(query),
+                    "tokenized_query": self.llm.tokenizer(
+                        self.craft_autoregressive_query_without_doc(query),
+                        return_tensors="pt",
+                        padding=False,
+                    )["input_ids"],
+                }
+            ]
+            similarities = torch.tensor([1.0], device=self.device)
 
         @torch.no_grad()
         def generator():
