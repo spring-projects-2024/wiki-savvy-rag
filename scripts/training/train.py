@@ -66,7 +66,7 @@ def main():
     # TODO: currently only batch_size=1 is supported. To have larger batch sizes,
     # the collate_fn in the DataLoader should be modified to pad the sequences.
     train_data = load_yahoo_answers(subset="stem")
-    train_loader = DataLoader(train_data, batch_size=batch_size)
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     test_data = load_mmlu_for_training(split="validation", subset="stem")
     test_loader = DataLoader(test_data, batch_size=batch_size)
     train_metadata = {
@@ -84,7 +84,7 @@ def main():
     optimizer = AdamW(rag_handler.llm.model.parameters(), **optimizer_params)
     criterion = RagCriterion()
     scheduler = None
-    
+
     # num_training_steps = len(train_loader) * max_epochs
     # num_warmup_steps = int(0.1 * num_training_steps)
     # scheduler = get_linear_schedule_with_warmup(

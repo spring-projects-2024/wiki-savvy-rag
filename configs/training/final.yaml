@@ -3,7 +3,7 @@
   use_qlora: true,
   log_to_wandb: true,
   wandb_project: "rag",
-  seed: 42,
+  seed: 4,
   model_name: Qwen/Qwen1.5-0.5B-Chat,
   model_kwargs: { torch_dtype: auto },
   tokenizer_kwargs: {},

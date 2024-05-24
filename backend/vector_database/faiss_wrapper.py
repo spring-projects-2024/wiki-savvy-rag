@@ -117,7 +117,6 @@ class FaissWrapper:
         """
 
         I, D = self._search_text_get_I_D(text, n_neighbors)
-
         return [(self._index_to_text(i), j) for i, j in zip(D[0], I[0]) if i != -1]
 
     def search_multiple_texts(
@@ -190,8 +189,10 @@ if __name__ == "__main__":
       "dataset": "scripts/dataset/data/dataset.db",
     }
     faiss = FaissWrapper("cpu", **faiss_kwargs)
-    out = faiss._index_to_text(1002)
-    print(out)
+    query = "What is the mechanism thanks to which aeroplanes can fly?"
+    res = faiss.search_text(query)
+    for r in res:
+        print(r)
 
 
 # INDEX_PATH = "backend/vector_database/data/default.index"

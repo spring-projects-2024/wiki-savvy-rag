@@ -348,10 +348,10 @@ class RagHandler(nn.Module):
                 answer.append(next_token_str)
                 yield next_token_str
 
-        tokens = generator() if return_generator else "".join(generator())
+        output = generator() if return_generator else "".join(generator())
         if return_prompt:
-            return tokens, retrieved_docs, autoregressive_state["query"]
-        return tokens, retrieved_docs
+            return output, retrieved_docs, autoregressive_state[0]["query"]
+        return output, retrieved_docs
 
     def naive_inference(
         self,
