@@ -39,6 +39,7 @@ def main():
     seed = config["seed"]
     wandb_project = config["wandb_project"]
     validation_interval = config["validation_interval"]
+    validation_samples = config["validation_samples"]
 
     llm_generation_config = config.get("llm_generation_config", {})
     llm_kwargs = config.get("llm_kwargs", None)
@@ -67,7 +68,7 @@ def main():
     # the collate_fn in the DataLoader should be modified to pad the sequences.
     train_data = load_yahoo_answers(subset="stem")
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
-    test_data = load_mmlu_for_training(split="validation", subset="stem")
+    test_data = load_mmlu_for_training(split="validation", subset="stem", num_samples=validation_samples)
     test_loader = DataLoader(test_data, batch_size=batch_size)
     train_metadata = {
         "id": "yahoo_answers",
