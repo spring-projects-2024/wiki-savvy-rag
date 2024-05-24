@@ -146,8 +146,8 @@ class RagHandler(nn.Module):
         queries: List[str] = batch["query"]
         answers: List[str] = batch["answer"]
 
-        eos_token = self.llm.tokenizer.eos_token
-        answers = [answer + eos_token for answer in answers]
+        # eos_token = self.llm.tokenizer.eos_token
+        # answers = [answer + eos_token for answer in answers]
 
         retrieved_docs = self.faiss.search_multiple_texts(queries, n_neighbors=1)
         headers: List[str] = []

@@ -28,6 +28,7 @@ def main():
 
     device = config["device"]
     model_name = config["model_name"]
+    run_id = config["run_id"]
     use_qlora = config["use_qlora"]
     optimizer_params = config["optimizer_params"]
     max_epochs = config["max_epochs"]
@@ -115,6 +116,7 @@ def main():
         "checkpoint_interval_steps": checkpoint_interval_steps,
         "validation_interval": validation_interval,
         "watch_model": watch_model,
+        "run_id": run_id,
     }
 
     print("Training...")

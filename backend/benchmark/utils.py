@@ -35,6 +35,7 @@ def load_mmlu_for_training(
     subset: Union[list, str, None] = "stem",
     num_samples: Optional[int] = None,
 ) -> datasets.Dataset:
+    
     dataset: datasets.Dataset = load_mmlu(
         split=split, subset=subset, num_samples=num_samples
     )
