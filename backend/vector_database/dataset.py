@@ -94,7 +94,6 @@ class DatasetSQL:
         )
         chunk = res.fetchone()
         con.close()
-
         return self._res_to_chunk(chunk)
 
     def search_chunks(self, ids):
@@ -181,9 +180,13 @@ class MockDataset:
 
     def __init__(self, chunks: list):
         self.chunks = chunks
+        self.titles = ["title" for _ in chunks]
 
-    def search_chunk(self, id) ->  str:
-        return self.chunks[id]
+    def search_chunk(self, id) -> str:
+        return {
+            "text": self.chunks[id],
+            "titles": self.titles[id],
+        }
 
     def search_chunks(self, ids: list):
         return [chunk for index, chunk in enumerate(self.chunks) if index in ids]

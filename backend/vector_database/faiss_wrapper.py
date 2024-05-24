@@ -106,7 +106,9 @@ class FaissWrapper:
         :param index: The index of the text.
         :return: The text corresponding to the index.
         """
-        return self.dataset.search_chunk(index)
+        retrieved: dict = self.dataset.search_chunk(index)
+        text = f"{retrieved['titles']}\n{retrieved['text']}"
+        return text
 
     def search_text(self, text: str, n_neighbors=10) -> List[Tuple[str, float]]:
         """
