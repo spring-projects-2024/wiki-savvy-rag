@@ -17,8 +17,9 @@ def load_mmlu(
     If 'stem', the function will return only the subcategories related to Science, Technology, Engineering, and Mathematics (STEM).
     If a list of strings is provided, the function will return only the subcategories specified in the list.
     """
-    dataset = load_dataset("cais/mmlu", "all")
-    dataset = dataset[split]
+    if num_samples is not None:
+        split = f"{split}[:{num_samples}]"
+    dataset = load_dataset("cais/mmlu", "all", split=split)
     if subset is None:
         return dataset
     if isinstance(subset, str):
@@ -26,9 +27,7 @@ def load_mmlu(
             raise ValueError("subset must be a list of strings, None, or 'stem'")
         subset = stem_subcategories
     dataset = dataset.filter(lambda x: x["subject"] in subset)
-    if num_samples is None:
-        return dataset
-    return dataset[:num_samples]
+    return dataset
 
 
 def load_mmlu_for_training(
@@ -61,8 +60,10 @@ def load_yahoo_answers(
     If 'stem', the function will return only the subcategories related to Science, Technology, Engineering, and Mathematics (STEM).
     If a list of strings is provided, the function will return only the subcategories specified in the list.
     """
-    dataset = load_dataset("yahoo_answers_qa")
-    dataset = dataset["train"]
+    split = "train"
+    if num_samples is not None:
+        split += f"[:{num_samples}]"
+    dataset = load_dataset("yahoo_answers_qa", split=split)
     if subset is None:
         return dataset
     if isinstance(subset, str):
@@ -71,9 +72,7 @@ def load_yahoo_answers(
         subset = yahoo_stem_categories
     dataset = dataset.filter(lambda x: x["main_category"] in subset)
     dataset = dataset.rename_column("question", "query")
-    if num_samples is None:
-        return dataset
-    return dataset[:num_samples]
+    return dataset
 
 
 def _format_question(question: dict, include_answer: bool = False) -> str:
