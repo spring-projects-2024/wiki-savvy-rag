@@ -3,6 +3,7 @@ err
 out
 test_slurm
 wandb
+checkpoints
 
 JEPA
 wikidump_processing/data/*
