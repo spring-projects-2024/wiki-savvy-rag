@@ -21,5 +21,7 @@
   gradient_accumulation_steps: 2,
   log_interval: 10,
   checkpoint_interval_steps: 10000,
-  validation_interval: 5000, # val size is 300
+  validation_interval: 3000, # val size is 300
+  validation_samples: None,
+  watch_model: true,
 }

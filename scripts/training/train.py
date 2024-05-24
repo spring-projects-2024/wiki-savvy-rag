@@ -40,6 +40,7 @@ def main():
     wandb_project = config["wandb_project"]
     validation_interval = config["validation_interval"]
     validation_samples = config["validation_samples"]
+    watch_model = config["watch_model"]
 
     llm_generation_config = config.get("llm_generation_config", {})
     llm_kwargs = config.get("llm_kwargs", None)
@@ -82,7 +83,7 @@ def main():
 
     print("Preparing training...")
 
-    optimizer = AdamW(rag_handler.llm.model.parameters(), **optimizer_params)
+    optimizer = AdamW(rag_handler.parameters(), **optimizer_params)
     criterion = RagCriterion()
     scheduler = None
 
@@ -113,6 +114,7 @@ def main():
         "gradient_accumulation_steps": gradient_accumulation_steps,
         "checkpoint_interval_steps": checkpoint_interval_steps,
         "validation_interval": validation_interval,
+        "watch_model": watch_model,
     }
 
     print("Training...")
