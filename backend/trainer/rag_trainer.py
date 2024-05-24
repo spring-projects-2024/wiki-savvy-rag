@@ -4,7 +4,7 @@ from typing import Optional
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 
-from backend.benchmark.utils import load_yahoo_answers, load_mmlu
+from backend.benchmark.utils import load_yahoo_answers, load_mmlu_for_training
 from backend.vector_database.dataset import MockDataset
 from jepa.trainer.trainer import Trainer
 from backend.model.rag_handler import RagHandler
@@ -69,16 +69,19 @@ class RagTrainer(Trainer):
     @torch.no_grad()
     def test_epoch(self) -> float:
         dataset = self.test_loader.dataset
-        idxs = [random.randint(0, len(dataset) - 1) for _ in range(3)]
+        # TODO: implement logging of text through tables in wandb (otherwise it's pointless to log more than one)
+        idxs = [random.randint(0, len(dataset) - 1) for _ in range(1)]
         for idx in idxs:
             batch = dataset[idx]
             predicted_answer, retrieved_docs = self.model.replug_inference(
                 batch["query"], n_docs=1
             )
-            text = f"Context: {retrieved_docs[0]}\n\nQuery: {batch['query']}\n\Predicted Answer: {predicted_answer}"
-            self.logger.log_text(text, "Q&A")
+            if self.log_to_wandb:
+                self.logger.log_text("context", retrieved_docs[0])
+                self.logger.log_text("query", batch["query"])
+                self.logger.log_text("predicted_answer", predicted_answer)
         return super().test_epoch()
-    
+
     def condimento_batch(self, batch: dict) -> dict:
         answers = batch["answer"]
         tokenized_answers: BatchEncoding = self.model.llm.tokenizer(
@@ -90,7 +93,7 @@ class RagTrainer(Trainer):
         }
         batch["targets"] = targets
         return batch
-    
+
     def make_checkpoint(self):
         """
         We override this method because we are using qlora and we want to
@@ -151,7 +154,7 @@ def debug():
 
     train_data = load_yahoo_answers(subset="stem")
     train_loader = DataLoader(train_data, batch_size=batch_size)
-    test_data = load_mmlu(split="validation", subset="stem")
+    test_data = load_mmlu_for_training(split="validation", subset="stem", num_samples=1)
     test_loader = DataLoader(test_data, batch_size=batch_size)
     train_metadata = {
         "id": "yahoo_answers",
@@ -180,20 +183,22 @@ def debug():
         "max_epochs": 1,
         "device": "cpu",
         "scheduler": scheduler,
-        "log_to_wandb": False,
+        "log_to_wandb": True,
         "log_interval": 1,
         "checkpoint_interval": 1,
         "checkpoint_root_dir": "../checkpoints",
         "seed": 42,
-        "wandb_project": "ajdoasjda",
+        "wandb_project": "rag",
         "compile_model": False,
         "checkpoint_interval_steps": 1000,
+        "validation_interval": 1,
     }
 
     print("Training...")
     rag_trainer = RagTrainer(**train_config)
     # rag_trainer.train_step(next(iter(train_loader)))
-    rag_trainer.test_step(next(iter(test_loader)))
+    # rag_trainer.test_step(next(iter(test_loader)))
+    rag_trainer.train()
 
 
 if __name__ == "__main__":
