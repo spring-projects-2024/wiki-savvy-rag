@@ -43,6 +43,9 @@ def compute_probabilities_for_training(
     }
 
 
+def craft_training_prompt(query: str, doc: str, answer: str) -> str:
+    return f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:\n{answer}"
+
 
 class RagHandler(nn.Module):
     """
