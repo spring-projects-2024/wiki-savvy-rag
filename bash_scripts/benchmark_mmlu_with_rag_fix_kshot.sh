@@ -12,6 +12,8 @@
 
 #SBATCH --error=err/%x_%j.er
 
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=8G
 
 cd /home/3144366/textbook-savvy-rag
 
