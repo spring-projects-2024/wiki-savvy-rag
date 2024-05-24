@@ -5,7 +5,9 @@ from backend.benchmark.constants import stem_subcategories, yahoo_stem_categorie
 
 
 def load_mmlu(
-    split: str = "test", subset: Union[list, str, None] = "stem"
+    split: str = "test",
+    subset: Union[list, str, None] = "stem",
+    num_samples: Optional[int] = None,
 ) -> datasets.Dataset:
     """
     Function to load the MMLU dataset.
@@ -24,13 +26,19 @@ def load_mmlu(
             raise ValueError("subset must be a list of strings, None, or 'stem'")
         subset = stem_subcategories
     dataset = dataset.filter(lambda x: x["subject"] in subset)
-    return dataset
+    if num_samples is None:
+        return dataset
+    return dataset[:num_samples]
 
 
 def load_mmlu_for_training(
-    split: str = "test", subset: Union[list, str, None] = "stem"
+    split: str = "test",
+    subset: Union[list, str, None] = "stem",
+    num_samples: Optional[int] = None,
 ) -> datasets.Dataset:
-    dataset: datasets.Dataset = load_mmlu(split=split, subset=subset)
+    dataset: datasets.Dataset = load_mmlu(
+        split=split, subset=subset, num_samples=num_samples
+    )
 
     def write_answer(example):
         example["answer_new"] = example["choices"][example["answer"]]
@@ -43,7 +51,9 @@ def load_mmlu_for_training(
     return dataset
 
 
-def load_yahoo_answers(subset: Union[list, str, None] = "stem") -> datasets.Dataset:
+def load_yahoo_answers(
+    subset: Union[list, str, None] = "stem", num_samples: Optional[int] = None
+) -> datasets.Dataset:
     """
     Function to load the Yahoo Answers QA dataset.
     :param subset: determines the subset of the dataset to be returned. Acceptable values are None, 'stem', or a list of strings.
@@ -61,7 +71,9 @@ def load_yahoo_answers(subset: Union[list, str, None] = "stem") -> datasets.Data
         subset = yahoo_stem_categories
     dataset = dataset.filter(lambda x: x["main_category"] in subset)
     dataset = dataset.rename_column("question", "query")
-    return dataset
+    if num_samples is None:
+        return dataset
+    return dataset[:num_samples]
 
 
 def _format_question(question: dict, include_answer: bool = False) -> str:
