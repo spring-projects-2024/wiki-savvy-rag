@@ -111,7 +111,7 @@ def craft_query(
             prompt += "\n\n"
     prompt += _format_question(question, include_answer=False)
 
-    prompt += "\n\nAnswer (only the letter):\n"
+    prompt += "Provide only the letter of the answer:\n"
     return prompt
 
 

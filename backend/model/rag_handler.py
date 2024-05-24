@@ -43,9 +43,6 @@ def compute_probabilities_for_training(
     }
 
 
-def craft_training_prompt(query: str, doc: str, answer: str) -> str:
-    return f"Context:\n{doc}\n\nQuery:\n{query}\n\nAnswer:\n{answer}"
-
 
 class RagHandler(nn.Module):
     """
@@ -114,6 +111,27 @@ class RagHandler(nn.Module):
     def set_use_rag(self, use_rag: bool):
         self.use_rag = use_rag
 
+
+    def craft_autoregressive_query_without_doc(self, query: str) -> str:
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant. You are specialized in answering STEM questions. "
+                "You will be provided with a question to answer.",
+            },
+            {
+                "role": "user",
+                "content": f"Question:\n{query}",
+            },
+        ]
+
+        mess_prep: str = self.llm.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
+        return mess_prep
     def craft_autoregressive_query(self, query: str, doc: str) -> str:
         messages = [
             {
@@ -237,7 +255,7 @@ class RagHandler(nn.Module):
     def replug_inference(
         self,
         query: str,
-        n_docs: int = 10,
+        n_docs_retrieved: int = 10,
         decoding_strategy: str = "greedy",
         return_generator: bool = False,
         return_prompt: bool = False,
@@ -265,7 +283,7 @@ class RagHandler(nn.Module):
         """
 
         if self.use_rag:
-            retrieved_docs = self.faiss.search_text(query, n_neighbors=n_docs)
+            retrieved_docs = self.faiss.search_text(query, n_neighbors=n_docs_retrieved)
             autoregressive_state = [
                 {
                     "past_key_values": None,
@@ -294,9 +312,9 @@ class RagHandler(nn.Module):
                     "past_key_values": None,
                     "doc": None,
                     "similarity": 1.0,
-                    "query": query,
+                    "query": self.craft_autoregressive_query_without_doc(query),
                     "tokenized_query": self.llm.tokenizer(
-                        query,
+                        self.craft_autoregressive_query_without_doc(query),
                         return_tensors="pt",
                         padding=False,
                     )["input_ids"],
