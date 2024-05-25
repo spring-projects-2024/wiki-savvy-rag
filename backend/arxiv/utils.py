@@ -16,7 +16,7 @@ import fitz
 arx_client = arxiv.Client(delay_seconds=0.0)
 
 
-def get_id_from_link_prompt(query: str) -> List[str]:
+def get_ids_from_link_prompt(query: str) -> List[str]:
     """
     Takes the query for the LLM, from the user and checks if it contains a link to archive paper.
     If that is the case, returns paper ids from the link, otherwise returns None

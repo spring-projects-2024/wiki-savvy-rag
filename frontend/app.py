@@ -52,6 +52,10 @@ print(st.session_state["uploaded_file"])
 
 if prompt := st.chat_input("Please ask a question."):
     st.chat_message("user").markdown(prompt)
+    link_id = get_id_from_link_prompt(prompt)
+    if (link_id) != None:
+        print(link_id)
+
     with st.spinner("Thinking..."):
         stream, retrieved_docs = controller.inference(st.session_state.messages, prompt)
 
