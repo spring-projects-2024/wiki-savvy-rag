@@ -171,9 +171,9 @@ def parse_references(references):
     return id_list
 
 
-def get_id_from_pdf(pdf_path):
-    """Given a path to pdf file, it will return the paper id (as title)"""
-    doc = fitz.open(pdf_path)
+def get_id_from_pdf(pdf_file):
+    """Given a pdf file, it will return the paper id (as title)"""
+    doc = fitz.open(stream=pdf_file, filetype="pdf")
     first_page = doc[0]
     blocks = first_page.get_text("dict")["blocks"]
     title = ""
