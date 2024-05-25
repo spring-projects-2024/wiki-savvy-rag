@@ -9,7 +9,7 @@ from transformers import (
 from transformers.utils import ModelOutput
 from torch import nn
 
-DEFAULT_MODEL = "microsoft/phi-3-mini-128k-instruct"
+DEFAULT_MODEL = "Minami-su/Qwen1.5-0.5B-Chat_llamafy"
 
 
 class LLMHandler(nn.Module):

@@ -151,7 +151,9 @@ The demo allows users to customize configuration options, as shown in the follow
 All options can be configured directly through the chatbot's UI:
 
 * **Device**: Users can select from all compatible devices available on their machine. If a CUDA-enabled graphics card is present, it is recommended to select it for improved performance.
-* **Model**: Choose between `Minami-su/Qwen1.5-0.5B-Chat_llamafy` and `microsoft/phi-3-mini-128k-instruct`. These models require approximately 2GB and 16GB of memory on the selected device, respectively.
+* **Model**: Choose between `Minami-su/Qwen1.5-0.5B-Chat_llamafy` and `microsoft/phi-3-mini-128k-instruct`. Despite all our analysis were done on Qwen 1.5, we inserted also 
+Microsoft's Phi-3 for comparison.
+These models require approximately 2GB and 16GB of memory on the selected device, respectively.
 * **Decoding Strategy**: Supported options include:
   * Greedy decoding
   * Top-k decoding (considering 50 tokens)
