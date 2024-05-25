@@ -2,7 +2,6 @@
 
 \documentclass[11pt]{article}
 
-% Remove the "review" option to generate the final version.
 \usepackage{WIKI-SAVVY-RAG}
 \usepackage{times}
 \usepackage{latexsym}
@@ -11,12 +10,12 @@
 \usepackage{microtype}
 \usepackage{inconsolata}
 
+% TODOS: 
+% - Add the training section
+% - Add the MMLU results
+% - Add the training results
+% - Add bibliography
 
-% If the title and author information does not fit in the area allocated, uncomment the following
-%
-%\setlength\titlebox{<dim>}
-%
-% and set <dim> to something 5cm or larger.
 
 \title{Wikipedia-Savvy-RAG: Wikipedia-backed RAG system expert about STEM subjects}  
 
@@ -25,9 +24,11 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-We present Wikipedia-Savvy-RAG, a Retrieval-Augmented Generation (RAG) system 
-fine-tuned for STEM domain discussions. Our system features a chat interface that 
-enhances responses using retrieved Wikipedia passages.  
+We present Wikipedia-Savvy-RAG, a Retrieval-Augmented Generation (RAG) system for 
+STEM domain question answering. Our system features a chat interface that 
+enhances responses using retrieved Wikipedia passages.
+The system was built with low computational resources in mind and can be easily
+deployed on powerful-enough personal computers.
 We assessed the system using STEM question-answering benchmarks from the MMLU dataset, 
 fine-tuning the LLM for improved performance. 
 
@@ -55,20 +56,16 @@ interact with the model in real-time. Users can ask questions about STEM
 subjects, and the model will provide answers based on the Wikipedia passages it
 retrieves from its knowledge base. 
 
-We evaluated our system using STEM question-answering benchmarks from the MMLU
+The system was built under the constraints of low computational resources for 
+both inference and finetuning, and can be deployed on personal computers with a
+CUDA-enabled GPU with at least 8GB of memory obtaining reasonable performances.
+
+We evaluated our system using STEM multiple-choice questions from the MMLU
 dataset. We fine-tuned the LLM for improved performance, comparing the accuracy
 of our system with and without RAG, before and after fine-tuning.
 
 This report will outline the steps we took to build our system, the motivation
 behind our choices, and the results of our evaluation. 
-One note on this is that we tried to implement some of the components from scratch
-to have a better understanding of the system and to have more control over the
-implementation.
-This choice wasn't always the most efficient, but it allowed us to learn a lot
-about the inner workings of the system. 
-We think that this work demonstrates the potential of RAG systems in specialized 
-domains like STEM and provived us with valuable insights about the best practices 
-to follow when building such systems.
 
 \section{Related Works}
 
@@ -91,12 +88,11 @@ gradient through Low Rank Adapters (LoRA).
 \section{System Overview}
 Our system is composed of four main components.
 An SQLite database stores the Wikipedia passages for faster reading.
-An encoder-only model, commonly referred to as embedder, processes the queries and the Wikipedia passages to
-obtain a dense representation of them; in this way, similarity between the queries and the passages can be computed
-by simple dot products.
+An encoder-only model, commonly referred to as embedder, processes the queries and the 
+Wikipedia passages to obtain a dense representation of them; in this way, similarity 
+between the queries and the passages can be computed by simple dot products.
 A vector database stores the embeddings for fast similarity search.
 A RAG handler generates the answers using a LLM and the retrieved passages.
-
 
 \section{Knowledge Base}
 
@@ -118,12 +114,18 @@ We stored all of these, together with their titles, in an SQLite database.
 
 \subsection{Embeddings}
 
-Once we had the cleaned Wikipedia passages, we processed them with an embedder to obtain the embeddings.
-We used the BAAI/bge-small-en-v1.5 model \textit{link}, available on the Hugging Face model hub, 
-which was a good compromise between performance and computational resources. 
-\textit{maybe Mattia can explain a little better}
+Once we had the cleaned Wikipedia passages, we processed them with an embedder to obtain the dense 
+representations.
+We used the BAAI/bge-small-en-v1.5 model \textit{link}, available on the Hugging Face model hub.
 
-The embedder is a BERT-like model with 33.4M parameters which outputs 384-dimensional vectors.
+The model is the smaller version of the BAAI General Embeedding family v1.5. 
+To get the sentence embeddings, it uses the last hidden state of the [CLS] token, and it outputs 
+384-dimensional vectors.
+
+We chose this model for its balance between performance and computational cost.
+In fact, the embedder is significantly smaller than its peers, being a BERT-like model with 33.4M 
+parameters and only 0.12GB of memory usage, but achieves a 51.68 score on the MTEB Retrival task.
+
 
 
 \subsection{Vector Database}
@@ -145,21 +147,32 @@ We compared the performance of different indexes and quantization techniques to 
 configuration for our system. See the Benchmark section for more details.
 We eventually chose the Flat index with 128 subvectors product quantization.
 
-\section{RAG}
+\section{Retrieval-Augmented Generation}
 
-\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
+The Retrieval-Augmented Generation (RAG) required to decide the Large Language Model (LLM) to use 
+and the way to generate the answer given the top-k most similar passages retrieved from the knowledge base.
+Similarity is calculated using the dot product between the query and the passages embeddings.
 
-\subsection{LLM}
+\subsection{Large Language Model}
 
-\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
+The choice of the LLM was crucial for the performance of the system. Following the
+same reasoning as for the embedder, we chose a model that was small but still powerful.
+We chose the Minami-su/Qwen1.5-0.5B-Chat \textit{link}, available on the Hugging Face model hub. 
+This model is the smaller version of the Qwen family v1.5, and it has only 620M parameters, making
+it one of the smallest models available on the hub.
+It was pretrained with a large amount of data, and post-trained with both supervised finetuning 
+and direct preference optimization. It has a context length of 32K tokens.
 
 \subsection{Generation}
 
-\textit{Talk about the two ways to generate the answer: naive and REPLUG}
+The generation process is the core of the RAG model. We implemented two methods to generate the
+answers: the naive method and the REPLUG method.
+The naive method is the simplest one: the model is feeded with the concatenation of all 
+the retrieved passages and the query, and it generates the answer.
+The REPLUG method is more complex: the model is given the query and each individual passage 
+separately, generating an answer for each one. The final answer is then produced by 
+combining the predicted probabilities from each passage.
+
 
 \section{Finetuning}
 
@@ -186,7 +199,7 @@ that allows users to interact with the model in real-time with a chat-like inter
 The application lets users ask questions about STEM subjects, and the model will provide answers 
 based on the Wikipedia passages it retrieves from its knowledge base. 
 The user can decide the number of passages to retrieve, the decoding strategy (greedy, top-k, top-p), 
-the inference type (naive or REPLUG) and other configuration parameters.
+the generation type (naive or REPLUG) and other configuration parameters.
 Refer to our GitHub repository for more information on the application.
 
 \subsection{Arxiv}
@@ -195,14 +208,13 @@ Refer to our GitHub repository for more information on the application.
 
 \section{Benchmark}
 
-\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
+To evaluate the performance of our system, we conducted several experiments.
+We compared the performance of different Faiss indexes, the accuracy of the system with and without RAG,
+and the accuracy of the system before and after fine-tuning.
 
-\subsection{Faiss index}
+\subsection{Faiss indexes}
 
-To choose the best Faiss index for our system, we compared the performance of 
-different indexes. The task was to retrieve the K most similar passages to a
+The task was to retrieve the k most similar passages to a
 given query coming from the MMLU dataset.
 The parameters we considered were the recall, the query time, 
 and the memory usage. 
@@ -214,11 +226,14 @@ the amount of quantization bits.
 
 \subsection{MMLU}
 
-\section{Results}
+The Measuring Massive Multitask Language Understanding (MMLU) is a collection of 
+multiple-choice questions that spans a wide range of topics.
+For evaluating our system, we focused on the STEM subjects, which are the most
+relevant for our application.
+We hand-picked the subcategories that according to us were part of the STEM domain and
+obtain a total of about 3000 questions.
 
-\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
+\section{Results}
 
 \subsection{Training}
 
@@ -260,8 +275,18 @@ Index & Recall & Query Time & Memory \\
 \hline
 \end{tabular}
 \caption{Faiss index comparison}
+\
 \label{tab:faiss-index}
 \end{table}
+
+As it is expected, Flat indexes are the ones that perform the best in terms of recall.
+Here what really matters is the trade-off between compression level and accuracy.
+The query time significantly decreseas with the use of IVF and HNSW indexes, but the recall
+is also affected.
+
+In the end, since the query time was fine for our purposes, we chose the Flat index with 128
+subvectors product quantization, which had the lowest memory usage and a good recall.
+
 
 \subsection{MMLU}
 \textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
@@ -274,11 +299,22 @@ system for STEM domain discussions. Our application features a chat interface
 that enhances responses using retrieved Wikipedia passages. We processed the 
 English Wikipedia to build a vector database of STEM-focused semantic 
 embeddings. 
-We assessed the system using STEM question-answering benchmarks from the MMLU 
+We assessed the system using the MMLU 
 dataset, fine-tuning the LLM for improved performance. Evaluations compared 
 performance with and without RAG, before and after fine-tuning.
 Results show significant accuracy improvements, highlighting RAG's potential 
 in specialized domains like STEM.
+
+One note is that we tried to implement some of the components from scratch
+to have a better understanding of the system and to have more control over the
+implementation.
+This choice wasn't always the most efficient, but it allowed us to learn a lot
+about the inner workings of retrieval augmented systems and processing of natural 
+language in general. 
+
+We think that this work demonstrates the potential of RAG systems in specialized 
+domains like STEM and provived us with valuable insights about the best practices 
+to follow when building such systems.
 
 \bibliography{wiki-savvy-rag}
 \bibliographystyle{acl_natbib}
@@ -289,5 +325,7 @@ in specialized domains like STEM.
 \label{sec:appendix}
 
 This is a section in the appendix.
+
+\textit{I don't think it's really needed}
 
 \end{document}
