@@ -4,6 +4,7 @@ from sidebar import build_sidebar
 from backend.arxiv.utils import get_ids_from_link_prompt, get_id_from_pdf
 import os
 
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 st.set_page_config("Wikipedia Savvy", page_icon=":books:")
 
@@ -58,9 +59,8 @@ if prompt := st.chat_input("Please ask a question."):
         )
 
     with st.spinner("Thinking..."):
-        stream, retrieved_docs = controller.inference(
-            st.session_state.messages, prompt, st.session_state["uploaded_file"]
-        )
+        controller.get_chunks_from_ids(st.session_state["uploaded_file"])
+        stream, retrieved_docs = controller.inference(st.session_state.messages, prompt)
 
         st.session_state.messages.append({"role": "user", "content": prompt})
 

@@ -1,0 +1,49 @@
+We experiment with RAG in a wide range of knowledge-intensive tasks. For all experiments, we use a single Wikipedia dump for our non-parametric knowledge source. Following \citet{lee-etal-2019-latent} and \citet{Karpukhin20dense}, we use the December 2018 dump. Each Wikipedia article is split into disjoint 100-word chunks, to make a total of 21M documents.
+%
+We use the document encoder to compute an embedding for each document, and build a single MIPS index using FAISS~\cite{JDH17} with a Hierarchical Navigable Small World approximation for fast retrieval~\cite{Malkov2016EfficientAR}.
+% 
+During training, we retrieve the top $k$ documents for each query. We consider $k \in \{5,10\}$ for training and set $k$ for test time using dev data. We now discuss experimental details for each task.
+
+\subsection{Open-domain Question Answering}
+
+Open-domain question answering (QA) is an important real-world application and common testbed for knowledge-intensive tasks~\cite{guu2020realm}. 
+We treat questions and answers as input-output text pairs $(x,y)$ and train RAG by directly minimizing the negative log-likelihood of answers. 
+We compare RAG to the popular extractive QA paradigm~\cite{chen_reading_2017,clark_simple_2017,lee-etal-2019-latent,Karpukhin20dense}, where answers are extracted spans from retrieved documents, relying primarily on non-parametric knowledge.
+We also compare to ``Closed-Book QA'' approaches~\cite{roberts2020t5cqba}, which, like RAG, generate answers, but which do not exploit retrieval, instead relying purely on parametric knowledge.
+We consider four popular open-domain QA datasets: Natural Questions (NQ)~\cite{kwiatkowski_natural_2019}, TriviaQA (TQA)~\cite{joshi_triviaqa:_2017}. WebQuestions (WQ)~\cite{berant_semantic_2013} and CuratedTrec (CT)~\cite{baudivs2015modeling}.
+% 
+As CT and WQ are small, we follow DPR~\cite{Karpukhin20dense} by initializing CT and WQ models with our NQ RAG model.
+We use the same train/dev/test splits as prior work~\cite{lee-etal-2019-latent,Karpukhin20dense} 
+% 
+and report Exact Match (EM) scores. 
+For TQA, to compare with T5~\cite{roberts2020t5cqba}, we also evaluate on the TQA Wiki test set.
+
+
+
+\subsection{Abstractive Question Answering}
+
+RAG models 
+can go beyond simple extractive QA 
+and answer questions with free-form, abstractive text generation. To test RAG's natural language generation (NLG) in a knowledge-intensive setting, we use the MSMARCO NLG task v2.1~\cite{DBLP:conf/nips/NguyenRSGTMD16}. The task consists of questions, ten gold passages retrieved from a search engine for each question, and a full sentence answer annotated from the retrieved passages.
+We do not use the supplied passages, only the questions and answers, to treat MSMARCO as an open-domain abstractive QA task. MSMARCO has some questions that cannot be answered in a way that matches the reference answer without access to the gold passages, such as ``What is the weather in Volcano, CA?'' so performance will be lower without using gold passages. 
+We also note that some MSMARCO questions cannot be answered using Wikipedia alone. Here, RAG can rely on parametric knowledge to generate reasonable responses.
+
+\subsection{Jeopardy Question Generation}
+
+To evaluate RAG's generation abilities in a non-QA setting, we study open-domain question generation.
+Rather than use questions from standard open-domain QA tasks, which typically consist of short, simple questions, we propose the more demanding task of generating Jeopardy questions. Jeopardy is an unusual format that consists of trying to guess an entity from a fact about that entity. For example, ``The World Cup'' is the answer to the question ``In 1986 Mexico scored as the first country to host this international sports competition twice.'' As Jeopardy questions are precise, factual statements, generating Jeopardy questions conditioned on their answer entities constitutes a challenging knowledge-intensive generation task. 
+
+We use the splits from SearchQA
+\cite{dunn_searchqa:_2017}, with 100K train, 14K dev, and 27K test examples. 
+As this is a new task, we train a BART model for comparison.
+Following~\cite{zhang-bansal-2019-addressing}, we evaluate using the SQuAD-tuned Q-BLEU-1 metric~\cite{nema-khapra-2018-towards}. Q-BLEU is a variant of BLEU with a higher weight for matching entities and has higher correlation with human judgment for question generation than standard metrics. 
+We also perform two human evaluations, one to assess generation factuality, and one for specificity. We define factuality as whether a statement can be corroborated by trusted external sources, and specificity as high mutual dependence between the input and output~\cite{li-etal-2016-diversity}. 
+We follow best practice and use pairwise comparative evaluation~\cite{Li2019ACUTEEVALID}. Evaluators are shown an answer and two generated questions, one from BART and one from RAG. They are then asked to pick one of four options---quuestion A is better, question B is better, both are good, or neither is good.
+
+\subsection{Fact Verification}
+
+FEVER~\cite{thorne-etal-2018-fever} requires classifying whether a natural language claim is supported or refuted by Wikipedia, or whether there is not enough information to decide. The task requires retrieving evidence from Wikipedia relating to the claim and then reasoning over this evidence to classify whether the claim is true, false, or unverifiable from Wikipedia alone.
+FEVER is a retrieval problem coupled with an challenging entailment reasoning task. It also  
+provides an appropriate testbed for exploring the RAG models' ability to handle classification rather than generation. 
+We map FEVER class labels (supports, refutes, or not enough info) to single output tokens and directly train with claim-class pairs. Crucially, unlike most other approaches to FEVER, we do not use supervision on retrieved evidence. In many real-world applications, retrieval supervision signals aren't available, and models that do not require such supervision will be applicable to a wider range of tasks. 
+We explore two variants: the standard 3-way classification task (supports/refutes/not enough info) and the 2-way (supports/refutes) task studied in \citet{Thorne2020AvoidingCF}. In both cases we report label accuracy.

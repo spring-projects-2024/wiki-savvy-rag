@@ -1,0 +1,93 @@
+\newcommand{\TODO}[1]{}
+\newif\ifshowtodo
+\showtodotrue
+% \showtodofalse
+\ifshowtodo
+\renewcommand{\TODO}[1]{{\color{red} TODO: {#1}}}
+\fi
+
+\newcounter{srCounter}
+\newif\ifsrvar
+\srvartrue
+% \srvarfalse
+\ifsrvar
+\newcommand{\seb}[1]{{\small \color{red} \refstepcounter{srCounter}\textsf{[SR]$_{\arabic{srCounter}}$:{#1}}}}
+\else
+\newcommand{\seb}[1]{}
+\fi
+
+\newcounter{fpCounter}
+\newif\iffpvar
+\fpvartrue
+% \fpvarfalse
+\iffpvar
+\newcommand{\fabio}[1]{{\small \color{blue} \refstepcounter{fpCounter}\textsf{[FP]$_{\arabic{fpCounter}}$:{#1}}}}
+\else
+\newcommand{\fabio}[1]{}
+\fi
+
+\newcounter{trCounter}
+\newif\iftrvar
+\trvartrue
+% \trvarfalse
+\iftrvar
+\newcommand{\tim}[1]{{\small \color{purple} \refstepcounter{trCounter}\textsf{[TR]$_{\arabic{trCounter}}$:{#1}}}}
+\else
+\newcommand{\tim}[1]{}
+\fi
+
+\newcounter{apCounter}
+\newif\ifapvar
+\apvartrue
+% \apvarfalse
+\ifapvar
+\newcommand{\piktus}[1]{{\small \color{orange} \refstepcounter{apCounter}\textsf{[AP]$_{\arabic{apCounter}}$:{#1}}}}
+\else
+\newcommand{\piktus}[1]{}
+\fi
+
+\newcounter{plCounter}
+\newif\ifplvar
+\plvartrue
+% \plvarfalse
+\ifplvar
+\newcommand{\patrick}[1]{{\small \color{magenta} \refstepcounter{plCounter}\textsf{[PL]$_{\arabic{plCounter}}$:{#1}}}}
+\else
+\newcommand{\patrick}[1]{}
+\fi
+
+
+\newcounter{dkCounter}
+\newif\ifdkvar
+\dkvartrue
+% \dkvarfalse
+\ifdkvar
+\newcommand{\douwe}[1]{{\small \color{cyan} \refstepcounter{dkCounter}\textsf{[DK]$_{\arabic{dkCounter}}$:{#1}}}}
+\else
+\newcommand{\douwe}[1]{}
+\fi
+
+
+\newcounter{epCounter}
+\newif\ifepvar
+\epvartrue
+% \epvarfalse
+\ifepvar
+\newcommand{\ethan}[1]{{\small \color{orange} \refstepcounter{epCounter}\textsf{[EP]$_{\arabic{epCounter}}$:{#1}}}}
+\else
+\newcommand{\ethan}[1]{}
+\fi
+
+% \newcommand{\citetodo}[1]{{\color{red}(#1)}}
+% \iftrue
+\iffalse
+\renewcommand{\fabio}[1]{}
+\renewcommand{\seb}[1]{}
+\renewcommand{\piktus}[1]{}
+\renewcommand{\tim}[1]{}
+\renewcommand{\patrick}[1]{}
+\renewcommand{\douwe}[1]{}
+\renewcommand{\ethan}[1]{}
+
+% \renewcommand{\citetodo}[1]{}
+\fi

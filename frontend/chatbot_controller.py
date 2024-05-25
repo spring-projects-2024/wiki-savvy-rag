@@ -8,6 +8,7 @@ from backend.model.rag_handler import TOP_K, TOP_P, RagHandler
 from backend.vector_database.dataset import DatasetSQL
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
 
+
 MODELS = [
     {
         "name": "Qwen 1.5 0.5B Chat",
@@ -179,6 +180,9 @@ class ChatbotController:
             <strong>Chunk {i+1}</strong>: {titles} (score: {score:.2f})</br>"""
         retrieved_docs_str += "</p>"
         return retrieved_docs_str
+
+    def get_chunks_from_ids(self, ids: List[str], chunk_limit):
+        pass
 
     mock_responses = [
         "Banana and dragonfruit salad is a delicious and healthy dish that you can make in minutes.",
