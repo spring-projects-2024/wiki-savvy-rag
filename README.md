@@ -4,7 +4,7 @@
 
 For our project, we implemented, fine-tuned, and evaluated a Retrieval Augmented Generation system that could discuss a range of topics in the STEM domain. To showcase our system, we developed a simple application with a chat interface that replies to the user prompts with the help of retrieved Wikipedia passages.
 
-We downloaded, cleaned, and filtered the English Wikipedia (~100GB) and built a vector database of semantic embeddings based on STEM articles. We then built a RAG system using one of open-source LLMs, `Minami-su/Qwen1.5-0.5B-Chat_llamafy` and `microsoft/phi-3-mini-128k-instruct`, and the open-source embedder `BAAI/bge-small-en-v1.5`. To evaluate our system, we considered its accuracy on question answering benchmarks focusing on the STEM domain, e.g., using an appropriate subset of MMLU.
+We downloaded, cleaned, and filtered the English Wikipedia (~100GB) and built a vector database of semantic embeddings based on STEM articles. We then built a RAG system using one of open-source LLMs, `Qwen/Qwen1.5-0.5B-Chat` and `microsoft/phi-3-mini-128k-instruct`, and the open-source embedder `BAAI/bge-small-en-v1.5`. To evaluate our system, we considered its accuracy on question answering benchmarks focusing on the STEM domain, e.g., using an appropriate subset of MMLU.
 
 To improve the performance of our system, we fine-tuned the LLM on a STEM question answering task. We assessed the performance with and without RAG, as well as before and after fine-tuning.
 
@@ -151,7 +151,8 @@ The demo allows users to customize configuration options, as shown in the follow
 All options can be configured directly through the chatbot's UI:
 
 * **Device**: Users can select from all compatible devices available on their machine. If a CUDA-enabled graphics card is present, it is recommended to select it for improved performance.
-* **Model**: Choose between `Minami-su/Qwen1.5-0.5B-Chat_llamafy` and `microsoft/phi-3-mini-128k-instruct`. These models require approximately 2GB and 16GB of memory on the selected device, respectively.
+* **Model**: Choose between `Qwen/Qwen1.5-0.5B-Chat`, a finetuned version of it, and  `microsoft/phi-3-mini-128k-instruct`. Despite all our analysis were done on Qwen 1.5, we inserted also Microsoft's Phi-3 for comparison. These models require approximately 2GB and 16GB of memory on the selected device, respectively.
+* **Finetuned Model Path**: Path to the finetuned checkpoint to use
 * **Decoding Strategy**: Supported options include:
   * Greedy decoding
   * Top-k decoding (considering 50 tokens)
@@ -162,8 +163,8 @@ All options can be configured directly through the chatbot's UI:
 * **Inference Type**: Defines how to use retrieved documents during inference:
   * **Naive**: Append all documents before the query and perform inference based on that.
   * **REPLUG**: Append each document to the query separately, determine token probabilities, and calculate weighted averages of these tokens based on document similarity. For more information, see the [REPLUG](https://arxiv.org/abs/2301.12652) paper.
-  * **Mock**: Mock response of the chatbot (for testing purposes).
 * **Number of Documents to Retrieve**: Specify the number of documents to retrieve.
+* **Mock Responses**: Whether to mock responses (for testing purposes).
 
 
 ### Notes for future improvements
