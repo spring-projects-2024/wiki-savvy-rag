@@ -152,13 +152,13 @@ All options can be configured directly through the chatbot's UI:
 
 * **Device**: Users can select from all compatible devices available on their machine. If a CUDA-enabled graphics card is present, it is recommended to select it for improved performance.
 * **Model**: Choose between `Qwen/Qwen1.5-0.5B-Chat`, a finetuned version of it, and  `microsoft/phi-3-mini-128k-instruct`. Despite all our analysis were done on Qwen 1.5, we inserted also Microsoft's Phi-3 for comparison. These models require approximately 2GB and 16GB of memory on the selected device, respectively.
-* **Finetuned Model Path**: Path to the finetuned checkpoint to use
+* **Finetuned Model Path**: Path to the finetuned checkpoint to use (see the [Finetuning the LLM](finetuning-the-llm) section)
 * **Decoding Strategy**: Supported options include:
   * Greedy decoding
   * Top-k decoding (considering 50 tokens)
   * Top-p decoding (with a cumulative probability of 0.9)
 * **Use RAG**: Option to retrieve and use documents to enhance the assistant's replies.
-* **Database Path**: Path to the SQL database generated during the preliminary steps (see the Preliminary Steps section).
+* **Database Path**: Path to the SQL database generated during the preliminary steps (see the [Preliminary Steps](preliminary-steps) section).
 * **Vector Index Path**: Path to the vector database.
 * **Inference Type**: Defines how to use retrieved documents during inference:
   * **Naive**: Append all documents before the query and perform inference based on that.
@@ -217,7 +217,8 @@ Here is a table summarizing our results:
 
 The index we chose is PQ128 because it was a good compromise between accuracy, speed and size on memory.
 
+### Finetuning the LLM
+
 ### Benchmark on MMLU  
 
-### Train LLM
 
