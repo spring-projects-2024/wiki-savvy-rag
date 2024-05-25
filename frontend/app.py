@@ -6,7 +6,6 @@ import os
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
-first_prompt = True
 
 st.set_page_config("Wikipedia Savvy", page_icon=":books:")
 
@@ -20,8 +19,17 @@ with st.spinner("Loading/Updating the Chatbot. It could take a while..."):
 
 st.title(":books: Wikipedia Savvy")
 
+
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
+
+
+if len(st.session_state["messages"]) == 2:
+    st.toast(
+        "Did you know that you can use link to arXiv papers to augment the model's reply? \n You can also directly upload the pdf of an arXiv paper, using the Upload button below!",
+        icon="😍",
+    )
+
 
 # Display chat messages
 for message in st.session_state.messages:
@@ -39,12 +47,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 if prompt := st.chat_input("Please ask a question."):
-    if first_prompt:
-        st.toast(
-            "Did you know that you can use link to arXiv papers to augment the model's reply? \n You can also directly upload the pdf of an arXiv paper!",
-            icon="😍",
-        )
-        first_prompt = False
+
     st.chat_message("user").markdown(prompt)
     with st.spinner("Thinking..."):
         stream, retrieved_docs = controller.inference(st.session_state.messages, prompt)
