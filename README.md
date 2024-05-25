@@ -151,9 +151,8 @@ The demo allows users to customize configuration options, as shown in the follow
 All options can be configured directly through the chatbot's UI:
 
 * **Device**: Users can select from all compatible devices available on their machine. If a CUDA-enabled graphics card is present, it is recommended to select it for improved performance.
-* **Model**: Choose between `Qwen/Qwen1.5-0.5B-Chat` and `microsoft/phi-3-mini-128k-instruct`. Despite all our analysis were done on Qwen 1.5, we inserted also 
-Microsoft's Phi-3 for comparison.
-These models require approximately 2GB and 16GB of memory on the selected device, respectively.
+* **Model**: Choose between `Qwen/Qwen1.5-0.5B-Chat`, a finetuned version of it, and  `microsoft/phi-3-mini-128k-instruct`. Despite all our analysis were done on Qwen 1.5, we inserted also Microsoft's Phi-3 for comparison. These models require approximately 2GB and 16GB of memory on the selected device, respectively.
+* **Finetuned Model Path**: Path to the finetuned checkpoint to use
 * **Decoding Strategy**: Supported options include:
   * Greedy decoding
   * Top-k decoding (considering 50 tokens)
@@ -164,8 +163,8 @@ These models require approximately 2GB and 16GB of memory on the selected device
 * **Inference Type**: Defines how to use retrieved documents during inference:
   * **Naive**: Append all documents before the query and perform inference based on that.
   * **REPLUG**: Append each document to the query separately, determine token probabilities, and calculate weighted averages of these tokens based on document similarity. For more information, see the [REPLUG](https://arxiv.org/abs/2301.12652) paper.
-  * **Mock**: Mock response of the chatbot (for testing purposes).
 * **Number of Documents to Retrieve**: Specify the number of documents to retrieve.
+* **Mock Responses**: Whether to mock responses (for testing purposes).
 
 
 ### Notes for future improvements
