@@ -171,7 +171,8 @@ def parse_references(references):
     return id_list
 
 
-def extract_title(pdf_path):
+def get_id_from_pdf(pdf_path):
+    """Given a path to pdf file, it will return the paper id (as title)"""
     doc = fitz.open(pdf_path)
     first_page = doc[0]
     blocks = first_page.get_text("dict")["blocks"]
@@ -184,7 +185,10 @@ def extract_title(pdf_path):
                 if span["size"] > max_font_size:
                     max_font_size = span["size"]
                     title = span["text"]
-    return title.strip()
+
+    id = title.strip()
+
+    return id
 
 
 if __name__ == "__main__":
@@ -207,4 +211,4 @@ if __name__ == "__main__":
     print(f"References parsed in {time.process_time()} seconds")
 
     local_pdf_path = "your_path_to_file.pdf"
-    print(extract_title(local_pdf_path))
+    print(get_id_from_pdf(local_pdf_path))
