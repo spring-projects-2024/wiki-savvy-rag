@@ -10,6 +10,8 @@ from urllib.request import urlretrieve
 import arxiv
 from refextract import extract_references_from_url
 import re
+import fitz
+
 
 arx_client = arxiv.Client(delay_seconds=0.0)
 
@@ -169,10 +171,26 @@ def parse_references(references):
     return id_list
 
 
+def extract_title(pdf_path):
+    doc = fitz.open(pdf_path)
+    first_page = doc[0]
+    blocks = first_page.get_text("dict")["blocks"]
+    title = ""
+    max_font_size = 0
+    for block in blocks:
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                # Check if the current span has the largest font size found so far
+                if span["size"] > max_font_size:
+                    max_font_size = span["size"]
+                    title = span["text"]
+    return title.strip()
+
+
 if __name__ == "__main__":
     title = "Supersymmetric Quantum Mechanics, multiphoton algebras and coherent states"
     x = get_id_from_link_prompt(
-        "i have two papers here https://arxiv.org/abs/2005.11401  and also https://arxiv.org/abs/2405.10302 https://arxiv.org/abs/12345678 https://arxiv.org/src/87654321/supplementary.zip"
+        "i have some papers here https://arxiv.org/abs/2005.11401  and also https://arxiv.org/abs/2405.10302 https://arxiv.org/abs/12345678 https://arxiv.org/src/87654321/supplementary.zip"
     )
     print(get_id_from_link_prompt(x))
 
@@ -187,3 +205,6 @@ if __name__ == "__main__":
     ids = parse_references(references)
     print(f"Number of references found: {len(ids)}")
     print(f"References parsed in {time.process_time()} seconds")
+
+    local_pdf_path = "your_path_to_file.pdf"
+    print(extract_title(local_pdf_path))
