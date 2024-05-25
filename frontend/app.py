@@ -56,10 +56,11 @@ if prompt := st.chat_input("Please ask a question."):
         st.session_state["uploaded_file"].extend(
             [paper_id for paper_id in link_id if link_id]
         )
-    print(st.session_state["uploaded_file"])
 
     with st.spinner("Thinking..."):
-        stream, retrieved_docs = controller.inference(st.session_state.messages, prompt)
+        stream, retrieved_docs = controller.inference(
+            st.session_state.messages, prompt, st.session_state["uploaded_file"]
+        )
 
         st.session_state.messages.append({"role": "user", "content": prompt})
 

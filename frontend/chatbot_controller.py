@@ -171,11 +171,7 @@ class ChatbotController:
             decoding_strategy=self.configs["decoding_strategy"],
         )
 
-    def _mock_inference(
-        self,
-        history: List[Dict],
-        query: str,
-    ):
+    def _mock_inference(self, history: List[Dict], query: str):
         """Return a mock response instead of performing an inference. Used for testing purposes."""
 
         response = self.mock_responses[len(history) % len(self.mock_responses)]
