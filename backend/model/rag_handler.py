@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Optional, List, Dict, Tuple
 
 from torch import nn
@@ -13,6 +12,11 @@ DECODING_STRATEGIES = ["greedy", "top_k", "top_p"]
 INFERENCE_TYPES = ["naive", "replug"]
 TOP_K = 50
 TOP_P = 0.9
+
+DEFAULT_LLM_GENERATION_CONFIG = {
+    "max_new_tokens": 500,
+    "do_sample": False,
+}
 
 
 def compute_probabilities_for_training(
@@ -89,13 +93,9 @@ class RagHandler(nn.Module):
         )
         self.use_rag = use_rag
         self.device = device
-        self.llm_generation_config = self.get_default_llm_config()
+        self.llm_generation_config = DEFAULT_LLM_GENERATION_CONFIG
         if llm_generation_config is not None:
             self.llm_generation_config.update(llm_generation_config)
-
-    def forward(self, batch: dict) -> dict:
-        # for use with RagTrainer
-        return self.forward_batch_query_single_doc(batch)
 
     def to(self, device: str):
         """
@@ -109,75 +109,9 @@ class RagHandler(nn.Module):
     def set_use_rag(self, use_rag: bool):
         self.use_rag = use_rag
 
-    def craft_no_docs_query(self, query: str) -> str:
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a helpful assistant. You are specialized in answering STEM questions. "
-                "You will be provided with a question to answer.",
-            },
-            {
-                "role": "user",
-                "content": f"Question:\n{query}",
-            },
-        ]
-
-        mess_prep: str = self.llm.tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True,
-        )
-
-        return mess_prep
-
-    def craft_single_doc_query(self, query: str, doc: Dict) -> str:
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a helpful assistant. You are specialized in answering STEM questions. "
-                "You will be provided with a context and a question to answer based on the context.",
-            },
-            {
-                "role": "user",
-                "content": f"Context:\n{doc['text']}\nQuestion:\n{query}",
-            },
-        ]
-
-        mess_prep: str = self.llm.tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True,
-        )
-
-        return mess_prep
-
-    def craft_multiple_docs_query(self, query: str, docs: List[Dict]) -> str:
-        user_prompt = ""
-        user_prompt += "== Context ==\n"
-        for i, (docs, _) in enumerate(docs):
-            user_prompt += f"=== Document {i} ===\n"
-            user_prompt += docs["text"] + "\n"
-        user_prompt += f"== User Query ==\n{query}"
-
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a helpful assistant. You are specialized in answering STEM questions."
-                "You will be provided with a context consisting of multiple documents and a question to answer based on the context.",
-            },
-            {
-                "role": "user",
-                "content": user_prompt,
-            },
-        ]
-
-        mess_prep: str = self.llm.tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True,
-        )
-
-        return mess_prep
+    def forward(self, batch: dict) -> dict:
+        # for use with RagTrainer
+        return self.forward_batch_query_single_doc(batch)
 
     def forward_batch_query_single_doc(self, batch: Dict):
         """
@@ -198,7 +132,7 @@ class RagHandler(nn.Module):
         for query, doc in zip(queries, retrieved_docs):
             doc_content, _ = doc[0]
             # header = f"Context:\n{doc_content}\n\nQuery:\n{query}\n\nAnswer:\n"
-            header = self.craft_single_doc_query(query, doc_content)
+            header = self._craft_single_doc_query(query, doc_content)
             headers.append(header)
 
         tokenized_headers: BatchEncoding = self.llm.tokenizer(
@@ -243,40 +177,6 @@ class RagHandler(nn.Module):
             "answer_lengths": answer_lengths,
         }
 
-    def _logits_to_weighted_probs(self, logits: torch.Tensor, scores: torch.Tensor):
-        """
-        Compute the probabilities of the tokens by aggregating the probabilities of the retrieved documents.
-        :param logits:
-        :param scores: Need to be normalized
-        :return:
-        """
-        probas = torch.nn.functional.softmax(
-            logits, dim=-1
-        )  # (num_docs, seq_len, vocab_size)
-        return (probas * scores[:, None, None]).sum(dim=0)  # (seq_len, vocab_size)
-
-    def _next_token_strategy(self, probs, decoding_strategy):
-        assert decoding_strategy in DECODING_STRATEGIES
-        # probs has messed up indices (there is an extra dimension at the beginning),
-        # this code takes this into account
-
-        if decoding_strategy == "greedy":
-            next_token = torch.argmax(probs)
-        elif decoding_strategy == "top_k":
-            top_k_probs, top_k_indices = torch.topk(probs, TOP_K)
-            next_token = top_k_indices[:, torch.multinomial(top_k_probs, 1).item()]
-        elif decoding_strategy == "top_p":
-            sorted_probs, top_k_indices = torch.sort(probs, descending=True)
-            cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
-            sorted_indices_to_remove = cumulative_probs > TOP_P
-            # shift to the right to keep the first token that exceeds TOP_P
-            sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[:, :-1].clone()
-            sorted_indices_to_remove[:, 0] = False
-            sorted_probs[sorted_indices_to_remove] = 0
-            sorted_probs /= sorted_probs.sum()
-            next_token = top_k_indices[:, torch.multinomial(sorted_probs, 1).item()]
-        return next_token
-
     @torch.no_grad()
     def inference(
         self,
@@ -290,7 +190,22 @@ class RagHandler(nn.Module):
         Tuple[str, List[Tuple[str, float]]]
         | Tuple[str, List[Tuple[str, float]], List[Dict]]
     ):
+        """
+        This method performs inference with the LLM model and optionally the RAG model.
+        See the documentation of the specific inference methods for more details (no_rag_inference,
+        naive_inference, replug_inference)
 
+        :param query: the query for which to generate text
+        :param n_docs_retrieved: the number of documents to retrieve
+        :param decoding_strategy: the decoding strategy to use. Can be "greedy", "top_k", or "top_p"
+        :param inference_type: the type of inference to perform. Can be "naive" or "replug"
+        :param return_generator: whether to return a generator or the generated text
+        :param return_prompt: if True, return the prompt used for generation as a third element of the
+        returned tuple
+
+        :return: a tuple with the generated text, the retrieved documents, and the prompt used for generation
+                (if return_prompt is True)
+        """
         assert decoding_strategy in DECODING_STRATEGIES, "Invalid decoding strategy"
         assert inference_type in INFERENCE_TYPES, "Invalid inference type"
 
@@ -332,17 +247,30 @@ class RagHandler(nn.Module):
         Tuple[str, List[Tuple[str, float]]]
         | Tuple[str, List[Tuple[str, float]], List[Dict]]
     ):
+        """
+        This method performs inference with the LLM model only.
+        This method reuses cached values of the past key values of the model to avoid recomputing them.
 
+        :param query: the query for which to generate text
+        :param decoding_strategy: the decoding strategy to use. Can be "greedy", "top_k", or "top_p"
+        :param return_generator: whether to return a generator or the generated text
+        :param return_prompt: if True, return the prompt used for generation as a third element of the
+
+        :return: a tuple with the generated text, an empty list (to match the return type of the other methods),
+        and the prompt used for generation
+        """
         assert decoding_strategy in DECODING_STRATEGIES
+
+        prompt = self._craft_no_docs_query(query)
 
         autoregressive_state = [
             {
                 "past_key_values": None,
                 "doc": None,
                 "similarity": 1.0,
-                "query": self.craft_no_docs_query(query),
+                "query": prompt,
                 "tokenized_query": self.llm.tokenizer(
-                    self.craft_no_docs_query(query),
+                    prompt,
                     return_tensors="pt",
                     padding=False,
                 )["input_ids"],
@@ -361,6 +289,7 @@ class RagHandler(nn.Module):
             return output, [], autoregressive_state[0]["query"]
         return output, []
 
+    @torch.no_grad()
     def naive_inference(
         self,
         query: str,
@@ -380,18 +309,21 @@ class RagHandler(nn.Module):
         3. Creates a prompt with the retrieved passages and the query.
         4. Generates text based on the prompt.
 
-        :param histories: the chat history/histories (right now it is only used in the case RAG is not used)
-        :param queries: the query(queries) for which to generate text
-        :param n_docs: the number of documents to retrieve
-        :param kwargs: additional arguments to pass to the LLM model
+        This method reuses cached values of the past key values of the model to avoid recomputing them.
 
-        :return: a tuple with the generated text and the retrieved documents
+        :param query: the query for which to generate text
+        :param n_docs_retrieved: the number of documents to retrieve
+        :param decoding_strategy: the decoding strategy to use. Can be "greedy", "top_k", or "top_p"
+        :param return_generator: whether to return a generator or the generated text
+        :param return_prompt: if True, return the prompt used for generation as a third element of the
+
+        :return: a tuple with the generated text, the retrieved documents, and the prompt used for generation
         """
 
         assert decoding_strategy in DECODING_STRATEGIES
 
         retrieved_docs = self.faiss.search_text(query, n_neighbors=n_docs_retrieved)
-        prompt = self.craft_multiple_docs_query(query, retrieved_docs)
+        prompt = self._craft_multiple_docs_query(query, retrieved_docs)
         autoregressive_state = [
             {
                 "past_key_values": None,
@@ -443,13 +375,13 @@ class RagHandler(nn.Module):
         This method reuses cached values of the past key values of the model to avoid recomputing them.
 
         :param query: the query for which to generate text
-        :param n_docs: the number of documents to retrieve
+        :param n_docs_retrieved: the number of documents to retrieve
         :param decoding_strategy: the decoding strategy to use. Can be "greedy", "top_k", or "top_p"
         :param return_generator: whether to return a generator or the generated text
         :param return_prompt: if True, return the prompt used for generation as a third element of the
         returned tuple
 
-        :return: a tuple with the token generator and the retrieved documents
+        :return: a tuple with the generated text, the retrieved documents, and the prompt used for generation
         """
 
         assert decoding_strategy in DECODING_STRATEGIES
@@ -460,9 +392,9 @@ class RagHandler(nn.Module):
                 "past_key_values": None,
                 "doc": doc,
                 "similarity": similarity,
-                "query": self.craft_single_doc_query(query, doc),
+                "query": self._craft_single_doc_query(query, doc),
                 "tokenized_query": self.llm.tokenizer(
-                    self.craft_single_doc_query(query, doc),
+                    self._craft_single_doc_query(query, doc),
                     return_tensors="pt",
                     padding=False,
                 )["input_ids"],
@@ -487,6 +419,76 @@ class RagHandler(nn.Module):
         if return_prompt:
             return output, retrieved_docs, autoregressive_state
         return output, retrieved_docs
+
+    def _craft_no_docs_query(self, query: str) -> str:
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant. You are specialized in answering STEM questions. "
+                "You will be provided with a question to answer.",
+            },
+            {
+                "role": "user",
+                "content": f"Question:\n{query}",
+            },
+        ]
+
+        mess_prep: str = self.llm.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
+        return mess_prep
+
+    def _craft_single_doc_query(self, query: str, doc: Dict) -> str:
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant. You are specialized in answering STEM questions. "
+                "You will be provided with a context and a question to answer based on the context.",
+            },
+            {
+                "role": "user",
+                "content": f"Context:\n{doc['text']}\nQuestion:\n{query}",
+            },
+        ]
+
+        mess_prep: str = self.llm.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
+        return mess_prep
+
+    def _craft_multiple_docs_query(self, query: str, docs: List[Dict]) -> str:
+        user_prompt = ""
+        user_prompt += "== Context ==\n"
+        for i, (docs, _) in enumerate(docs):
+            user_prompt += f"=== Document {i} ===\n"
+            user_prompt += docs["text"] + "\n"
+        user_prompt += f"== User Query ==\n{query}"
+
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant. You are specialized in answering STEM questions."
+                "You will be provided with a context consisting of multiple documents and a question to answer based on the context.",
+            },
+            {
+                "role": "user",
+                "content": user_prompt,
+            },
+        ]
+
+        mess_prep: str = self.llm.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
+        return mess_prep
 
     @torch.no_grad()
     def _inference_generator(
@@ -537,12 +539,36 @@ class RagHandler(nn.Module):
             answer.append(next_token_str)
             yield next_token_str
 
-    @staticmethod
-    def get_default_llm_config():
-        return {
-            "max_new_tokens": 500,
-            "do_sample": False,
-        }
+    def _logits_to_weighted_probs(self, logits: torch.Tensor, scores: torch.Tensor):
+        """
+        Compute the probabilities of the tokens by aggregating the probabilities of the retrieved documents.
+        :param logits:
+        :param scores: Need to be normalized
+        :return:
+        """
+        probas = torch.nn.functional.softmax(
+            logits, dim=-1
+        )  # (num_docs, seq_len, vocab_size)
+        return (probas * scores[:, None, None]).sum(dim=0)  # (seq_len, vocab_size)
 
-    def add_arxiv_paper(self, paper):
-        raise NotImplementedError
+    def _next_token_strategy(self, probs, decoding_strategy):
+        assert decoding_strategy in DECODING_STRATEGIES
+        # probs has messed up indices (there is an extra dimension at the beginning),
+        # this code takes this into account
+
+        if decoding_strategy == "greedy":
+            next_token = torch.argmax(probs)
+        elif decoding_strategy == "top_k":
+            top_k_probs, top_k_indices = torch.topk(probs, TOP_K)
+            next_token = top_k_indices[:, torch.multinomial(top_k_probs, 1).item()]
+        elif decoding_strategy == "top_p":
+            sorted_probs, top_k_indices = torch.sort(probs, descending=True)
+            cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
+            sorted_indices_to_remove = cumulative_probs > TOP_P
+            # shift to the right to keep the first token that exceeds TOP_P
+            sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[:, :-1].clone()
+            sorted_indices_to_remove[:, 0] = False
+            sorted_probs[sorted_indices_to_remove] = 0
+            sorted_probs /= sorted_probs.sum()
+            next_token = top_k_indices[:, torch.multinomial(sorted_probs, 1).item()]
+        return next_token
