@@ -51,19 +51,12 @@ for message in st.session_state.messages:
 
 if prompt := st.chat_input("Please ask a question."):
     st.chat_message("user").markdown(prompt)
-    all_ids = []
     link_id = get_ids_from_link_prompt(prompt)
     if link_id != None:
-        all_ids = [paper_id for paper_id in link_id if link_id]
-    all_ids.extend(
-        [
-            paper_id
-            for paper_id in st.session_state["uploaded_file"]
-            if st.session_state["uploaded_file"] != []
-        ]
-    )
-
-    print(all_ids)
+        st.session_state["uploaded_file"].extend(
+            [paper_id for paper_id in link_id if link_id]
+        )
+    print(st.session_state["uploaded_file"])
 
     with st.spinner("Thinking..."):
         stream, retrieved_docs = controller.inference(st.session_state.messages, prompt)
