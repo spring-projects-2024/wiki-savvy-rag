@@ -1,7 +1,7 @@
 import streamlit as st
 from chatbot_controller import load_controller
 from sidebar import build_sidebar
-from backend.arxiv.utils import get_id_from_link_prompt, get_id_from_pdf
+from backend.arxiv.utils import get_ids_from_link_prompt, get_id_from_pdf
 import os
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -48,13 +48,22 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-print(st.session_state["uploaded_file"])
 
 if prompt := st.chat_input("Please ask a question."):
     st.chat_message("user").markdown(prompt)
-    link_id = get_id_from_link_prompt(prompt)
-    if (link_id) != None:
-        print(link_id)
+    all_ids = []
+    link_id = get_ids_from_link_prompt(prompt)
+    if link_id != None:
+        all_ids = [paper_id for paper_id in link_id if link_id]
+    all_ids.extend(
+        [
+            paper_id
+            for paper_id in st.session_state["uploaded_file"]
+            if st.session_state["uploaded_file"] != []
+        ]
+    )
+
+    print(all_ids)
 
     with st.spinner("Thinking..."):
         stream, retrieved_docs = controller.inference(st.session_state.messages, prompt)
@@ -77,13 +86,16 @@ if prompt := st.chat_input("Please ask a question."):
             }
         )
 
-uploaded_file = st.file_uploader(
-    "📁 Upload File", key=st.session_state["file_upload_key"]
+uploaded_files = st.file_uploader(
+    "📁 Upload File",
+    accept_multiple_files=True,
+    key=st.session_state["file_upload_key"],
 )
-if uploaded_file:
-    bytes_data = uploaded_file.getvalue()
-    id = get_id_from_pdf(bytes_data)
-    st.session_state["uploaded_file"] = id
-    st.session_state["file_upload_key"] += 1
+if uploaded_files:
+    for paper in uploaded_files:
+        bytes_data = paper.getvalue()
+        id = get_id_from_pdf(bytes_data)
+        st.session_state["uploaded_file"].append(id)
+        st.session_state["file_upload_key"] += 1
 else:
     st.session_state["uploaded_file"] = []
