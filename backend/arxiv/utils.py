@@ -186,9 +186,24 @@ def get_id_from_pdf(pdf_path):
                     max_font_size = span["size"]
                     title = span["text"]
 
-    id = title.strip()
+    title = title.strip()
+    # use a regex to get the plain arxiv id
+    pattern = r"arXiv:([\d.]+)v1"
+    re_match = re.search(pattern, title)
+    if re_match:
+        return re_match.group(1)
+    else:
+        return None
 
-    return id
+
+def extract_text_from_paper(pdf_path):
+    doc = fitz.open(pdf_path)
+    all_text = ""
+    for page_num in range(len(doc)):
+        page = doc[page_num]
+        text = page.get_text()
+        all_text += text
+    return all_text
 
 
 if __name__ == "__main__":
