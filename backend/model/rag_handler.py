@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Optional, List, Dict, Tuple, Iterable
+from typing import Optional, List, Dict, Tuple
 
 from torch import nn
 import torch
@@ -7,15 +7,10 @@ from transformers import BatchEncoding
 
 from backend.model.llm_handler import LLMHandler
 from backend.vector_database.faiss_wrapper import FaissWrapper
-from backend.vector_database.dataset import DatasetSQL
-from backend.vector_database.embedder_wrapper import EmbedderWrapper
-from backend.model.prompt_utils import (
-    join_messages_query_no_rag,
-    join_messages_query_rag,
-)
 
 REPLUG_GEN_MAX_LENGTH = 1000
 DECODING_STRATEGIES = ["greedy", "top_k", "top_p"]
+INFERENCE_TYPES = ["naive", "replug"]
 TOP_K = 50
 TOP_P = 0.9
 
@@ -114,8 +109,7 @@ class RagHandler(nn.Module):
     def set_use_rag(self, use_rag: bool):
         self.use_rag = use_rag
 
-
-    def craft_autoregressive_query_without_doc(self, query: str) -> str:
+    def craft_no_docs_query(self, query: str) -> str:
         messages = [
             {
                 "role": "system",
@@ -135,7 +129,8 @@ class RagHandler(nn.Module):
         )
 
         return mess_prep
-    def craft_autoregressive_query(self, query: str, doc: str) -> str:
+
+    def craft_single_doc_query(self, query: str, doc: Dict) -> str:
         messages = [
             {
                 "role": "system",
@@ -144,7 +139,35 @@ class RagHandler(nn.Module):
             },
             {
                 "role": "user",
-                "content": f"Context:\n{doc}\nQuestion:\n{query}",
+                "content": f"Context:\n{doc['text']}\nQuestion:\n{query}",
+            },
+        ]
+
+        mess_prep: str = self.llm.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
+        return mess_prep
+
+    def craft_multiple_docs_query(self, query: str, docs: List[Dict]) -> str:
+        user_prompt = ""
+        user_prompt += "== Context ==\n"
+        for i, (docs, _) in enumerate(docs):
+            user_prompt += f"=== Document {i} ===\n"
+            user_prompt += docs["text"] + "\n"
+        user_prompt += f"== User Query ==\n{query}"
+
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant. You are specialized in answering STEM questions."
+                "You will be provided with a context consisting of multiple documents and a question to answer based on the context.",
+            },
+            {
+                "role": "user",
+                "content": user_prompt,
             },
         ]
 
@@ -173,9 +196,9 @@ class RagHandler(nn.Module):
         retrieved_docs = self.faiss.search_multiple_texts(queries, n_neighbors=1)
         headers: List[str] = []
         for query, doc in zip(queries, retrieved_docs):
-            doc_content, doc_score = doc[0]
+            doc_content, _ = doc[0]
             # header = f"Context:\n{doc_content}\n\nQuery:\n{query}\n\nAnswer:\n"
-            header = self.craft_autoregressive_query(query, doc_content)
+            header = self.craft_single_doc_query(query, doc_content)
             headers.append(header)
 
         tokenized_headers: BatchEncoding = self.llm.tokenizer(
@@ -255,6 +278,147 @@ class RagHandler(nn.Module):
         return next_token
 
     @torch.no_grad()
+    def inference(
+        self,
+        query: str,
+        n_docs_retrieved: int = 10,
+        decoding_strategy: str = "greedy",
+        inference_type: str = "replug",
+        return_generator: bool = False,
+        return_prompt: bool = False,
+    ) -> (
+        Tuple[str, List[Tuple[str, float]]]
+        | Tuple[str, List[Tuple[str, float]], List[Dict]]
+    ):
+
+        assert decoding_strategy in DECODING_STRATEGIES, "Invalid decoding strategy"
+        assert inference_type in INFERENCE_TYPES, "Invalid inference type"
+
+        if not self.use_rag:
+            return self.no_rag_inference(
+                query,
+                decoding_strategy=decoding_strategy,
+                return_generator=return_generator,
+                return_prompt=return_prompt,
+            )
+
+        if inference_type == "naive":
+            return self.naive_inference(
+                query,
+                n_docs_retrieved=n_docs_retrieved,
+                decoding_strategy=decoding_strategy,
+                return_generator=return_generator,
+                return_prompt=return_prompt,
+            )
+        elif inference_type == "replug":
+            return self.replug_inference(
+                query,
+                n_docs_retrieved=n_docs_retrieved,
+                decoding_strategy=decoding_strategy,
+                return_generator=return_generator,
+                return_prompt=return_prompt,
+            )
+
+        assert False, "This should never be reached"
+
+    @torch.no_grad()
+    def no_rag_inference(
+        self,
+        query: str,
+        decoding_strategy: str = "greedy",
+        return_generator: bool = False,
+        return_prompt: bool = False,
+    ) -> (
+        Tuple[str, List[Tuple[str, float]]]
+        | Tuple[str, List[Tuple[str, float]], List[Dict]]
+    ):
+
+        assert decoding_strategy in DECODING_STRATEGIES
+
+        autoregressive_state = [
+            {
+                "past_key_values": None,
+                "doc": None,
+                "similarity": 1.0,
+                "query": self.craft_no_docs_query(query),
+                "tokenized_query": self.llm.tokenizer(
+                    self.craft_no_docs_query(query),
+                    return_tensors="pt",
+                    padding=False,
+                )["input_ids"],
+            }
+        ]
+        similarities = torch.tensor([1.0], device=self.device)
+
+        generator = self._inference_generator(
+            autoregressive_state,
+            similarities,
+            decoding_strategy=decoding_strategy,
+        )
+
+        output = generator if return_generator else "".join(generator)
+        if return_prompt:
+            return output, [], autoregressive_state[0]["query"]
+        return output, []
+
+    def naive_inference(
+        self,
+        query: str,
+        n_docs_retrieved: int = 10,
+        decoding_strategy: str = "greedy",
+        return_generator: bool = False,
+        return_prompt: bool = False,
+    ) -> (
+        Tuple[str, List[Tuple[str, float]]]
+        | Tuple[str, List[Tuple[str, float]], List[Dict]]
+    ):
+        """
+        This method performs inference with the RAG model. It operates as follows:
+
+        1. Accepts a query as input.
+        2. Retrieves relevant passages based on the query.
+        3. Creates a prompt with the retrieved passages and the query.
+        4. Generates text based on the prompt.
+
+        :param histories: the chat history/histories (right now it is only used in the case RAG is not used)
+        :param queries: the query(queries) for which to generate text
+        :param n_docs: the number of documents to retrieve
+        :param kwargs: additional arguments to pass to the LLM model
+
+        :return: a tuple with the generated text and the retrieved documents
+        """
+
+        assert decoding_strategy in DECODING_STRATEGIES
+
+        retrieved_docs = self.faiss.search_text(query, n_neighbors=n_docs_retrieved)
+        prompt = self.craft_multiple_docs_query(query, retrieved_docs)
+        autoregressive_state = [
+            {
+                "past_key_values": None,
+                "doc": None,
+                "similarity": 1.0,
+                "query": prompt,
+                "tokenized_query": self.llm.tokenizer(
+                    prompt,
+                    return_tensors="pt",
+                    padding=False,
+                )["input_ids"],
+            }
+        ]
+        similarities = torch.tensor([1.0], device=self.device)
+
+        generator = self._inference_generator(
+            autoregressive_state,
+            similarities,
+            decoding_strategy=decoding_strategy,
+        )
+
+        output = generator if return_generator else "".join(generator)
+        if return_prompt:
+            return output, retrieved_docs, autoregressive_state[0]["query"]
+        return output, retrieved_docs
+
+    @torch.no_grad()
     def replug_inference(
         self,
         query: str,
@@ -262,9 +426,12 @@ class RagHandler(nn.Module):
         decoding_strategy: str = "greedy",
         return_generator: bool = False,
         return_prompt: bool = False,
-    ) -> Tuple[Iterable[str] | str, List[Tuple[str, float]]]:
+    ) -> (
+        Tuple[str, List[Tuple[str, float]]]
+        | Tuple[str, List[Tuple[str, float]], List[Dict]]
+    ):
         """
-        This method performs autoregressive generation using the RePlug method. It operates as follows:
+        This method performs autoregressive generation using the REPLUG method. It operates as follows:
 
         1. Accepts a query as input.
         2. It retrieves relevant passages based on the query.
@@ -285,163 +452,90 @@ class RagHandler(nn.Module):
         :return: a tuple with the token generator and the retrieved documents
         """
 
-        if self.use_rag:
-            retrieved_docs = self.faiss.search_text(query, n_neighbors=n_docs_retrieved)
-            autoregressive_state = [
-                {
-                    "past_key_values": None,
-                    "doc": doc,
-                    "similarity": similarity,
-                    "query": self.craft_autoregressive_query(query, doc),
-                    "tokenized_query": self.llm.tokenizer(
-                        self.craft_autoregressive_query(query, doc),
-                        return_tensors="pt",
-                        padding=False,
-                    )["input_ids"],
-                }
-                for doc, similarity in retrieved_docs
-            ]
+        assert decoding_strategy in DECODING_STRATEGIES
 
-            similarities = torch.tensor(
-                [state["similarity"] for state in autoregressive_state],
-                device=self.device,
-            )
+        retrieved_docs = self.faiss.search_text(query, n_neighbors=n_docs_retrieved)
+        autoregressive_state = [
+            {
+                "past_key_values": None,
+                "doc": doc,
+                "similarity": similarity,
+                "query": self.craft_single_doc_query(query, doc),
+                "tokenized_query": self.llm.tokenizer(
+                    self.craft_single_doc_query(query, doc),
+                    return_tensors="pt",
+                    padding=False,
+                )["input_ids"],
+            }
+            for doc, similarity in retrieved_docs
+        ]
 
-            similarities /= similarities.sum()
-        else:
-            retrieved_docs = []
-            autoregressive_state = [
-                {
-                    "past_key_values": None,
-                    "doc": None,
-                    "similarity": 1.0,
-                    "query": self.craft_autoregressive_query_without_doc(query),
-                    "tokenized_query": self.llm.tokenizer(
-                        self.craft_autoregressive_query_without_doc(query),
-                        return_tensors="pt",
-                        padding=False,
-                    )["input_ids"],
-                }
-            ]
-            similarities = torch.tensor([1.0], device=self.device)
+        similarities = torch.tensor(
+            [state["similarity"] for state in autoregressive_state],
+            device=self.device,
+        )
 
-        @torch.no_grad()
-        def generator():
-            answer = []
-            while len(answer) < REPLUG_GEN_MAX_LENGTH:
-                all_logits = []
+        similarities /= similarities.sum()
 
-                for state in autoregressive_state:
-                    tokenized_query = state["tokenized_query"].to(self.device)
-                    result = self.llm.model(
-                        tokenized_query,
-                        past_key_values=state["past_key_values"],
-                        use_cache=True,
-                    )
+        generator = self._inference_generator(
+            autoregressive_state,
+            similarities,
+            decoding_strategy=decoding_strategy,
+        )
 
-                    logits: torch.Tensor = result.logits
-                    logits = logits[:, -1, :]
-
-                    state["past_key_values"] = result.past_key_values
-
-                    all_logits.append(logits)
-
-                # compute the average of the logits weighted by the scores of the retrieved documents
-                torch_logits = torch.stack(all_logits)
-
-                probs = self._logits_to_weighted_probs(torch_logits, similarities)
-
-                next_token = self._next_token_strategy(probs, decoding_strategy)
-
-                # get the token from the tokenizer
-                next_token_str = self.llm.tokenizer.decode(next_token)
-
-                for state in autoregressive_state:
-                    state["query"] += next_token_str
-                    state["tokenized_query"] = torch.tensor([[next_token]])  # type: ignore
-
-                if len(answer) > 0 and next_token_str == self.llm.tokenizer.eos_token:
-                    break
-
-                if next_token_str in self.llm.tokenizer.all_special_tokens:
-                    continue
-
-                answer.append(next_token_str)
-                yield next_token_str
-
-        output = generator() if return_generator else "".join(generator())
+        output = generator if return_generator else "".join(generator)
         if return_prompt:
-            return output, retrieved_docs, autoregressive_state[0]["query"]
+            return output, retrieved_docs, autoregressive_state
         return output, retrieved_docs
 
-    def naive_inference(
+    @torch.no_grad()
+    def _inference_generator(
         self,
-        histories: List[List[Dict]] | List[Dict],
-        queries: List[str] | str,
-        n_docs: int = 10,
-        **kwargs,
-    ) -> Tuple[
-        List[str] | str, List[List[Tuple[str, float]]] | List[Tuple[str, float]]
-    ]:
-        """
-        This method performs inference with the RAG model. It operates as follows:
+        autoregressive_state: List[Dict],
+        similarities: torch.Tensor,
+        decoding_strategy: str = "greedy",
+    ):
+        answer = []
+        while len(answer) < REPLUG_GEN_MAX_LENGTH:
+            all_logits = []
 
-        1. Accepts a query as input.
-        2. Retrieves relevant passages based on the query.
-        3. Creates a prompt with the retrieved passages and the query.
-        4. Generates text based on the prompt.
-
-        This method leverages the pipeline method of the Transformers library to perform inference.
-        It is inserted here for comparison purposes with the REPLUG generation method.
-
-        We are assuming that queries and histories are coherent in type.
-        We support both batch inference and single queries, but we assume that if queries is a string then histories
-        is a list of dictionaries containing the chat history.
-        If queries is a list of strings then histories is a list of lists of dictionaries containing the chat history.
-
-        :param histories: the chat history/histories (right now it is only used in the case RAG is not used)
-        :param queries: the query(queries) for which to generate text
-        :param n_docs: the number of documents to retrieve
-        :param kwargs: additional arguments to pass to the LLM model
-
-        :return: a tuple with the generated text and the retrieved documents
-        """
-
-        if isinstance(queries, list):
-            updated_histories = []
-            retrieved = []
-            for history, query in zip(histories, queries):
-                if self.use_rag is False:
-                    updated_histories.append(join_messages_query_no_rag(history, query))
-                else:
-                    retrieved_now = self.faiss.search_text(query, n_neighbors=n_docs)
-                    # here we would do some preprocessing on the retrieved documents
-                    updated_histories.append(
-                        join_messages_query_rag(history, query, retrieved_now)
-                    )
-                    retrieved.append(retrieved_now)
-
-        elif isinstance(queries, str):
-            if self.use_rag is False:
-                updated_histories = join_messages_query_no_rag(histories, queries)
-                retrieved = []
-            else:
-                retrieved = self.faiss.search_text(queries, n_neighbors=n_docs)
-                # here we would do some preprocessing on the retrieved documents
-                updated_histories = join_messages_query_rag(
-                    histories, queries, retrieved
+            for state in autoregressive_state:
+                tokenized_query = state["tokenized_query"].to(self.device)
+                result = self.llm.model(
+                    tokenized_query,
+                    past_key_values=state["past_key_values"],
+                    use_cache=True,
                 )
-        else:
-            raise TypeError(
-                "histories and queries must be either both strings or both lists of strings"
-            )
 
-        rag_config = deepcopy(self.llm_generation_config)
-        if kwargs:
-            rag_config.update(kwargs)
-        response = self.llm.inference(updated_histories, rag_config)
+                logits: torch.Tensor = result.logits
+                logits = logits[:, -1, :]
 
-        return response, retrieved
+                state["past_key_values"] = result.past_key_values
+
+                all_logits.append(logits)
+
+            # compute the average of the logits weighted by the scores of the retrieved documents
+            torch_logits = torch.stack(all_logits)
+
+            probs = self._logits_to_weighted_probs(torch_logits, similarities)
+
+            next_token = self._next_token_strategy(probs, decoding_strategy)
+
+            # get the token from the tokenizer
+            next_token_str = self.llm.tokenizer.decode(next_token)
+
+            for state in autoregressive_state:
+                state["query"] += next_token_str
+                state["tokenized_query"] = torch.tensor([[next_token]])  # type: ignore
+
+            if len(answer) > 0 and next_token_str == self.llm.tokenizer.eos_token:
+                break
+
+            if next_token_str in self.llm.tokenizer.all_special_tokens:
+                continue
+
+            answer.append(next_token_str)
+            yield next_token_str
 
     @staticmethod
     def get_default_llm_config():

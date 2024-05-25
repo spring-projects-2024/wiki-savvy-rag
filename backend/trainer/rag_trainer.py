@@ -73,7 +73,7 @@ class RagTrainer(Trainer):
         idxs = [random.randint(0, len(dataset) - 1) for _ in range(1)]
         for idx in idxs:
             batch = dataset[idx]
-            predicted_answer, retrieved_docs, prompt = self.model.replug_inference(
+            predicted_answer, retrieved_docs, prompt = self.model.inference(
                 batch["query"], n_docs=1, return_prompt=True
             )
             if self.log_to_wandb:
@@ -139,7 +139,7 @@ def debug():
     md = MockDataset(["ciao"])
     faiss_kwargs = {"embedder": None, "dataset": md, "index_str": "Flat"}
     rag_handler = RagHandler(
-        model_name="Minami-su/Qwen1.5-0.5B-Chat_llamafy",
+        model_name="Qwen/Qwen1.5-0.5B-Chat",
         device="cpu",
         use_qlora=False,
         llm_generation_config=None,

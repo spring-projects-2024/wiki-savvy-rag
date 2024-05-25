@@ -10,27 +10,32 @@ from backend.vector_database.embedder_wrapper import EmbedderWrapper
 
 MODELS = [
     {
-        "name": "Minami-su Qwen1.5 0.5B Chat Llamafy",
-        "model": "Minami-su/Qwen1.5-0.5B-Chat_llamafy",
-        "use_qlora": False,
+        "name": "Qwen 1.5 0.5B Chat",
+        "model": "Qwen/Qwen1.5-0.5B-Chat",
+        "from_path": False,
     },
     {
-        "name": "Microsoft Phi-3 Mini 128k Instruct",
+        "name": "Finetuned Qwen 1.5 0.5B Chat",
+        "model": "Qwen/Qwen1.5-0.5B-Chat",
+        "from_path": True,
+    },
+    {
+        "name": "Microsoft Phi-3 Mini 128k Instruct (Heavy)",
         "model": "microsoft/phi-3-mini-128k-instruct",
-        "use_qlora": False,
+        "from_path": False,
     },
 ]
-
-INFERENCE_TYPES = ["naive", "replug", "mock"]
 
 MODEL_DEFAULT = 0
 DB_PATH_DEFAULT = "./scripts/dataset/data/dataset.db"
 INDEX_PATH_DEFAULT = "./scripts/vector_database/data/default.index"
+CUSTOM_MODEL_PATH_DEFAULT = "./checkpoints/step600"
 DEVICE_DEFAULT = "cpu"
 USE_RAG_DEFAULT = True
 RETRIEVED_DOCS_DEFAULT = 5
-INFERENCE_TYPE_DEFAULT = "naive"
+INFERENCE_TYPE_DEFAULT = "replug"
 DECODING_STRATEGY_DEFAULT = "top_k"
+MOCK_RESPONSES_DEFAULT = False
 
 
 @st.cache_resource(show_spinner="Loading Chatbot. It could take a while...")
@@ -50,9 +55,10 @@ class ChatbotController:
             - index_path: str - the path to the Faiss index file (default: "./scripts/vector_database/data/default.index")
             - device: str - the device to run the model on (default: "cpu")
             - use_rag: bool - whether to enhance the query with retrieved documents (default: True)
-        - inference_type: str - the type of inference to perform. It can be "naive", "replug", or "mock" (default: "naive")
         - retrieved_docs: int - the number of retrieved documents to use in the inference process (default: 5)
+        - inference_type: str - the type of inference to perform. It can be "naive" or "replug" (default: "replug")
         - decoding_strategy: str - the decoding strategy to use in the inference process. It can be "top_k", "top_p", or "greedy" (default: "top_k")
+        - mock_responses: bool - whether to use mock responses instead of performing an inference (default: False)
     - rag: RagHandler - an instance of the RagHandler class that handles the RAG model
     """
 
@@ -61,33 +67,37 @@ class ChatbotController:
         self.rag = None
 
     def _init_rag_handler(self):
-        cfgs = self.configs["rag_initialization"]
+        rag_initialization_cfgs = self.configs["rag_initialization"]
         use_rag = self.real_use_rag()
 
         # Create the dataset and embedder only if RAG is used
         if use_rag:
-            dataset = DatasetSQL(db_path=cfgs["db_path"])
-            embedder = EmbedderWrapper(cfgs["device"])
+            dataset = DatasetSQL(db_path=rag_initialization_cfgs["db_path"])
+            embedder = EmbedderWrapper(rag_initialization_cfgs["device"])
             faiss_kwargs = {
-                "index_path": cfgs["index_path"],
+                "index_path": rag_initialization_cfgs["index_path"],
                 "dataset": dataset,
                 "embedder": embedder,
             }
         else:
             faiss_kwargs = None
 
-        model = MODELS[cfgs["model_idx"]]
+        model = MODELS[rag_initialization_cfgs["model_idx"]]
 
         self.rag = RagHandler(
             model_name=model["model"],
-            device=cfgs["device"],
+            device=rag_initialization_cfgs["device"],
             llm_kwargs={
                 "torch_dtype": "auto",
                 "do_sample": True,
             },
             faiss_kwargs=faiss_kwargs,
             use_rag=use_rag,
-            use_qlora=model["use_qlora"],
+            pretrained_model_path=(
+                rag_initialization_cfgs["custom_model_path"]
+                if model["from_path"]
+                else None
+            ),
         )
 
     def real_use_rag(self):
@@ -125,51 +135,17 @@ class ChatbotController:
         """Main entry point for the inference process. It delegates the inference to the RAG model, based on the
         user-defined configurations. If the inference type is "mock", a mock response is returned instead.
         """
-        if self.configs["inference_type"] == "mock":
+
+        if self.configs["mock_responses"]:
             return self._mock_inference(history, query)
-        if not self.real_use_rag() or self.configs["inference_type"] == "naive":
-            return self._naive_inference(history, query)
-        return self._replug_inference(history, query)
-
-    def _naive_inference(
-        self,
-        history: List[Dict],
-        query: str,
-    ):
-        """Perform a naive inference using the RAG model. See RagHandler.naive_inference for more details."""
-        kwargs = {}
-        if self.configs["decoding_strategy"] == "greedy":
-            kwargs["do_sample"] = False
-        elif self.configs["decoding_strategy"] == "top_k":
-            kwargs["do_sample"] = True
-            kwargs["top_k"] = TOP_K
-        elif self.configs["decoding_strategy"] == "top_p":
-            kwargs["do_sample"] = True
-            kwargs["top_p"] = TOP_P
-
-        response, retrieved_docs = self.rag.naive_inference(
-            histories=history,
-            queries=query,
-            n_docs=self.configs["retrieved_docs"],
-            **kwargs,
-        )
-
-        assert isinstance(response, str)
-
-        return self._string_generator(response), retrieved_docs
-
-    def _replug_inference(
-        self,
-        history: List[Dict],
-        query: str,
-    ):
-        """Perform inference with the REPLUG method using the RAG model. See RagHandler.replug_inference for more details."""
-        return self.rag.replug_inference(
-            query=query,
-            n_docs=self.configs["retrieved_docs"],
-            return_generator=True,
-            decoding_strategy=self.configs["decoding_strategy"],
-        )
+        else:
+            return self.rag.inference(
+                query=query,
+                n_docs_retrieved=self.configs["retrieved_docs"],
+                decoding_strategy=self.configs["decoding_strategy"],
+                inference_type=self.configs["inference_type"],
+                return_generator=True,
+            )
 
     def _mock_inference(
         self,

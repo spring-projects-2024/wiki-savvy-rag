@@ -1,4 +1,4 @@
-from typing import Tuple, List, Iterable, Optional
+from typing import Dict, Tuple, List, Iterable, Optional
 
 # keep in this specific order, otherwise it gives Segmentation Fault on Federico's pc
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
@@ -106,10 +106,9 @@ class FaissWrapper:
         :param index: The index of the text.
         :return: The text corresponding to the index.
         """
-        retrieved: dict = self.dataset.search_chunk(index)
-        return retrieved["text"]  # contains titles as well
+        return self.dataset.search_chunk(index)
 
-    def search_text(self, text: str, n_neighbors=10) -> List[Tuple[str, float]]:
+    def search_text(self, text: str, n_neighbors=10) -> List[Tuple[Dict, float]]:
         """
         Search for the nearest neighbors of a text.
         :param text: The text to search for.
@@ -121,7 +120,7 @@ class FaissWrapper:
 
     def search_multiple_texts(
         self, texts: List[str], n_neighbors: int
-    ) -> List[List[Tuple[str, float]]]:
+    ) -> List[List[Tuple[Dict, float]]]:
         """
         Search for the nearest neighbors of multiple texts.
         :param texts: List of texts to search for.
@@ -184,9 +183,9 @@ class FaissWrapper:
 
 if __name__ == "__main__":
     faiss_kwargs = {
-      "index_path": "scripts/vector_database/data/PQ128.index",
-      "embedder": None,
-      "dataset": "scripts/dataset/data/dataset.db",
+        "index_path": "scripts/vector_database/data/PQ128.index",
+        "embedder": None,
+        "dataset": "scripts/dataset/data/dataset.db",
     }
     faiss = FaissWrapper("cpu", **faiss_kwargs)
     query = "What is the mechanism thanks to which aeroplanes can fly?"
