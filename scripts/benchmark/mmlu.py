@@ -16,6 +16,7 @@ def evaluate(
     k_shot: int = 0,
     batch_size: int = 1,
     n_samples: int = None,
+    inference_type: str = "replug",
 ):
     metrics = {
         "correct": 0,
@@ -39,11 +40,12 @@ def evaluate(
             craft_query(question, chat=True, examples=examples) for question in batch
         ]
         responses = [
-            rag_handler.replug_inference(
+            rag_handler.inference(
                 query=query,
                 n_docs_retrieved=n_docs_retrieved,
                 return_generator=False,
                 return_prompt=False,
+                inference_type=inference_type,
             )[0]
             for query in queries
         ]
@@ -79,6 +81,7 @@ def main():
     parser.add_argument("--use_rag", type=bool, default=False)
     parser.add_argument("--n_docs_retrieved", type=int, default=10)
     parser.add_argument("--log_answers", type=bool, default=False)
+    parser.add_argument("--inference_type", type=str, default="replug")
 
     args = parser.parse_args()
 
@@ -95,7 +98,6 @@ def main():
     model_kwargs = config.get("model_kwargs", None)
     tokenizer_kwargs = config.get("tokenizer_kwargs", None)
     faiss_kwargs = config.get("faiss_kwargs", None)
-
     rag_kwargs = config.get("rag_kwargs", {})
 
     print("Creating RAGHandler...")
@@ -118,6 +120,7 @@ def main():
         k_shot=args.k_shot,
         batch_size=args.batch_size,
         n_samples=args.n_samples,
+        inference_type=args.inference_type,
     )
     print("Evaluation done.")
 

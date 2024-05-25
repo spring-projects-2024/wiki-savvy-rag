@@ -9,7 +9,7 @@ from transformers import (
 from transformers.utils import ModelOutput
 from torch import nn
 
-DEFAULT_MODEL = "microsoft/phi-3-mini-128k-instruct"
+DEFAULT_MODEL = "Qwen/Qwen1.5-0.5B-Chat"
 
 
 class LLMHandler(nn.Module):
@@ -63,7 +63,12 @@ class LLMHandler(nn.Module):
         self.quantization_config = quantization_config
 
         if pretrained_model_path is not None:
-            self.model = AutoModelForCausalLM.from_pretrained(pretrained_model_path, local_files_only=True)
+            self.model = AutoModelForCausalLM.from_pretrained(
+                pretrained_model_path,
+                device_map=device,
+                trust_remote_code=True,
+                **llm_kwargs,
+            )
         else:
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_name,
@@ -71,6 +76,9 @@ class LLMHandler(nn.Module):
                 trust_remote_code=True,
                 quantization_config=quantization_config,
                 **llm_kwargs,
+            )
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                model_name, **tokenizer_kwargs
             )
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, **tokenizer_kwargs)
