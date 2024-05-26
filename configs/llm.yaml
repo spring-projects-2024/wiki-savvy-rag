@@ -5,8 +5,8 @@
     torch_dtype: "auto",
   },
   faiss_kwargs: {
-#    index_path: scripts/vector_database/data/PQ128.index,
-#    embedder: null,
-#    dataset: "scripts/dataset/data/dataset.db",
+    index_path: scripts/vector_database/data/PQ128.index,
+    embedder: null,
+    dataset: "scripts/dataset/data/dataset.db",
   },
 }
