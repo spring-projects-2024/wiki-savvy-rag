@@ -63,7 +63,7 @@ At the end of the script you should have the cleaned and processed version in th
 The required space on disk is about 26GB.
 
 ```bash
-wikidump_processing/clean_dump.sh /path/to/dump.xml True
+bash wikidump_processing/clean_dump.sh /path/to/dump.xml True
 ```
 
 ### Create SQLite dataset
@@ -87,7 +87,7 @@ python scripts/embeddings/compute_embeddings.py --device "cuda:0" --db_dir "scri
 Since the computation of the embeddings is heavy and might cause troubles (like out of memory errors), we created a bash script that runs multiple instances of the script:
 
 ```bash
-bash_scripts/compute_embeddings_magistralis.sh
+bash bash_scripts/compute_embeddings_magistralis.sh
 ```
 
 ### Build vector database
@@ -102,7 +102,7 @@ python scripts/vector_database/train_vector_database.py --index "PQ128" --traini
 The exact configuration we used is in the following bash script:
 
 ```bash
-bash_scripts/train_vector_database.sh
+bash bash_scripts/train_vector_database.sh
 ```
 
 ### Troubleshooting libmagic dependency
