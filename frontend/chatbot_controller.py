@@ -7,7 +7,7 @@ import streamlit as st
 from backend.model.rag_handler import TOP_K, TOP_P, RagHandler
 from backend.vector_database.dataset import DatasetSQL
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
-
+from backend.arxiv.chunk_data import papers_to_chunks
 
 MODELS = [
     {
@@ -181,8 +181,8 @@ class ChatbotController:
         retrieved_docs_str += "</p>"
         return retrieved_docs_str
 
-    def get_chunks_from_ids(self, ids: List[str], chunk_limit):
-        pass
+    def get_chunks_from_ids(self, ids: List[str]):
+        return papers_to_chunks(ids)
 
     mock_responses = [
         "Banana and dragonfruit salad is a delicious and healthy dish that you can make in minutes.",

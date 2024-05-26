@@ -85,16 +85,15 @@ def download_source_files(id: str):
     path = f"{id}.tar.gz"
 
     if not os.path.exists(path):
-
         path, headers = urlretrieve(url, path)
 
-        try:  # todo: policy to re-try
-            tar = tarfile.open(path)
-            tar.extractall(f"{id}/")
-            tar.close()
-
-        except:
-            print(f"Error extracting {path}")
+    try:  # todo: policy to re-try
+        tar = tarfile.open(path)
+        tar.extractall(f"{id}/")
+        time.sleep(5)
+        tar.close()
+    except:
+        Exception("Error extracting {path}")
 
 
 def get_references_raw(id) -> List:
