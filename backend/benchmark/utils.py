@@ -137,8 +137,8 @@ def format_example_0_shot(line):
         + line["question"]
         + "\n"
     )
-    for choice in CHOICES:
-        example += f'{choice}. {line[f"{choice}"]}\n'
+    for i, choice in enumerate(line["choices"]):
+        example += f"{chr(65 + i)}.{choice}\n"
     return example
 
 
