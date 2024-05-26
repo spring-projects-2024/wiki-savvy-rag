@@ -90,8 +90,9 @@ def _format_question(question: dict, include_answer: bool = False) -> str:
 
 def format_example(line, include_answer=True):
     example = "Question: " + line["question"]
-    for choice in CHOICES:
-        example += f'\n{choice}. {line[f"{choice}"]}'
+
+    for i, choice in enumerate(line["choices"]):
+        example += f'\n{chr(65 + i)}. {choice}'
 
     if include_answer:
         example += "\nAnswer: " + line["answer"] + "\n\n"
