@@ -14,5 +14,6 @@ libmagic
 arxiv
 peft
 bitsandbytes
+thefuzz
 PyMuPDF
 pylatexenc
