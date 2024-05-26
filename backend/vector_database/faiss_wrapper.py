@@ -194,7 +194,7 @@ if __name__ == "__main__":
         print(r)
 
 
-# INDEX_PATH = "backend/vector_database/data/default.index"
+# INDEX_PATH = "backend/vector_database/data/PQ128.index"
 
 # if __name__ == "__main__":
 #     chunks = ["ciao", "sono", "mattia"]

@@ -3,7 +3,7 @@ import argparse
 from scripts.vector_database.utils import train_vector_db
 
 INPUT_DIR_DEFAULT = "scripts/embeddings/data/"
-OUTPUT_FILE_DEFAULT = "scripts/vector_database/data/default.index"
+OUTPUT_FILE_DEFAULT = "scripts/vector_database/data/PQ128.index"
 M = 128
 CENTROIDS = 10_000
 INDEX_DEFAULT = f"IVF{CENTROIDS},PQ{M}x4fsr"
