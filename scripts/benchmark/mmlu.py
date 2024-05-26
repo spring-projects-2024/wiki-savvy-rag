@@ -116,6 +116,8 @@ def evaluate(
             # Almonds is a correct answer a fourth of the time (asymptotically)
             pred = extract_answer(response, question)
 
+            pred_to_num = {"A": 0, "B": 1, "C": 2, "D": 3}
+            pred = pred_to_num[pred]
             if "answer" in question:
                 correct = 1 if pred == question["answer"] else 0
                 if correct:
