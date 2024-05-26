@@ -37,15 +37,13 @@ def train_vector_db(
     nprobe: int,
     device: str,
     training_size: float,
-    train_on_gpu: bool = True,
 ):
     """Trains a vector database with the given configuration.
     :param index_str: the index factory string
     :param input_dir: the directory containing the embeddings files
     :param nprobe: the number of probes for the IVF quantizer
     :param device: the device to use for the embedder
-    :param training_size: the fraction of the data to use for training
-    :param train_on_gpu: whether to train on GPU"""
+    :param training_size: the fraction of the data to use for training"""
 
     print(f"Initializing index {index_str}")
 
@@ -80,7 +78,7 @@ def train_vector_db(
     start = time.time()
     print("Start: ", start)
 
-    vector_db.train_from_vectors(training_set, train_on_gpu=train_on_gpu)
+    vector_db.train_from_vectors(training_set)
 
     end = time.time()
     print("Training done!")

@@ -142,18 +142,11 @@ class FaissWrapper:
             for D_i, I_i in zip(D, I)
         ]
 
-    def train_from_vectors(self, data, train_on_gpu=False):
+    def train_from_vectors(self, data):
         """
         Train the index on the input data.
         :param data: The data to train on.
-        :param train_on_gpu: Whether to train on the GPU. Default is False.
         """
-        if train_on_gpu:
-            index_ivf = faiss.extract_index_ivf(self._index)
-            clustering_index = faiss.index_cpu_to_all_gpus(
-                faiss.IndexFlatL2(index_ivf.d)
-            )
-            index_ivf.clustering_index = clustering_index
 
         self._index.train(data)
 

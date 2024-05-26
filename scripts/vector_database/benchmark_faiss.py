@@ -19,7 +19,6 @@ OUTPUT_DIR_DEFAULT = "scripts/vector_database/data/"
 DEVICE = "cpu"
 KNN_NEIGHBORS_DEFAULT = 100
 MMLU_SAMPLE_SIZE_DEFAULT = 10
-TRAIN_ON_GPU_DEFAULT = False
 TRAINING_SIZE_DEFAULT = 0.2
 NPROBE_DEFAULT = 10
 
@@ -33,7 +32,6 @@ NPROBE_DEFAULT = 10
 # --nprobe: Number of probes for the IVF quantizer
 # --training_size: Fraction of the dataset to use for training
 # --mmlu_sample_size: Number of samples to use from the MMLU dataset for the benchmarks
-# --train_on_gpu: Whether to train on GPU
 # --output_dir: Location of the directory where to store the output files
 
 
@@ -74,7 +72,6 @@ def benchmark(
     mmlu_embds: np.ndarray,
     I_base: np.ndarray,
     training_size: float,
-    train_on_gpu: bool,
     output_dir: str,
     nprobe: int,
     n_neighbors: int,
@@ -87,7 +84,6 @@ def benchmark(
         index_str=index_str,
         input_dir="scripts/embeddings/data/",
         training_size=training_size,
-        train_on_gpu=train_on_gpu,
         nprobe=nprobe,
         device=DEVICE,
     )
@@ -122,7 +118,6 @@ def benchmark(
     results["mmlu_sample_size"] = mmlu_embds.shape[0]
     results["nprobe"] = nprobe
     results["training_size"] = training_size
-    results["train_on_gpu"] = train_on_gpu
     results["mmlu_sample_size"] = mmlu_embds.shape[0]
 
     # save checkpoint of results
@@ -160,12 +155,6 @@ def main():
         type=int,
         default=MMLU_SAMPLE_SIZE_DEFAULT,
         help="Number of samples to use from the MMLU dataset",
-    )
-    parser.add_argument(
-        "--train_on_gpu",
-        type=bool,
-        default=TRAIN_ON_GPU_DEFAULT,
-        help="Whether to train on GPU",
     )
     parser.add_argument(
         "--output_dir",
@@ -214,7 +203,6 @@ def main():
             mmlu_embds,
             I_base,
             args.training_size,
-            args.train_on_gpu,
             args.output_dir,
             args.nprobe,
             args.knn_neighbors,
@@ -228,7 +216,6 @@ def main():
             mmlu_embds,
             I_base,
             args.training_size,
-            args.train_on_gpu,
             args.output_dir,
             args.nprobe,
             args.knn_neighbors,
@@ -243,7 +230,6 @@ def main():
                 mmlu_embds,
                 I_base,
                 args.training_size,
-                args.train_on_gpu,
                 args.output_dir,
                 args.nprobe,
                 args.knn_neighbors,
@@ -258,7 +244,6 @@ def main():
                 mmlu_embds,
                 I_base,
                 args.training_size,
-                args.train_on_gpu,
                 args.output_dir,
                 args.nprobe,
                 args.knn_neighbors,
@@ -273,7 +258,6 @@ def main():
                 mmlu_embds,
                 I_base,
                 args.training_size,
-                args.train_on_gpu,
                 args.output_dir,
                 args.nprobe,
                 args.knn_neighbors,
