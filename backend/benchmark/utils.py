@@ -95,7 +95,7 @@ def format_example(line, include_answer=True):
         example += f'\n{chr(65 + i)}. {choice}'
 
     if include_answer:
-        example += f"\nAnswer:{chr(65 + question['answer'])}"
+        example += f"\nAnswer:{chr(65 + line['answer'])}"
     else:
         example += "\nAnswer:"
     return example
@@ -169,8 +169,3 @@ def craft_few_shot_prompt(subject, examples: list[dict]):
 if __name__ == "__main__":
     dataset = load_yahoo_answers("stem")
 
-    question = dataset[0]
-    print(question)
-
-if __name__ == "__main__":
-    dataset = load_mmlu_for_training("test", None)
