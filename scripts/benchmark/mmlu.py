@@ -1,6 +1,6 @@
 import time
 import json
-from backend.benchmark.utils import craft_query, load_mmlu
+from backend.benchmark.utils import craft_query, load_mmlu, craft_few_shot_prompt, format_example, format_example_0_shot
 import argparse
 import yaml
 import datasets
@@ -28,6 +28,14 @@ def evaluate(
 
     examples = [dataset[i] for i in range(k_shot)]  # k-shot evaluation
 
+    if k_shot > 0:
+        few_shot_prompt: str = craft_few_shot_prompt(
+            subject=examples[0]["subject"],
+            examples=examples,
+        )
+    else:
+        few_shot_prompt: str = ""
+
     if n_samples is None:
         n_samples = len(dataset)
     else:
@@ -36,9 +44,15 @@ def evaluate(
     i = k_shot
     while i + batch_size < n_samples:
         batch = [dataset[i + j] for j in range(batch_size)]
-        queries = [
-            craft_query(question, chat=True, examples=examples) for question in batch
-        ]
+        if k_shot > 0:
+            queries = [
+                few_shot_prompt + format_example(question, include_answer=False)
+                for question in batch
+            ]
+        else:
+            queries = [format_example_0_shot(question) for question in batch]
+
+
         responses = [
             rag_handler.inference(
                 query=query,
