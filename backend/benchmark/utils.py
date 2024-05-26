@@ -95,7 +95,7 @@ def format_example(line, include_answer=True):
         example += f'\n{chr(65 + i)}. {choice}'
 
     if include_answer:
-        example += "\nAnswer: " + line["answer"] + "\n\n"
+        example += f"\nAnswer:{chr(65 + question['answer'])}"
     else:
         example += "\nAnswer:"
     return example
