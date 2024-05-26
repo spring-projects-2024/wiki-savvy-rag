@@ -5,7 +5,7 @@ from backend.vector_database.faiss_wrapper import FaissWrapper
 
 DB_DIR = "scripts/dataset/data"
 DB_NAME = "dataset"
-INDEX_PATH = "scripts/vector_database/data/default.index"
+INDEX_PATH = "scripts/vector_database/data/PQ128.index"
 
 # This script loads the embeddings files and checks if the embeddings are correct.
 # It is used to check that the output of train_vector_database.py is correct.
