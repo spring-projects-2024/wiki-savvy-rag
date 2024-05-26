@@ -1,6 +1,6 @@
 # Wikipedia-Savvy-RAG
 
-*Include animated gif of the ChatBot*
+![](media/demo.gif)
 
 For our project, we implemented, fine-tuned, and evaluated a Retrieval Augmented Generation system that could discuss a range of topics in the STEM domain. To showcase our system, we developed a simple application with a chat interface that replies to the user prompts with the help of retrieved Wikipedia passages.
 
@@ -106,7 +106,7 @@ python scripts/vector_database/train_vector_database.py
     --index "PQ128"
     --training_size 0.1
     --input_dir "scripts/embeddings/data"
-    --output "scripts/vector_database/data/default.index"
+    --output "scripts/vector_database/data/PQ128.index"
 ```
 
 The exact configuration we used is in the following bash script:
@@ -146,7 +146,7 @@ To run the ChatBot demo, run the following script:
 
 The demo allows users to customize configuration options, as shown in the following screenshot:
 
-*insert screenshot*
+![](media/configs.png)
 
 All options can be configured directly through the chatbot's UI:
 

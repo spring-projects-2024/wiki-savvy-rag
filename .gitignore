@@ -180,7 +180,7 @@ wikipedia_data/exploration/short_chunks.json
 scripts/embeddings/data/*
 backend/vector_database/data/*
 scripts/dataset/data/*
-scripts/vector_database/data/flat.index
+scripts/vector_database/data/*
 scripts/vector_database/data/default.index
 paper/reference/*
 paper/wiki-savvy-rag.aux

@@ -28,7 +28,7 @@ MODELS = [
 
 MODEL_DEFAULT = 0
 DB_PATH_DEFAULT = "./scripts/dataset/data/dataset.db"
-INDEX_PATH_DEFAULT = "./scripts/vector_database/data/default.index"
+INDEX_PATH_DEFAULT = "./scripts/vector_database/data/PQ128.index"
 CUSTOM_MODEL_PATH_DEFAULT = "./checkpoints/step600"
 DEVICE_DEFAULT = "cpu"
 USE_RAG_DEFAULT = True
@@ -52,7 +52,7 @@ class ChatbotController:
         - rag_initialization: Dict[str, str] - a dictionary containing the RAG model initialization configurations. The keys are:
             - model_idx: int - the index in the MODELS list of the model to use (default: 0)
             - db_path: str - the path to the SQLite database file (default: "./scripts/dataset/data/dataset.db")
-            - index_path: str - the path to the Faiss index file (default: "./scripts/vector_database/data/default.index")
+            - index_path: str - the path to the Faiss index file (default: "./scripts/vector_database/data/PQ128.index")
             - device: str - the device to run the model on (default: "cpu")
             - use_rag: bool - whether to enhance the query with retrieved documents (default: True)
         - retrieved_docs: int - the number of retrieved documents to use in the inference process (default: 5)
