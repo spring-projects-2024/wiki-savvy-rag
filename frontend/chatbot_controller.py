@@ -145,6 +145,7 @@ class ChatbotController:
                 decoding_strategy=self.configs["decoding_strategy"],
                 inference_type=self.configs["inference_type"],
                 return_generator=True,
+                history=history,
             )
 
     def _mock_inference(
