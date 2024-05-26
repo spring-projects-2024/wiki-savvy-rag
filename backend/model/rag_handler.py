@@ -186,6 +186,7 @@ class RagHandler(nn.Module):
         inference_type: str = "replug",
         return_generator: bool = False,
         return_prompt: bool = False,
+        history: Optional[List[Dict]] = None,
     ) -> (
         Tuple[str, List[Tuple[str, float]]]
         | Tuple[str, List[Tuple[str, float]], List[Dict]]
@@ -215,6 +216,7 @@ class RagHandler(nn.Module):
                 decoding_strategy=decoding_strategy,
                 return_generator=return_generator,
                 return_prompt=return_prompt,
+                history=history,
             )
 
         if inference_type == "naive":
@@ -243,6 +245,7 @@ class RagHandler(nn.Module):
         decoding_strategy: str = "greedy",
         return_generator: bool = False,
         return_prompt: bool = False,
+        history: Optional[List[Dict]] = None,
     ) -> (
         Tuple[str, List[Tuple[str, float]]]
         | Tuple[str, List[Tuple[str, float]], List[Dict]]
@@ -261,7 +264,7 @@ class RagHandler(nn.Module):
         """
         assert decoding_strategy in DECODING_STRATEGIES
 
-        prompt = self._craft_no_docs_query(query)
+        prompt = self._craft_no_docs_query(query, history)
 
         autoregressive_state = [
             {
@@ -420,18 +423,25 @@ class RagHandler(nn.Module):
             return output, retrieved_docs, autoregressive_state
         return output, retrieved_docs
 
-    def _craft_no_docs_query(self, query: str) -> str:
+    def _craft_no_docs_query(
+        self, query: str, history: Optional[List[Dict]] = None
+    ) -> str:
         messages = [
             {
                 "role": "system",
                 "content": "You are a helpful assistant. You are specialized in answering STEM questions. "
                 "You will be provided with a question to answer.",
             },
+        ]
+        if history is not None:
+            messages.extend(history)
+
+        messages.append(
             {
                 "role": "user",
                 "content": f"Question:\n{query}",
             },
-        ]
+        )
 
         mess_prep: str = self.llm.tokenizer.apply_chat_template(
             messages,
