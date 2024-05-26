@@ -6,6 +6,52 @@ import yaml
 import datasets
 import os
 from backend.model.rag_handler import RagHandler
+import re
+from thefuzz import process
+
+choices = ["A", "B", "C", "D"]
+def extract_choice(gen, choice_list):
+    # answer is A | choice is A | choose A
+    res = re.search(
+        r"(?:(?:[Cc]hoose)|(?:(?:[Aa]nswer|[Cc]hoice)(?![^ABCD]{0,20}?(?:n't|not))[^ABCD]{0,10}?\b(?:|is|:|be))\b)[^ABCD]{0,20}?\b(A|B|C|D)\b",
+        gen,
+    )
+
+    # A is correct | A is right
+    if res is None:
+        res = re.search(
+            r"\b(A|B|C|D)\b(?![^ABCD]{0,8}?(?:n't|not)[^ABCD]{0,5}?(?:correct|right))[^ABCD]{0,10}?\b(?:correct|right)\b",
+            gen,
+        )
+
+    # straight answer: A
+    if res is None:
+        res = re.search(r"^(A|B|C|D)(?:\.|,|:|$)", gen)
+
+    # simply extract the first appearred letter
+    if res is None:
+        res = re.search(r"(?<![a-zA-Z])(A|B|C|D)(?![a-zA-Z=])", gen)
+
+    if res is None:
+        return choices[choice_list.index(process.extractOne(gen, choice_list)[0])]
+    return res.group(1)
+
+
+def process_before_extraction(gen, choice_dict):
+    # replace the choice by letter in the generated sentence
+    # from longest one to shortest one
+    for key, val in sorted(choice_dict.items(), key=lambda x: len(x[1]), reverse=True):
+        pattern = re.compile(re.escape(val.rstrip(".")), re.IGNORECASE)
+        gen = pattern.sub(key, gen)
+    return gen
+
+def extract_answer(response, question):
+    gen = process_before_extraction(
+        response, {choice: answ for choice, answ in zip(choices, question["choices"])}
+    )
+    pred = extract_choice(gen, question["choices"])
+    return pred
+
 
 
 def evaluate(
@@ -67,11 +113,17 @@ def evaluate(
             response = response.strip()
             complete_response = response
 
-            response = response[0].lower()  # extract first character
             # Almonds is a correct answer a fourth of the time (asymptotically)
-            target = chr(ord("a") + question["answer"])
-            if response == target:
-                metrics["correct"] += 1
+            pred = extract_answer(response, question)
+
+            if "answer" in question:
+                correct = 1 if pred == question["answer"] else 0
+                if correct:
+                    metrics["correct"] += 1
+
+            # target = chr(ord("a") + question["answer"])
+            # if response == target:
+            #     metrics["correct"] += 1
             metrics["total"] += 1
 
             if log_answers:
