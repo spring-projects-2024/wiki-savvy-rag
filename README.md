@@ -12,22 +12,24 @@ The chat was developed using Streamlit and allows users to configure key aspects
 
 ## Project Structure
 
-Our project is organized into the following folders:
+Our project is organized into the following directories:
 
-- `backend`: This folder contains the core code for the RAG handler, LLM handler, embedder wrapper, vector database wrapper, and model trainer. It also includes various utility functions used throughout the project. For convenience, it is installed as a package (see the Installation section).
-- `bash_scripts`: This folder contains our bash script definitions.
-- `configs`: This folder holds YAML configuration files for initializing the RAG handler.
-- `frontend`: This folder includes the code for the ChatBot demo interface.
-- `notebooks`: This folder contains Python notebooks primarily used for exploratory data analysis.
-- `scripts`: This folder has scripts for building the dataset, computing embeddings, training models, constructing the FAISS vector database, fine-tuning the model, and benchmarking with MMLU.
-- `wikidump_processing`: This folder includes all the code for retrieving, processing, and cleaning the Wikipedia dump.
-
-## 
+- `backend`: This directory contains the core code for the RAG handler, LLM handler, embedder wrapper, vector database wrapper, and model trainer. It also includes various utility functions used throughout the project. For convenience, it is installed as a package (see the Installation section).
+- `bash_scripts`: This directory contains our bash script definitions.
+- `configs`: This directory holds YAML configuration files for initializing the RAG handler.
+- `frontend`: This directory includes the code for the ChatBot demo interface.
+- `notebooks`: This directory contains Python notebooks primarily used for exploratory data analysis.
+- `scripts`: This directory has scripts for building the dataset, computing embeddings, training models, constructing the FAISS vector database, fine-tuning the model, and benchmarking with MMLU.
+- `wikidump_processing`: This directory includes all the code for retrieving, processing, and cleaning the Wikipedia dump. 
 
 
 ## Preliminary steps 
 
-This steps are required to both run the ChatBot and to replicate our results on the MMLU evaluation dataset.
+The following steps are required to both run the ChatBot and to replicate our results on the MMLU evaluation dataset.  
+
+Since we are aware that executing all the steps is computationally demanding, we link a 
+zip files containing all the required files to run the ChatBot and most of the benchmarks at [this link](https://bocconi-my.sharepoint.com/:u:/g/personal/federico_zarantonello_studbocconi_it/ETwUiIiLIQdEklW5u-VqP8YB6_0ulvNoHHVQgq0SgHB-vw?e=zqDD8H).
+Simply copy and paste the content of the unzipped directory in the project root and you should be fine!
 
 ### Installation
 
@@ -56,9 +58,9 @@ We used the version dated 2023-12-20.
 
 ### Process the Wikipedia Dump
 
-Run the following script from the root folder to run the processing of the Wikipedia dump.  
+Run the following script from the root directory to run the processing of the Wikipedia dump.  
 At the end of the script you should have the cleaned and processed version in the `wikidump_processing/data/subsample_chunkeder.xml` file.  
-The required space on disk is about 26GB *(to confirm)*.
+The required space on disk is about 26GB.
 
 ```bash
 wikidump_processing/clean_dump.sh /path/to/dump.xml True
@@ -70,24 +72,16 @@ Run the following script to create and populate a SQLite dataset containing the 
 The required space on disk is about 9GB.
 
 ```bash
-python scripts/dataset/populate_dataset.py
-    --input "wikidump_processing/data/subsample_chunkeder.xml"
-    --db_dir "scripts/dataset/data"
-    --db_name="dataset"
+python scripts/dataset/populate_dataset.py --input "wikidump_processing/data/subsample_chunkeder.xml" --db_dir "scripts/dataset/data" --db_name="dataset"
 ```
 
 ### Compute embeddings
 
-The following script calculates the embeddings and dumps them on multiple files in the specified folder.
+The following script calculates the embeddings and dumps them on multiple files in the specified directory (be sure that the directory exists)
 The required space on disk for all the embeddings is about 20GB.
 
 ```bash
-python scripts/embeddings/compute_embeddings.py
-    --device "cuda:0"
-    --db_dir "scripts/dataset/data"
-    --db_name="dataset"
-    --output_dir "scripts/embeddings/data/"
-    --max_accumulation 250
+python scripts/embeddings/compute_embeddings.py --device "cuda:0" --db_dir "scripts/dataset/data" --db_name="dataset" --output_dir "scripts/embeddings/data/" --max_accumulation 250
 ```
 
 Since the computation of the embeddings is heavy and might cause troubles (like out of memory errors), we created a bash script that runs multiple instances of the script:
@@ -102,11 +96,7 @@ The following script builds the vector database with the given index factory str
 The required space on disk depends on the chosen index factory.
 
 ```bash
-python scripts/vector_database/train_vector_database.py
-    --index "PQ128"
-    --training_size 0.1
-    --input_dir "scripts/embeddings/data"
-    --output "scripts/vector_database/data/PQ128.index"
+python scripts/vector_database/train_vector_database.py --index "PQ128" --training_size 0.01 --input_dir "scripts/embeddings/data" --output "scripts/vector_database/data/PQ128.index"
 ```
 
 The exact configuration we used is in the following bash script:
@@ -142,6 +132,13 @@ To run the ChatBot demo, run the following script:
     streamlit run frontend/app.py
 ```
 
+To be able to use the Retrieval Augmented Generation with chunks from Wikipedia, the ChatBot requires to have in your system the following files:
+* **SQLite database file**: this is produced by following [these instructions](#create-sqlite-dataset).
+* **Vector database**: produced by following [these instructions](#build-vector-database).
+
+To be able to run using a finetuned model, you need also the adapter files (see the [Finetuning the LLM](#finetuning-the-llm) section).
+
+
 ### Options
 
 The demo allows users to customize configuration options, as shown in the following screenshot:
@@ -152,13 +149,13 @@ All options can be configured directly through the chatbot's UI:
 
 * **Device**: Users can select from all compatible devices available on their machine. If a CUDA-enabled graphics card is present, it is recommended to select it for improved performance.
 * **Model**: Choose between `Qwen/Qwen1.5-0.5B-Chat`, a finetuned version of it, and  `microsoft/phi-3-mini-128k-instruct`. Despite all our analysis were done on Qwen 1.5, we inserted also Microsoft's Phi-3 for comparison. These models require approximately 2GB and 16GB of memory on the selected device, respectively.
-* **Finetuned Model Path**: Path to the finetuned checkpoint to use (see the [Finetuning the LLM](#finetuning-the-llm) section)
+* **Finetuned Model Path**: Path to the finetuned checkpoint to use.
 * **Decoding Strategy**: Supported options include:
   * Greedy decoding
   * Top-k decoding (considering 50 tokens)
   * Top-p decoding (with a cumulative probability of 0.9)
 * **Use RAG**: Option to retrieve and use documents to enhance the assistant's replies.
-* **Database Path**: Path to the SQL database generated during the preliminary steps (see the [Preliminary Steps](#preliminary-steps) section).
+* **Database Path**: Path to the SQLite database.
 * **Vector Index Path**: Path to the vector database.
 * **Inference Type**: Defines how to use retrieved documents during inference:
   * **Naive**: Append all documents before the query and perform inference based on that.
@@ -174,7 +171,7 @@ Currently, with the RAG option enabled, the chatbot only considers the user's pr
 ## Our results (and how to reproduce them)
 
 This section outlines the benchmarks we performed and the results we obtained.
-To reproduce our results, ensure to first run the preliminary scripts using our configurations, which are defined in the provided bash scripts in the folder `bash_scripts`.
+To reproduce our results, ensure to first run the preliminary scripts using our configurations, which are defined in the provided bash scripts in the directory `bash_scripts`.
 
 ### Benchmark on FAISS indices
 
@@ -183,11 +180,7 @@ To choose the best index among those offered by FAISS, we conducted benchmarks e
 To run your own benchmarks, use the following script:
 
 ```bash
-python3 scripts/vector_database/bench_quantizer.py
-    --knn_neighbors 100 
-    --nprobe 32 
-    --training_size 0.01 
-    --mmlu_sample_size 300
+python scripts/vector_database/benchmark_faiss.py --knn_neighbors 100 --nprobe 32 --training_size 0.01 --mmlu_sample_size 300
 ```
 
 In our evaluation, we trained our indexes on 1% of Wikipedia data and assessed the intersection measure for 1, 10, 50, and 100 results (with `knn_neighbors` specifying the maximum number of neighbors to retrieve). We evaluated 300 questions from the MMLU dataset and set the number of centroids for the IVF indexes to 32 (`nprobe`, for more details, refer to the [FAISS documentation](https://github.com/facebookresearch/faiss)).
@@ -218,6 +211,8 @@ Here is a table summarizing our results:
 The index we chose is PQ128 because it was a good compromise between accuracy, speed and size on memory.
 
 ### Finetuning the LLM
+
+*Talk also about how to reproduce (there is a link to this section)*
 
 ### Benchmark on MMLU  
 
