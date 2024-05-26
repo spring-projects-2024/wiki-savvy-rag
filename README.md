@@ -168,6 +168,11 @@ All options can be configured directly through the chatbot's UI:
 
 Currently, with the RAG option enabled, the chatbot only considers the user's prompt and does not take into account the history of previous messages. Integrating memory handling with RAG is outside the scope of this project. However, future enhancements may include this capability.
 
+
+## Finetuning the LLM
+
+*Talk also about how to reproduce (there is a link to this section)*
+
 ## Our results (and how to reproduce them)
 
 This section outlines the benchmarks we performed and the results we obtained.
@@ -209,10 +214,6 @@ Here is a table summarizing our results:
 | HNSW32_PQ24                           | 0.24   | 0.3193  | 0.353   | 0.3486   | 00:00.04     | 4,025,536,815        |
 
 The index we chose is PQ128 because it was a good compromise between accuracy, speed and size on memory.
-
-### Finetuning the LLM
-
-*Talk also about how to reproduce (there is a link to this section)*
 
 ### Benchmark on MMLU  
 
