@@ -1,7 +1,7 @@
 from backend.arxiv.utils import get_plain_doc_from_id
 from typing import Dict, List
 
-SHORT_CHUNK_LENGTH = 50
+SHORT_CHUNK_LENGTH = 30
 
 
 def extract_chunks(id):
@@ -9,7 +9,7 @@ def extract_chunks(id):
     chunks = []
     for paragraph in doc.split("\n\n"):
         if len(paragraph) > SHORT_CHUNK_LENGTH:
-            chunks.append({"text": paragraph})
+            chunks.append(paragraph)
 
     if len(chunks) == 0:
         return None
@@ -17,8 +17,8 @@ def extract_chunks(id):
 
 
 def papers_to_chunks(ids: List[str]):
-    chunks = {}
+    chunks = []
     for id in ids:
         ch = extract_chunks(id)
-        chunks[id] = ch
+        chunks.append(ch)
     return chunks

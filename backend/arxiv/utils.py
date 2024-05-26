@@ -20,6 +20,8 @@ def get_plain_doc_from_id(id: str):
     download_source_files(id)
     doc = get_text_from_extensions(id, ".tex")
     parsed_doc = LatexNodes2Text().latex_to_text(doc)
+    pattern = r"\{'text':\s+([^}]+)\}"
+    result = re.sub(pattern, r"\1", parsed_doc)
     return parsed_doc
 
 
