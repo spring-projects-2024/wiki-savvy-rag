@@ -29,6 +29,7 @@ def load_mmlu(
             raise ValueError("subset must be a list of strings, None, or 'stem'")
         subset = stem_subcategories
     dataset = dataset.filter(lambda x: x["subject"] in subset)
+    dataset = dataset.shuffle(seed=42)
     return dataset
 
 
