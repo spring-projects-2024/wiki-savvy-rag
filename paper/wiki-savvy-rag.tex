@@ -137,11 +137,7 @@ Faiss also offers different quantization techniques to reduce the memory footpri
 on two quantization techniques: scalar quantization and product quantization. 
 Scalar quantization quantizes each dimension of the vector independently in a linear
 range, while the product quantization splits the vector into subvectors and quantizes each
-subvector independently.
-
-We benchmarked extensively different combinations of indexes and quantization techniques to find the best configuration
-for our system. We measured recall, query time, and memory usage to find a good trade-off. See the Benchmark section for more details.
-We eventually chose the Flat index with 128 subvectors product quantization.
+subvector independently. See the Benchmark section for a comparison between these strategies.
 
 \section{Retrieval-Augmented Generation}
 
