@@ -23,8 +23,6 @@ source activate base
 
 conda info --envs
 
-python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 0 --use_rag 1 --n_docs_retrieved 10
-python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 1 --use_rag 1 --n_docs_retrieved 10
 python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 5 --use_rag 1 --n_docs_retrieved 10
 
 conda deactivate

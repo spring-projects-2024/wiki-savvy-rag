@@ -23,6 +23,6 @@ source activate base
 
 conda info --envs
 
-python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 5 --use_rag 1 --inference_type "naive"
+python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 0 --use_rag 1 --inference_type "naive"
 
 conda deactivate
