@@ -10,7 +10,8 @@
 \usepackage{microtype}
 \usepackage{inconsolata}
 
-% TODOS: 
+% TODOS:
+% - In the abstract, briefly mention our findings once we have some
 % - Add the training section
 % - Add the MMLU results
 % - Add the training results
@@ -24,13 +25,15 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-We present Wikipedia-Savvy-RAG, a Retrieval-Augmented Generation (RAG) system for 
-STEM domain question answering. Our system features a chat interface that 
-enhances responses using retrieved Wikipedia passages.
-The system was built with low computational resources in mind and can be easily
-deployed on powerful-enough personal computers.
-We assessed the system using STEM question-answering benchmarks from the MMLU dataset, 
-fine-tuning the LLM for improved performance. 
+We present Wikipedia-Savvy-RAG, a lightweight Retrieval-Augmented Generation (RAG) system for
+STEM domain question answering. To improve performance in knowledge intensive tasks we filtered, cleaned, 
+chunked and embedded the English Wikipedia and built a vector database of STEM-focused semantic embeddings. 
+Then, we used QLORA to efficiently finetune a small pretrained language model 
+(500M params) on a subset of the Yahoo Answers dataset, feeding the model with the most relevant passages from the 
+vector database and keeping the query and passage embedders frozen. Finally, we used the MMLU dataset to 
+benchmark our system and run a variety of ablation studies, using the pretrained llm without RAG as our baseline.
+The system is lightweight and can be deployed on most modern personal computers. To demonstrate its capabilities,
+we developed a Streamlit web application that allows users to interact with the model in real-time with a chat-like interface.
 
 \end{abstract}
 
