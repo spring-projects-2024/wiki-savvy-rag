@@ -37,6 +37,7 @@ RETRIEVED_DOCS_DEFAULT = 5
 INFERENCE_TYPE_DEFAULT = "replug"
 DECODING_STRATEGY_DEFAULT = "top_k"
 MOCK_RESPONSES_DEFAULT = False
+INFERENCE_TYPES = ["naive", "replug"]
 
 
 @st.cache_resource(show_spinner="Loading Chatbot. It could take a while...")
