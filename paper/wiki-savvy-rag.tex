@@ -134,7 +134,7 @@ We implemented two methods to produce logits. The first one, which we refer to a
 and the query, and feeds the result to the model. The second one, following \cite{replug}, feeds the query and each individual passage
 separately to the model, and then combines the predicted probabilities from each passage with weights proportional to the similarity
 to get probabilities.
-As for the decoding strategy, we implemented greedy decoding, top-k sampling, and top-p sampling. \cite{smth}
+As for the decoding strategy, we implemented greedy decoding, top-k sampling, and top-p sampling. \cite{decoding}
 
 \section{Finetuning}
 
@@ -253,7 +253,8 @@ subvectors product quantization, which had the lowest memory usage and a good re
 
 \subsection{Training}
 
-We trained our model for slightly over 2 epochs, measuring the average cross-entropy on both the training and validation sets.
+We trained our model for slightly over 2 epochs, measuring the average cross-entropy on both the training and validation sets. We used weights
+and biases to monitor the training process through a variety of metrics and statistics, including parameters and gradients histograms.
 Due to limited memory, we had to resort to gradient accumulation to simulate a larger batch size than 1 (we used 2). The training loss, 
 with enough smoothing, decreased steadily, as expected. As for the validation loss, after an initial sharp decrease, it started increasing
 again with an oscillatory pattern. This is probably due in part to the use of different datasets for training and validation, which we did
