@@ -167,7 +167,7 @@ def main():
     tokenizer_kwargs = config.get("tokenizer_kwargs", None)
     faiss_kwargs = config.get("faiss_kwargs", None)
     rag_kwargs = config.get("rag_kwargs", {})
-    pretrained_model_path = config.get("pretrained_model_path")
+    pretrained_model_path = config.get("pretrained_model_path", None)
 
 
     print("Creating RAGHandler...")
