@@ -55,7 +55,9 @@ In this paper, we present Wikipedia-Savvy-RAG, a lightweight RAG system fine-tun
 in chat format. In building our system, we strived to keep the computational resources required for both
 training and inference contained. Indeed, our system can be deployed on personal computers with a CUDA-enabled GPU
 with at least 8GB of memory, through a Streamlit web application we developed. Furthermore, the finetuning can 
-be replicated on a single consumer-grade GPU in a few hours.
+be replicated on a single consumer-grade GPU in a few hours. In doing so, the main research question that we aimed to
+answer is whether and to what extent an llm can benefit from a retrieval mechanism in a specialized domain like STEM,
+and whether a simple finetuning recipe on a small dataset can improve the performance of the system.
 
 To build the vector database, we processed the English Wikipedia available on WikiMedia \cite{wikimedia} and obtained 
 dense representations of the chunks using a lightweight text embedder \cite{baai}. We then built a vector database using
@@ -64,27 +66,8 @@ we employed a small pretrained LLM with 500M parameters \cite{qwen}, and we used
 keeping the embedder frozen, on a subset of the Yahoo Answers dataset \cite{yahoo_answers}.
 In order to benchmark our system and conduct a variety of ablation studies, we used the MMLU dataset \cite{mmlu}.
 
-This report will outline the steps we took to build our system, the motivations
-behind our choices, and the results of our evaluation. 
-
-\section{Related Works}
-
-From the publication of the original RAG paper by Lewis et al. in 2020 \textit{(cite)},
-different works have been developed to improve the RAG model: these are extensively
-reviewed in the work by \textit{cite}.
-
-% in realtà, nel paper originale lo facevano già... qual'è davvero il contributo di replug?
-One of the most relevant works is the one by \textit{cite}, where the authors
-introduce REPLUG, a new paradigm in which the language model is treated as a
-black box. The retrieval component first retrieves the top-k passages from the
-knowledge base, and then the concatenation of each single passage with the
-query is fed to the language model separately. The final answer is then generated
-by ensembling the predicted probabilities of each passage.
-
-Another work that is worth mentioning, but not directly related to RAG, is the
-one by \textit{cite}, where the authors introduce QLORA, a lightweight method 
-to finetune LLM which uses 4-bit quantization of the original weights and backpropagates   
-gradient through Low Rank Adapters (LoRA).
+This report will outline the steps we took to build our system, the motivations behind our choices, and the results of our evaluation.
+We will also discuss potential improvements and future work.
 
 \section{System Overview}
 Our system is composed of four main components.
