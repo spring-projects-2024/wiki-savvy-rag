@@ -138,9 +138,7 @@ def format_example_0_shot(line):
     example = (
         "The following is a multiple-choice question. Please choose the most suitable one among A, B, C and D as the "
         "answer to this question. Clearly state the letter of the correct answer. DO NOT INCLUDE ANYTHING ELSE IN THE ANSWER.\n"
-        "Acceptable answers are 'A.', 'B.', 'C.' or 'D.'\n\n"
-        + line["question"]
-        + "\n"
+        "Acceptable answers are 'A.', 'B.', 'C.' or 'D.'\n\n" + line["question"] + "\n"
     )
     for i, choice in enumerate(line["choices"]):
         example += f"{chr(65 + i)}.{choice}\n"

@@ -7,6 +7,7 @@ import streamlit as st
 from backend.model.rag_handler import TOP_K, TOP_P, RagHandler
 from backend.vector_database.dataset import DatasetSQL
 from backend.vector_database.embedder_wrapper import EmbedderWrapper
+from backend.arxiv.chunk_data import papers_to_chunks
 
 MODELS = [
     {
@@ -65,6 +66,7 @@ class ChatbotController:
     def __init__(self):
         self.configs = None
         self.rag = None
+        self.papers_chks = []
 
     def _init_rag_handler(self):
         rag_initialization_cfgs = self.configs["rag_initialization"]
@@ -148,11 +150,7 @@ class ChatbotController:
                 history=history,
             )
 
-    def _mock_inference(
-        self,
-        history: List[Dict],
-        query: str,
-    ):
+    def _mock_inference(self, history: List[Dict], query: str):
         """Return a mock response instead of performing an inference. Used for testing purposes."""
 
         response = self.mock_responses[len(history) % len(self.mock_responses)]
@@ -184,6 +182,10 @@ class ChatbotController:
             <strong>Chunk {i+1}</strong>: {titles} (score: {score:.2f})</br>"""
         retrieved_docs_str += "</p>"
         return retrieved_docs_str
+
+    def get_chunks_from_ids(self, ids: List[str]):
+        """Returns a dictionary (indexed by the paper id) that contains a list of chunks related to the paper"""
+        self.papers_chks = papers_to_chunks(ids)
 
     mock_responses = [
         "Banana and dragonfruit salad is a delicious and healthy dish that you can make in minutes.",

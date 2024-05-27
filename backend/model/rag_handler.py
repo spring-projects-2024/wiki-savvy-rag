@@ -274,13 +274,14 @@ class RagHandler(nn.Module):
                 #      }, 1)
                 # ]
 
-                messages = self._craft_multiple_docs_query(query, retrieved_docs, do_prep=False)
+                messages = self._craft_multiple_docs_query(
+                    query, retrieved_docs, do_prep=False
+                )
 
                 outputs = self.pipe(messages, return_full_text=False)
                 return (outputs[0]["generated_text"],)
 
         raise ValueError("Bad parameters for inference method.")
-
 
     @torch.no_grad()
     def no_rag_inference(
