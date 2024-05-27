@@ -35,7 +35,7 @@ vector database and keeping the query and passage embedders frozen. Finally, we 
 benchmark our system and run a variety of ablation studies, using the pretrained llm without RAG as our baseline.
 The system is lightweight and can be deployed on most modern personal computers. To demonstrate its capabilities,
 we developed a Streamlit web application that allows users to interact with the model in real-time with a chat-like interface.
-Experiments are fully reproducible and the code is available at \cite{link_to_repo}.
+Experiments are fully reproducible and the code is available at \url{https://github.com/spring-projects-2024/wiki-savvy-rag}.
 
 \end{abstract}
 
@@ -78,8 +78,8 @@ We downloaded the English Wikipedia dump, filtered the articles related to STEM 
 
 \subsection{Filtering and Cleaning}
 
-We downloaded the dump dated 20 December 2023 (100GB) from WikiMedia \textit{cite}. Wikipedia articles have category tags to help classify them.
-Categories are organized in a directed acyclic graph (DAG), but not a tree \cite{kaggle_categories_thing}. To keep STEM articles, we marked only the categories that are at
+We downloaded the dump dated 20 December 2023 (100GB) from WikiMedia \cite{wikimedia}. Wikipedia articles have category tags to help classify them.
+Categories are organized in a directed acyclic graph (DAG), but not a tree \cite{wikipedia_category_tree}. To keep STEM articles, we marked only the categories that are at
 distance at most k from a set of hand-picked root categories in the category DAG, and we kept articles belonging to marked categories.
 Then, we used regular expressions and many python scripts to remove (almost) everything that wasn't plain text, such as XML tags, tables, and references. After filtering, the XML
 dump was reduced to 22GB. After cleaning, it went down to 8GB.
@@ -123,7 +123,7 @@ We eventually chose the Flat index with 128 subvectors product quantization.
 
 \subsection{Large Language Model}
 
-As llm, we chose the pretrained Qwen/Qwen1.5-0.5B-Chat \textit{link} model, the smallest model in the Qwen v1.5 family
+As llm, we chose the pretrained Qwen/Qwen1.5-0.5B-Chat \cite{qwen_hf} model, the smallest model in the Qwen v1.5 family
 with only 620M parameters. It was pretrained with a large amount of data, and post-trained with both supervised finetuning 
 and direct preference optimization to allign it with human preferences. It has a context length of 32K tokens.
 
@@ -145,7 +145,7 @@ To address this, we finetuned our system on a question answering task, using a s
 \subsection{Data}
 
 As training data, we downloaded the Yahoo Answers dataset and used its metadata to filter it and keep only STEM questions. The result is around 23k
-examples. As validation data, we used the validation split of the MMLU dataset. During training, for a given question, we retrieved the single most similar passage from
+examples. As validation data, we used the validation split of the MMLU dataset \cite{mmlu_hf}. During training, for a given question, we retrieved the single most similar passage from
 our knowledge base and formatted the input to meet the expectations of Qwen, including the retrieved passage as context.
 
 \subsection{Training}
