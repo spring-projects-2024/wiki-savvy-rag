@@ -18,11 +18,6 @@ source /home/3144860/miniconda3/bin/activate nlp
 
 conda info --envs
 
-python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 2 --use_rag 1 --inference_type "replug" --n_docs_retrieved 3 --n_samples 500
-python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 3 --use_rag 1 --inference_type "replug" --n_docs_retrieved 3 --n_samples 500
-python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 4 --use_rag 1 --inference_type "replug" --n_docs_retrieved 3 --n_samples 500
-python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 5 --use_rag 1 --inference_type "replug" --n_docs_retrieved 3 --n_samples 500
-python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 7 --use_rag 1 --inference_type "replug" --n_docs_retrieved 3 --n_samples 500
-python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 10 --use_rag 1 --inference_type "replug" --n_docs_retrieved 3 --n_samples 500
+python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 0 --use_rag 1 --inference_type "naive" --n_docs_retrieved 3 --n_samples 500
 
 conda deactivate
