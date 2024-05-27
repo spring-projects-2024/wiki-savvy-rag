@@ -55,13 +55,13 @@ def build_sidebar():
                     DEVICE_DEFAULT if DEVICE_DEFAULT in available_devices else "cpu"
                 ),
                 "use_rag": True,
-                "use_arxiv": False,
                 "custom_model_path": CUSTOM_MODEL_PATH_DEFAULT,
             },
             "inference_type": INFERENCE_TYPE_DEFAULT,
             "retrieved_docs": RETRIEVED_DOCS_DEFAULT,
             "decoding_strategy": DECODING_STRATEGY_DEFAULT,
             "mock_responses": MOCK_RESPONSES_DEFAULT,
+            "use_arxiv": False,
         }
 
     configs = st.session_state["configs"].copy()
@@ -155,7 +155,7 @@ def build_sidebar():
 
             new_use_arxiv = st.checkbox(
                 "Use ArXiv (Experimental Feature ⚠️)",
-                value=rag_initialization_cfgs["use_arxiv"],
+                value=configs["use_arxiv"],
             )
 
             submitted = st.form_submit_button("Apply")
@@ -166,13 +166,13 @@ def build_sidebar():
                     "index_path": new_index_path,
                     "device": new_device,
                     "use_rag": new_use_rag,
-                    "use_arxiv": new_use_arxiv,
                     "custom_model_path": new_custom_model_path,
                 }
                 configs["inference_type"] = new_inference_type
                 configs["retrieved_docs"] = new_retrieved_docs
                 configs["decoding_strategy"] = new_decoding_strategy
                 configs["mock_responses"] = new_mock_responses
+                configs["use_arxiv"] = new_use_arxiv
 
                 st.session_state["configs"] = configs
                 st.rerun()

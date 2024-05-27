@@ -54,7 +54,7 @@ def papers_to_chunks(ids: List[str]):
         for chunk in paper_ch:
             title = paper_title
             title += f" Section {i}"
-            c_dictionary = {"titles": "[ " + title + "]", "text": chunk}
+            c_dictionary = {"titles": '[ "' + title + '"]', "text": chunk}
             chunks.append(c_dictionary)
             i += 1
     return chunks

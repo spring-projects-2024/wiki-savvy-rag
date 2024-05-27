@@ -13,7 +13,7 @@ build_sidebar()
 configs = st.session_state["configs"]
 controller = load_controller()
 
-use_arxiv = configs["rag_initialization"]["use_arxiv"]
+use_arxiv = configs["use_arxiv"]
 
 with st.spinner("Loading/Updating the Chatbot. It could take a while..."):
     controller.update_configs(configs)
@@ -29,7 +29,8 @@ if "file_upload_key" not in st.session_state:
 if "uploaded_file" not in st.session_state:
     st.session_state["uploaded_file"] = []
 
-if len(st.session_state["messages"]) == 2:
+
+if len(st.session_state["messages"]) == 2 and use_arxiv:
     st.toast(
         "Did you know that you can use link to arXiv papers to augment the model's reply? \n You can also directly upload the pdf of an arXiv paper, using the Upload button below!",
         icon="😍",
@@ -85,7 +86,6 @@ if prompt := st.chat_input("Please ask a question."):
         )
 
 if use_arxiv:
-
     uploaded_files = st.file_uploader(
         "📁 Upload File",
         accept_multiple_files=True,
