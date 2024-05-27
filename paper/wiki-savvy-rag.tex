@@ -13,6 +13,7 @@
 
 % TODOS:
 % - In the abstract, briefly mention our findings once we have some
+% - embeddings section: first one to go
 % - Add the training section
 % - Add the MMLU results
 % - Add the training results
@@ -70,27 +71,18 @@ In order to benchmark our system and conduct a variety of ablation studies, we u
 This report will outline the steps we took to build our system, the motivations behind our choices, and the results of our evaluation.
 We will also discuss potential improvements and future work.
 
-\section{System Overview}
-Our system is composed of four main components.
-An SQLite database stores the Wikipedia passages for faster reading.
-An encoder-only model, commonly referred to as embedder, processes the queries and the 
-Wikipedia passages to obtain a dense representation of them; in this way, similarity 
-between the queries and the passages can be computed by simple dot products.
-A vector database stores the embeddings for fast similarity search.
-A RAG handler generates the answers using a LLM and the retrieved passages.
-
 \section{Knowledge Base}
 
-One of the main components of most of retrieval-based systems is the knowledge base.
-In our case, we built a vector database of Wikipedia passages to be used by the RAG model.
+Since we decided to focus on STEM subjects, we needed a knowledge base that was rich in scientific and technical information.
+We downloaded the English Wikipedia dump, filtered the articles related to STEM subjects, and cleaned the text.
 
-\subsection{Cleaning Wikipedia}
+\subsection{Filtering and Cleaning}
 
-The first step in building our knowledge base was to download and clean the English
-Wikipedia dump. We downloaded the dump dated 20 December 2023 from WikiMedia \textit{cite} 
-and extracted the categories that are related to STEM subjects. 
-We then retrieved all the articles that belong to these categories and cleaned the text
-by removing everything that wasn't plain text, such as XML tags, tables, and references.
+We downloaded the dump dated 20 December 2023 (100GB) from WikiMedia \textit{cite}. Wikipedia articles have category tags to help classify them.
+Categories are organized in a directed acyclic graph (DAG), but not a tree \cite{kaggle_categories_thing}. To keep STEM articles, we marked only the categories that are at
+distance at most k from a set of hand-picked root categories in the category DAG, and we kept articles belonging to marked categories.
+Then, we used regular expressions and many python scripts to remove (almost) everything that wasn't plain text, such as XML tags, tables, and references. After filtering, the XML
+dump was reduced to 22GB. After cleaning, it went down to 8GB.
 
 Then we proceeded in splitting the articles into the different sections to obtain the chunks 
 that will be used by the RAG model. 
@@ -99,12 +91,10 @@ We stored all of these, together with their titles, in an SQLite database.
 
 \subsection{Embeddings}
 
-Once we had the cleaned Wikipedia passages, we processed them with an embedder to obtain the dense 
-representations.
-We used the BAAI/bge-small-en-v1.5 model \textit{link}, available on the Hugging Face model hub.
-
-The model is the smaller version of the BAAI General Embeedding family v1.5. 
-To get the sentence embeddings, it uses the last hidden state of the [CLS] token, and it outputs 
+To prepare the raw text for semantic embedding, we used spacy to chunk the articles into 13 million passages with an average
+length of 230 words, and stored them in an SQLite database. Then, we tokenized and embedded them using the open-source BAAI/bge-small-en-v1.5 model 
+\textit{link}. This model is the smaller version of the BAAI General Embeedding family v1.5. 
+To get the dense embeddings for sentences, it uses the last hidden state of the [CLS] token, and it outputs 
 384-dimensional vectors.
 
 We chose this model for its balance between performance and computational cost.
@@ -113,49 +103,39 @@ parameters and only 0.12GB of memory usage, but achieves a 51.68 score on the MT
 
 \subsection{Vector Database}
 
-To handle efficiently the retrieval of the 13 million embedded chunks, we used the Faiss library. 
-Faiss is a library for efficient similarity search and clustering of dense vectors. 
-It offers different indexing methods. Flat uses simple brute-force search, 
-IVF uses clustering to reduce the number of comparisons,
-and HNSW creates a multi-layered graph structure where each layer is a simplified, 
-navigable small world network. 
+We used the Faiss library to build a vector database of the embeddings for efficient retrieval, using cosine similarity to compare vectors.
+Faiss is a library for efficient similarity search and clustering of dense vectors that offers different indexing methods.
+We mostly investigated three index variants: Flat uses simple brute-force search, IVF uses centroid-based clustering to 
+implement a hierarchical search that reduces the number of comparisons, and HNSW creates a multi-layered graph structure 
+where each layer is a simplified, navigable small world network. For further details, see the excellent Faiss documentation \cite{faiss}.
 
-Faiss also offers different quantization techniques to reduce the memory usage of the embeddings, 
-the two we considered are the scalar quantization and the product quantization. 
-The scalar quantization quantizes each dimension of the vector independently in a linear
+Faiss also offers different quantization techniques to reduce the memory footprint of the embeddings. We focused
+on two quantization techniques: scalar quantization and product quantization. 
+Scalar quantization quantizes each dimension of the vector independently in a linear
 range, while the product quantization splits the vector into subvectors and quantizes each
 subvector independently.
 
-We compared the performance of different indexes and quantization techniques to choose the best
-configuration for our system. See the Benchmark section for more details.
+We benchmarked extensively different combinations of indexes and quantization techniques to find the best configuration
+for our system. We measured recall, query time, and memory usage to find a good trade-off. See the Benchmark section for more details.
 We eventually chose the Flat index with 128 subvectors product quantization.
 
 \section{Retrieval-Augmented Generation}
 
-The Retrieval-Augmented Generation (RAG) required to decide the Large Language Model (LLM) to use 
-and the way to generate the answer given the top-k most similar passages retrieved from the knowledge base.
-Similarity is calculated using the dot product between the query and the passages embeddings.
-
 \subsection{Large Language Model}
 
-The choice of the LLM was crucial for the performance of the system. Following the
-same reasoning as for the embedder, we chose a model that was small but still powerful.
-We chose the Qwen/Qwen1.5-0.5B-Chat \textit{link}, available on the Hugging Face model hub. 
-This model is the smaller version of the Qwen family v1.5, and it has only 620M parameters, making
-it one of the smallest models available on the hub.
-It was pretrained with a large amount of data, and post-trained with both supervised finetuning 
-and direct preference optimization. It has a context length of 32K tokens.
+As llm, we chose the pretrained Qwen/Qwen1.5-0.5B-Chat \textit{link} model, the smallest model in the Qwen v1.5 family
+with only 620M parameters. It was pretrained with a large amount of data, and post-trained with both supervised finetuning 
+and direct preference optimization to allign it with human preferences. It has a context length of 32K tokens.
 
 \subsection{Generation}
 
-The generation process is the core of the RAG model. We implemented two methods to generate the
-answers: the naive method and the REPLUG method.
-The naive method is the simplest one: the model is feeded with the concatenation of all 
-the retrieved passages and the query, and it generates the answer.
-The REPLUG method is more complex: the model is given the query and each individual passage 
-separately, generating an answer for each one. The final answer is then produced by 
-combining the predicted probabilities from each passage.
-
+To generate text through RAG, we need to pass retrieved passages to the model in order to produce logits
+for the next token, and then use a decoding strategy to generate the final answer.
+We implemented two methods to produce logits. The first one, which we refer to as 'naive', concatenates all the retrieved passages
+and the query, and feeds the result to the model. The second one, following \cite{replug}, feeds the query and each individual passage
+separately to the model, and then combines the predicted probabilities from each passage with weights proportional to the similarity
+to get probabilities.
+As for the decoding strategy, we implemented greedy decoding, top-k sampling, and top-p sampling. \cite{smth}
 
 \section{Finetuning}
 
