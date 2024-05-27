@@ -516,7 +516,7 @@
       "embedder": null,
       "dataset": "scripts/dataset/data/dataset.db"
     },
-    "pretrained_model_path": "checkpoints/step1500"
+    "pretrained_model_path": "checkpoints/step2000"
   },
   "args": {
     "split": "test",
@@ -524,7 +524,7 @@
     "output": null,
     "k_shot": 0,
     "batch_size": 1,
-    "config_path": "configs/checkpoints/step1500.yaml",
+    "config_path": "configs/checkpoints/step2000.yaml",
     "n_samples": 500,
     "use_rag": true,
     "n_docs_retrieved": 5,
