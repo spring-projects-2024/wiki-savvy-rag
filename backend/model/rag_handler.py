@@ -57,6 +57,8 @@ class RagHandler(nn.Module):
     - use_rag: whether to use the RAG model.
     - device: the device on which the model is loaded.
     - llm_generation_config: a dictionary with default configuration for the LLM model.
+    - use_qlora: whether to use QLora for the LLM model.
+    - pretrained_model_path: the path to the pretrained model.
     """
 
     def __init__(

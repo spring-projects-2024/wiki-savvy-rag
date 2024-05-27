@@ -81,7 +81,7 @@ The following script calculates the embeddings and dumps them on multiple files 
 The required space on disk for all the embeddings is about 20GB.
 
 ```bash
-python scripts/embeddings/compute_embeddings.py --device "cuda:0" --db_dir "scripts/dataset/data" --db_name="dataset" --output_dir "scripts/embeddings/data/" --max_accumulation 250
+python scripts/embeddings/compute_embeddings.py --device "cuda" --db_dir "scripts/dataset/data" --db_name="dataset" --output_dir "scripts/embeddings/data/" --max_accumulation 250
 ```
 
 Since the computation of the embeddings is heavy and might cause troubles (like out of memory errors), we created a bash script that runs multiple instances of the script:
