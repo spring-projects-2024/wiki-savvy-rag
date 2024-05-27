@@ -12,12 +12,11 @@
 \usepackage{natbib} % this is probably into you nips_2018 format file
 
 % TODOS:
+% - Add the MMLU results
+% - complete bibliography
+% - add figures
 % - In the abstract, briefly mention our findings once we have some
 % - embeddings section: first one to go
-% - Add the training section
-% - Add the MMLU results
-% - Add the training results
-% - Add bibliography
 
 
 \title{Wikipedia-Savvy-RAG: Wikipedia-backed RAG system expert about STEM subjects}  
@@ -145,8 +144,8 @@ To address this, we finetuned our system on a question answering task, using a s
 
 \subsection{Data}
 
-As training data, we downloaded the Yahoo Answers dataset and used its metadata to filter it and keep only STEM questions. As validation data,
-we used the validation split of the MMLU dataset. During training, for a given question, we retrieved the single most similar passage from
+As training data, we downloaded the Yahoo Answers dataset and used its metadata to filter it and keep only STEM questions. The result is around 23k
+examples. As validation data, we used the validation split of the MMLU dataset. During training, for a given question, we retrieved the single most similar passage from
 our knowledge base and formatted the input to meet the expectations of Qwen, including the retrieved passage as context.
 
 \subsection{Training}
@@ -201,12 +200,6 @@ obtain a total of about 3000 questions.
 
 \section{Results}
 
-\subsection{Training}
-
-\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
-
 \subsection{Faiss indexes}
 
 We measured the recall of the indexes on k=1, 10, 50 and 100. The query time was 
@@ -253,6 +246,13 @@ is also affected.
 In the end, since the query time was fine for our purposes, we chose the Flat index with 128
 subvectors product quantization, which had the lowest memory usage and a good recall.
 
+\subsection{Training}
+
+We trained our model for slightly over 2 epochs, measuring the average cross-entropy on both the training and validation sets.
+Due to limited memory, we had to resort to gradient accumulation to simulate a larger batch size than 1 (we used 2). The training loss, 
+with enough smoothing, decreased steadily, as expected. As for the validation loss, after an initial sharp decrease, it started increasing
+again with an oscillatory pattern. This is probably due in part to the use of different datasets for training and validation, which we did
+to measure generalization more reliably. Training curves are shown in figure \ref{fig:training_curves}.
 
 \subsection{MMLU}
 \textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
