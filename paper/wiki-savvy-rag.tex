@@ -12,9 +12,8 @@
 \usepackage{natbib} % this is probably into you nips_2018 format file
 
 % TODOS:
-% - Add the MMLU results
-% - complete bibliography
-% - add figures
+% - Add the MMLU results and figures
+% - add training figures
 % - In the abstract, briefly mention our findings once we have some
 % - embeddings section: first one to go
 
@@ -258,11 +257,10 @@ We trained our model for slightly over 2 epochs, measuring the average cross-ent
 Due to limited memory, we had to resort to gradient accumulation to simulate a larger batch size than 1 (we used 2). The training loss, 
 with enough smoothing, decreased steadily, as expected. As for the validation loss, after an initial sharp decrease, it started increasing
 again with an oscillatory pattern. This is probably due in part to the use of different datasets for training and validation, which we did
-to measure generalization more reliably. Training curves are shown in figure \ref{fig:training_curves}.
+to measure generalization more reliably. The sharp drop in validation loss right at the beginning of training could be due to the 4 bit quantization,
+as in the first few steps the model is still learning to correct the quantization errors. Training curves are shown in figure \ref{fig:training_curves}.
 
 \subsection{MMLU}
-
-
 
 \section{Conclusion}
 We developed, fine-tuned, and evaluated a Retrieval-Augmented Generation (RAG) 
