@@ -151,6 +151,13 @@ All options can be configured directly through the chatbot's UI:
 
 Currently, with the RAG option enabled, the chatbot only considers the user's prompt and does not take into account the history of previous messages. Integrating memory handling with RAG is outside the scope of this project. However, future enhancements may include this capability.
 
+##### ArXiv (Experimental feature)
+When the Use ArXiv flag is enabled, it will be possible to use ArXiv papers, in addition to wikidumps, in the RAG process. You can share papers either by sharing links using the chat or by directly uploading them from your device. You can also choose to use both methods simultaneously. Papers will be downloaded locally (temp) and automatically deleted after usage. LaTeX files will be parsed, and chunks will be created.
+The possibility of retrieving papers from references of a given paper, and use them in RAG, may be included in future enhancements. 
+![](media/arxiv.gif)
+
+
+
 ## Our results (and how to reproduce them)
 
 This section outlines the benchmarks we performed and the results we obtained.
