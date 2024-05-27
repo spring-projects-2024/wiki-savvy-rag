@@ -87,8 +87,8 @@ def evaluate(
     else:
         n_samples = min(n_samples + k_shot, len(dataset))
 
-    i = k_shot
-    while i + batch_size < n_samples:
+    i = k_shot + 1000
+    while i + batch_size < n_samples+1000:
         batch = [dataset[i + j] for j in range(batch_size)]
         if k_shot > 0:
             queries = [
@@ -118,9 +118,9 @@ def evaluate(
 
             pred_to_num = {"A": 0, "B": 1, "C": 2, "D": 3}
             pred = pred_to_num[pred]
+            print(pred, question["answer"], type(pred), type(question["answer"]))
             if "answer" in question:
-                correct = 1 if pred == question["answer"] else 0
-                if correct:
+                if pred == question["answer"]:
                     metrics["correct"] += 1
 
             # target = chr(ord("a") + question["answer"])

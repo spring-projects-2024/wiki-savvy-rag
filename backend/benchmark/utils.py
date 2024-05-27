@@ -2,6 +2,7 @@ import datasets
 from datasets import load_dataset
 from typing import Union, Optional
 from backend.benchmark.constants import stem_subcategories, yahoo_stem_categories
+
 CHOICES = ["A", "B", "C", "D"]
 
 
@@ -92,7 +93,7 @@ def format_example(line, include_answer=True):
     example = "Question: " + line["question"]
 
     for i, choice in enumerate(line["choices"]):
-        example += f'\n{chr(65 + i)}. {choice}'
+        example += f"\n{chr(65 + i)}. {choice}"
 
     if include_answer:
         example += f"\nAnswer:{chr(65 + line['answer'])}"
@@ -134,7 +135,9 @@ def craft_query(
 
 def format_example_0_shot(line):
     example = (
-        "The following is a multiple-choice question. Please choose the most suitable one among A, B, C and D as the answer to this question.\n\n"
+        "The following is a multiple-choice question. Please choose the most suitable one among A, B, C and D as the "
+        "answer to this question. Clearly state the letter of the correct answer. DO NOT INCLUDE ANYTHING ELSE IN THE ANSWER.\n"
+        "Acceptable answers are 'A.', 'B.', 'C.', or 'D.'\n\n"
         + line["question"]
         + "\n"
     )
@@ -143,9 +146,6 @@ def format_example_0_shot(line):
     return example
 
 
-
-
-# def generate_few_shot_prompt(k, subject, dev_df):
 def craft_few_shot_prompt(subject, examples: list[dict]):
     def format_subject(subject):
         l = subject.split("_")
@@ -163,9 +163,14 @@ def craft_few_shot_prompt(subject, examples: list[dict]):
             example,
             include_answer=True,
         )
+
+    prompt += (
+        "\nClearly state the letter of the correct answer. If the question contains whether "
+        "two statements are true or false, provide only the letter of the answer containing the right combination."
+        "Do not write which statement is false and which is true\n\n"
+    )
     return prompt
 
 
 if __name__ == "__main__":
     dataset = load_yahoo_answers("stem")
-
