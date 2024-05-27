@@ -230,7 +230,6 @@ class RagHandler(nn.Module):
             else:
                 self.llm.model.generation_config.max_length = 2500
 
-                breakpoint()
                 pipe_query = [
                     {
                         "role": "user",
@@ -263,6 +262,15 @@ class RagHandler(nn.Module):
                 retrieved_docs = self.faiss.search_text(
                     query, n_neighbors=n_docs_retrieved
                 )
+                #
+                # retrieved_docs = [
+                #     ({
+                #         "text": "test"
+                #      }, 1),
+                #     ({
+                #         "text": "test2"
+                #      }, 1)
+                # ]
 
                 messages = self._craft_multiple_docs_query(query, retrieved_docs, do_prep=False)
 

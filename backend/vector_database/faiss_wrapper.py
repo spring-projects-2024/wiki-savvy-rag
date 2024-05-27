@@ -116,7 +116,9 @@ class FaissWrapper:
         """
 
         I, D = self._search_text_get_I_D(text, n_neighbors)
-        return [(self._index_to_text(i), j) for i, j in zip(D[0], I[0]) if i != -1]
+        # return [(self._index_to_text(i), j) for i, j in zip(D[0], I[0]) if i != -1]
+        return [({"text": self._index_to_text(i), "id": i}, j) for i, j in zip(I[0], D[0]) if i != -1]
+
 
     def search_multiple_texts(
         self, texts: List[str], n_neighbors: int
@@ -138,7 +140,7 @@ class FaissWrapper:
         I, D = self.search_vectors(np.concatenate(embeddings), n_neighbors)
 
         return [
-            [(self._index_to_text(i), j) for i, j in zip(D_i, I_i) if i != -1]
+            [({"text": self._index_to_text(i)}, j) for i, j in zip(D_i, I_i) if i != -1]
             for D_i, I_i in zip(D, I)
         ]
 
