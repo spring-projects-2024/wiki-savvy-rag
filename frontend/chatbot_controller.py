@@ -166,9 +166,6 @@ class ChatbotController:
 
     def _post_process_titles(self, text: str):
         """This function is necessary because the json in titles is not formatted properly"""
-        if not isinstance(text, str):
-            text = text[0]
-
         return (
             text.replace("['", '["')
             .replace("',", '",')
@@ -182,7 +179,12 @@ class ChatbotController:
         It includes the titles of the documents and the score."""
         retrieved_docs_str = "<p style='font-size: 0.9em; color: rgb(75, 85, 99); background-color: #f9fafb; padding: 0.8rem; border-radius: 8px'>"
         for i, (doc, score) in enumerate(retrieved_docs):
-            titles = " > ".join(json.loads(self._post_process_titles(doc["titles"])))
+            try:
+                titles = " > ".join(
+                    json.loads(self._post_process_titles(doc["titles"]))
+                )
+            except json.JSONDecodeError as e:
+                titles = doc["titles"]
             retrieved_docs_str += f"""  
             <strong>Chunk {i+1}</strong>: {titles} (score: {score:.2f})</br>"""
         retrieved_docs_str += "</p>"
