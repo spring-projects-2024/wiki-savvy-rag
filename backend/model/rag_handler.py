@@ -103,6 +103,8 @@ class RagHandler(nn.Module):
             tokenizer=self.llm.tokenizer,
         )
 
+        self.llm.model.generation_config.max_length = 2500
+
     def to(self, device: str):
         """
         Move the model to the given device.
