@@ -49,7 +49,7 @@ plt.title("Accuracy (k_shot=0)")
 plt.xlabel("n_docs_retrieved")
 plt.ylabel("accuracy")
 plt.grid()
-plt.legend()
+# plt.legend()
 plt.show()
 
 # - accuracy vs number of documents retrieved, including 0 (can be done for a few chkpts, putting the curves in the same graph, as above. i would not use too many chkpts though)
