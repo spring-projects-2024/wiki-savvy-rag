@@ -2,14 +2,14 @@ from typing import Optional, List, Dict, Tuple
 
 from torch import nn
 import torch
-from transformers import BatchEncoding
+from transformers import BatchEncoding, pipeline, QuestionAnsweringPipeline
 
 from backend.model.llm_handler import LLMHandler
 from backend.vector_database.faiss_wrapper import FaissWrapper
 
 REPLUG_GEN_MAX_LENGTH = 1000
 DECODING_STRATEGIES = ["greedy", "top_k", "top_p"]
-INFERENCE_TYPES = ["naive", "replug"]
+INFERENCE_TYPES = ["naive", "replug", "pipe"]
 TOP_K = 50
 TOP_P = 0.9
 
@@ -94,8 +94,16 @@ class RagHandler(nn.Module):
         self.use_rag = use_rag
         self.device = device
         self.llm_generation_config = DEFAULT_LLM_GENERATION_CONFIG
+
         if llm_generation_config is not None:
             self.llm_generation_config.update(llm_generation_config)
+        self.pipe = pipeline(
+            "text-generation",
+            model=self.llm.model,
+            tokenizer=self.llm.tokenizer,
+        )
+
+        self.llm.model.generation_config.max_length = 2500
 
     def to(self, device: str):
         """
@@ -211,32 +219,58 @@ class RagHandler(nn.Module):
         assert inference_type in INFERENCE_TYPES, "Invalid inference type"
 
         if not self.use_rag:
-            return self.no_rag_inference(
-                query,
-                decoding_strategy=decoding_strategy,
-                return_generator=return_generator,
-                return_prompt=return_prompt,
-                history=history,
-            )
+            if inference_type != "pipe":
+                return self.no_rag_inference(
+                    query,
+                    decoding_strategy=decoding_strategy,
+                    return_generator=return_generator,
+                    return_prompt=return_prompt,
+                    history=history,
+                )
+            else:
+                self.llm.model.generation_config.max_length = 2500
 
-        if inference_type == "naive":
-            return self.naive_inference(
-                query,
-                n_docs_retrieved=n_docs_retrieved,
-                decoding_strategy=decoding_strategy,
-                return_generator=return_generator,
-                return_prompt=return_prompt,
-            )
-        elif inference_type == "replug":
-            return self.replug_inference(
-                query,
-                n_docs_retrieved=n_docs_retrieved,
-                decoding_strategy=decoding_strategy,
-                return_generator=return_generator,
-                return_prompt=return_prompt,
-            )
+                breakpoint()
+                pipe_query = [
+                    {
+                        "role": "user",
+                        "content": query,
+                    }
+                ]
+                outputs = self.pipe(pipe_query, return_full_text=False)
+                # if type([query][0]) == list:
+                #     return [output[0]["generated_text"] for output in outputs]
+                # else:
+                return (outputs[0]["generated_text"],)
+        else:
+            if inference_type == "naive":
+                return self.naive_inference(
+                    query,
+                    n_docs_retrieved=n_docs_retrieved,
+                    decoding_strategy=decoding_strategy,
+                    return_generator=return_generator,
+                    return_prompt=return_prompt,
+                )
+            elif inference_type == "replug":
+                return self.replug_inference(
+                    query,
+                    n_docs_retrieved=n_docs_retrieved,
+                    decoding_strategy=decoding_strategy,
+                    return_generator=return_generator,
+                    return_prompt=return_prompt,
+                )
+            elif inference_type == "pipe":
+                retrieved_docs = self.faiss.search_text(
+                    query, n_neighbors=n_docs_retrieved
+                )
 
-        assert False, "This should never be reached"
+                messages = self._craft_multiple_docs_query(query, retrieved_docs, do_prep=False)
+
+                outputs = self.pipe(messages, return_full_text=False)
+                return (outputs[0]["generated_text"],)
+
+        raise ValueError("Bad parameters for inference method.")
+
 
     @torch.no_grad()
     def no_rag_inference(
@@ -472,12 +506,14 @@ class RagHandler(nn.Module):
 
         return mess_prep
 
-    def _craft_multiple_docs_query(self, query: str, docs: List[Dict]) -> str:
+    def _craft_multiple_docs_query(
+        self, query: str, docs: List[Tuple], do_prep=True
+    ) -> str:
         user_prompt = ""
         user_prompt += "== Context ==\n"
-        for i, (docs, _) in enumerate(docs):
+        for i, (doc, _) in enumerate(docs):
             user_prompt += f"=== Document {i} ===\n"
-            user_prompt += docs["text"] + "\n"
+            user_prompt += doc["text"] + "\n"
         user_prompt += f"== User Query ==\n{query}"
 
         messages = [
@@ -492,13 +528,16 @@ class RagHandler(nn.Module):
             },
         ]
 
-        mess_prep: str = self.llm.tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True,
-        )
+        if do_prep:
+            mess_prep: str = self.llm.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
 
-        return mess_prep
+            return mess_prep
+        else:
+            return messages
 
     @torch.no_grad()
     def _inference_generator(
