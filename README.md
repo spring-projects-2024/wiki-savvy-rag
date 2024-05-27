@@ -217,4 +217,17 @@ The index we chose is PQ128 because it was a good compromise between accuracy, s
 
 ### Benchmark on MMLU  
 
+The Measuring Massive Multitask Language Understanding (MMLU) is a collection of multiple-choice questions that spans a wide range of topics.
+We hand-picked the subcategories that according to us were part of the STEM domain and obtain a total of about 3000 questions.
 
+We benchmarked the system considering different variations of it. First we compared the performances changing the number of retrieved passages; then we changed the number of examples in the prompt; finally we compared the different inference strategies (naive and REPLUG).
+To assess the performances throughout training steps, we compared the performances of different model checkpoints. 
+
+In general, to run a benchmark execute the following script: 
+
+```bash
+python scripts/benchmark/mmlu.py --split "test" --subset "stem" --output "/path/to/output.json" --k_shot 1 --batch_size 1 --config_path "/path/to/config.yaml" --use_rag True --n_docs_retrieved 3 --log_answers True --inference_type "replug"   
+```
+
+
+Refer to the bash scripts in the folders `bash_scripts/benchmark_original_model` for benchmarks on different variation of the original model and to the `bash_scripts/chkpts_bench` for benchmarks on the training checkpoints.
