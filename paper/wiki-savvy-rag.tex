@@ -56,8 +56,8 @@ in chat format. In building our system, we strived to keep the computational res
 training and inference contained. Indeed, our system can be deployed on personal computers with a CUDA-enabled GPU
 with at least 8GB of memory, through a Streamlit web application we developed. Furthermore, the finetuning can 
 be replicated on a single consumer-grade GPU in a few hours. In doing so, the main research question that we aimed to
-answer is whether and to what extent an llm can benefit from a retrieval mechanism in a specialized domain like STEM,
-and whether a simple finetuning recipe on a small dataset can improve the performance of the system.
+answer is whether and to what extent a small llm can benefit from retrieval in knowledge intensive tasks, and whether a
+simple finetuning recipe under tight computational constraints can still improve performance. 
 
 To build the vector database, we processed the English Wikipedia available on WikiMedia \cite{wikimedia} and obtained 
 dense representations of the chunks using a lightweight text embedder \cite{baai}. We then built a vector database using
@@ -109,8 +109,6 @@ To get the sentence embeddings, it uses the last hidden state of the [CLS] token
 We chose this model for its balance between performance and computational cost.
 In fact, the embedder is significantly smaller than its peers, being a BERT-like model with 33.4M 
 parameters and only 0.12GB of memory usage, but achieves a 51.68 score on the MTEB Retrival task.
-
-
 
 \subsection{Vector Database}
 
