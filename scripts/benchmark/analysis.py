@@ -1,9 +1,13 @@
+import datetime
 import os
 import sys
 import re
 import json
+import time
 from typing import List
 import matplotlib.pyplot as plt
+
+TRUST_AFTER = datetime.datetime(year=2024, month=5, day=27, hour=21, minute=43)
 
 
 def extract_steps(name):
@@ -14,7 +18,21 @@ def extract_steps(name):
 
 
 BENCHMARK_OUT_DIR = "out"
-ALLOWED_STEPS = [0, 100, 200, 300, 500, 700, 1000, 1500, 3000, 5000, 10000, 60000, 30000]
+ALLOWED_STEPS = [
+    0,
+    100,
+    200,
+    300,
+    500,
+    700,
+    1000,
+    1500,
+    3000,
+    5000,
+    10000,
+    60000,
+    30000,
+]
 # load data from output folder
 data = []
 
@@ -108,7 +126,6 @@ plt.xlabel("training_step")
 plt.ylabel("accuracy")
 plt.grid()
 plt.show()
-
 
 # accuracy vs kshots (using replug, fixed number of documents (e.g. 3), fixed training_step)
 
