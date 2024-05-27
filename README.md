@@ -28,7 +28,7 @@ Our project is organized into the following directories:
 The following steps are required to both run the ChatBot and to replicate our results on the MMLU evaluation dataset.  
 
 Since we are aware that executing all the steps is computationally demanding, we link a 
-zip files containing all the required files to run the ChatBot and most of the benchmarks at [this link](https://bocconi-my.sharepoint.com/:u:/g/personal/federico_zarantonello_studbocconi_it/EeTv47L2NEZKocBvyqGbNs0BvZ4YguxbQ8Gf0CxdKbf9jw?e=OGW38x).
+zip files containing all the required files to run the ChatBot and the benchmarks at [this link](https://bocconi-my.sharepoint.com/:u:/g/personal/federico_zarantonello_studbocconi_it/ESKBb1Hh7hFJhPzT-LvENOQBH0MqysZM9AtW_jdhYzqn1A?e=prSAOp).
 Simply copy and paste the content of the unzipped directory in the project root and you should be fine!
 
 ### Installation
