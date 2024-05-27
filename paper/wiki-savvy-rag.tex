@@ -78,7 +78,7 @@ in chat format. In building our system, we strived to keep the computational res
 training and inference contained. Indeed, our system can be deployed on personal computers with a CUDA-enabled GPU
 with at least 8GB of memory, through a Streamlit web application we developed. Furthermore, the finetuning can 
 be replicated on a single consumer-grade GPU in a few hours. In doing so, the main research question that we aimed to
-answer is whether and to what extent a small llm can benefit from retrieval in knowledge intensive tasks, and whether a
+answer is whether and to what extent a small LLM can benefit from retrieval in knowledge intensive tasks, and whether a
 simple finetuning recipe under tight computational constraints can still improve performance. 
 
 To build the vector database, we processed the English Wikipedia available on WikiMedia \cite{wikimedia} and obtained 
@@ -100,8 +100,8 @@ We downloaded the English Wikipedia dump, filtered the articles related to STEM 
 
 We downloaded the dump dated 20 December 2023 (100GB) from WikiMedia \cite{wikimedia}. Wikipedia articles have category tags to help classify them.
 Categories are organized in a directed acyclic graph (DAG), but not a tree \cite{wikipedia_category_tree}. To keep STEM articles, we marked only the categories that are at
-distance at most k from a set of hand-picked root categories in the category DAG, and we kept articles belonging to marked categories.
-Then, we used regular expressions and many python scripts to remove (almost) everything that wasn't plain text, such as XML tags, tables, and references. After filtering, the XML
+distance at most k from a set of hand-picked root categories in the category DAG, and we kept articles belonging to the marked categories.
+Then, we used regular expressions and many Python scripts to remove (almost) everything that wasn't plain text, such as XML tags, tables, and references. After filtering, the XML
 dump was reduced to 22GB. After cleaning, it went down to 8GB.
 
 Then we proceeded in splitting the articles into the different sections to obtain the chunks 
@@ -111,9 +111,8 @@ We stored all of these, together with their titles, in an SQLite database.
 
 \subsection{Embeddings}
 
-To prepare the raw text for semantic embedding, we used spacy to chunk the articles into 13 million passages with an average
-length of 230 words, and stored them in an SQLite database. Then, we tokenized and embedded them using the open-source BAAI/bge-small-en-v1.5 model 
-\textit{link}. This model is the smaller version of the BAAI General Embeedding family v1.5. 
+We tokenized and embedded the chunks using the open-source BAAI/bge-small-en-v1.5 model 
+\cite{bge_hf}. This model is the smaller version of the BAAI General Embeedding family v1.5. 
 To get the dense embeddings for sentences, it uses the last hidden state of the [CLS] token, and it outputs 
 384-dimensional vectors.
 
@@ -123,7 +122,7 @@ parameters and only 0.12GB of memory usage, but achieves a 51.68 score on the MT
 
 \subsection{Vector Database}
 
-We used the Faiss library to build a vector database of the embeddings for efficient retrieval, using cosine similarity to compare vectors.
+We used the Faiss library to build a vector database of the embeddings for efficient retrieval, using dot product to compare vectors.
 Faiss is a library for efficient similarity search and clustering of dense vectors that offers different indexing methods.
 We mostly investigated three index variants: Flat uses simple brute-force search, IVF uses centroid-based clustering to 
 implement a hierarchical search that reduces the number of comparisons, and HNSW creates a multi-layered graph structure 
@@ -143,9 +142,9 @@ We eventually chose the Flat index with 128 subvectors product quantization.
 
 \subsection{Large Language Model}
 
-As llm, we chose the pretrained Qwen/Qwen1.5-0.5B-Chat \cite{qwen_hf} model, the smallest model in the Qwen v1.5 family
+As LLM, we chose the pretrained Qwen/Qwen1.5-0.5B-Chat \cite{qwen_hf} model, the smallest model in the Qwen v1.5 family
 with only 620M parameters. It was pretrained with a large amount of data, and post-trained with both supervised finetuning 
-and direct preference optimization to allign it with human preferences. It has a context length of 32K tokens.
+and direct preference optimization to align it with human preferences. It has a context length of 32K tokens.
 
 \subsection{Generation}
 
@@ -159,7 +158,7 @@ As for the decoding strategy, we implemented greedy decoding, top-k sampling, an
 
 \section{Finetuning}
 
-The llm was pretrained alligned, but it was never tought to consider retrieved passages to compose its answer to a user query.
+The LLM was pretrained aligned, but it was never thought to compose its answers to user queries using retrieved passages.
 To address this, we finetuned our system on a question answering task, using a simple recipe.
 
 \subsection{Data}
@@ -170,7 +169,7 @@ our knowledge base and formatted the input to meet the expectations of Qwen, inc
 
 \subsection{Training}
 
-We froze the query and passage embedders and finetuned the llm only. We used the QLORA technique \cite{qlora} to drastically reduce the number of training
+We froze the query and passage embedders and finetuned the LLM only. We used the QLORA technique \cite{qlora} to drastically reduce the number of training
 parameters and the memory requirements while minimally impacting performance. In essence, this consists in freezing and quantizing the pretrained weights and adding low
 rank adapters to each layer, as in \cite{lora}. Then, we backpropagate through the 4-bit quantized frozen weights to train the adapters.
 As a training criterion, we use cross entropy loss between predicted logits and the ground truth answer. This allows exploiting the inherent
@@ -189,7 +188,8 @@ Refer to our GitHub repository for more information on the application.
 
 \subsection{Arxiv}
 
-\textit{???????????????????????????}
+A further functionality we implemented is the ability to upload Arxiv papers in Latex format and ask questions about them.
+This feature is marked as experimental, as it wasn't extensively tested.
 
 \section{Benchmark}
 
@@ -247,7 +247,6 @@ Index & Recall & Query Time & Memory \\
 \hline
 \end{tabular}
 \caption{Faiss index comparison. Query Time is on 300 MMLU examples and Memory is in MB. 1: Flat 4 bits scalar quantization, 2: Flat 8 bits scalar quantization, 3: Flat 128 subvectors product quantization, 4: IVF with 1000 centroids, 256 subvectors product quantization and HNSW32 as coarse quantizer, 5: HNSW 16 bits scalar quantization.}
-}
 \
 \label{tab:faiss-index}
 \end{table}
