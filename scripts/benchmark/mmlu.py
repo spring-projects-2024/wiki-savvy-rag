@@ -167,6 +167,8 @@ def main():
     tokenizer_kwargs = config.get("tokenizer_kwargs", None)
     faiss_kwargs = config.get("faiss_kwargs", None)
     rag_kwargs = config.get("rag_kwargs", {})
+    pretrained_model_path = config.get("pretrained_model_path")
+
 
     print("Creating RAGHandler...")
     rag_handler = RagHandler(
@@ -177,6 +179,7 @@ def main():
         llm_kwargs=model_kwargs,
         tokenizer_kwargs=tokenizer_kwargs,
         faiss_kwargs=faiss_kwargs,
+        pretrained_model_path=pretrained_model_path
     )
 
     print("Starting evaluation...")

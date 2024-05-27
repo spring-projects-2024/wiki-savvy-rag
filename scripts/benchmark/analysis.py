@@ -5,8 +5,16 @@ import json
 from typing import List
 import matplotlib.pyplot as plt
 
-BENCHMARK_OUT_DIR = "out"
 
+def extract_steps(name):
+    m = re.search(r"step(\d+)", name)
+    if m:
+        return int(m.group(1))
+    return 0
+
+
+BENCHMARK_OUT_DIR = "out"
+ALLOWED_STEPS = [0, 100, 200, 300, 500, 700, 1000, 1500, 3000, 5000, 10000, 60000, 30000]
 # load data from output folder
 data = []
 
@@ -14,8 +22,15 @@ for filename in os.listdir(BENCHMARK_OUT_DIR):
     with open(os.path.join(BENCHMARK_OUT_DIR, filename)) as f:
         data.append(json.load(f))
 
+nd = []
 for d in data:
     del d["metrics"]["answers"]
+
+    steps = extract_steps(d["args"]["config_path"])
+    if steps in ALLOWED_STEPS:
+        nd.append(d)
+
+data = nd
 
 config_path = "configs/llm_vm.yaml"
 k_shot_ok = [0]
@@ -38,25 +53,26 @@ for d in data:
     new_data[cfpath].append((d["args"]["n_docs_retrieved"], d["metrics"]["accuracy"]))
 
 for name, values in new_data.items():
-    print(name, len(values))
     # sort by x
     values.sort(key=lambda x: x[0])
 
     x, y = zip(*values)
+    print(x, y)
     plt.plot(x, y, label=name, marker="^")
 
 plt.title("Accuracy (k_shot=0)")
 plt.xlabel("n_docs_retrieved")
 plt.ylabel("accuracy")
 plt.grid()
-# plt.legend()
+plt.legend()
 plt.show()
 
 # - accuracy vs number of documents retrieved, including 0 (can be done for a few chkpts, putting the curves in the same graph, as above. i would not use too many chkpts though)
 
 # - accuracy vs training_step (using replug, kshot 0, fixed number of documents (e.g. 3))
 
-n_docs_retrieved = 5
+
+n_docs_retrieved = 1
 k_shot = 0
 inference_type = "replug"
 
@@ -76,11 +92,7 @@ for d in data:
     # cfpath is like "configs/checkpoints/step1000.yaml"
     # we want to extract the step number
 
-    m = re.search(r"step(\d+)", cfpath)
-    if m:
-        step = int(m.group(1))
-    else:
-        step = 0
+    step = extract_steps(cfpath)
 
     new_data[step] = d["metrics"]["accuracy"]
 
@@ -96,6 +108,7 @@ plt.xlabel("training_step")
 plt.ylabel("accuracy")
 plt.grid()
 plt.show()
+
 
 # accuracy vs kshots (using replug, fixed number of documents (e.g. 3), fixed training_step)
 
@@ -131,5 +144,3 @@ plt.xlabel("k_shot")
 plt.ylabel("accuracy")
 plt.grid()
 plt.show()
-
-
