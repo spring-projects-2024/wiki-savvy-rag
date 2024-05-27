@@ -187,7 +187,7 @@ class ChatbotController:
 
     def get_chunks_from_ids(self, ids: List[str]):
         """Returns a dictionary (indexed by the paper id) that contains a list of chunks related to the paper"""
-        self.papers_chks = papers_to_chunks(ids)
+        self.papers_chks.extend(papers_to_chunks(ids))
 
     mock_responses = [
         "Banana and dragonfruit salad is a delicious and healthy dish that you can make in minutes.",
