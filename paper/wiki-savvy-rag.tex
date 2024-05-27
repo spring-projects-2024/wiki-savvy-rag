@@ -37,37 +37,34 @@ we developed a Streamlit web application that allows users to interact with the 
 
 \end{abstract}
 
-\section{Introduction}
+\section{Introduction and Related Works}
 
 In recent years, the field of natural language processing has seen a surge in
-the development of large language models (LLMs) that can generate human-like text.
+the development of large language models (LLMs) that can generate human-like text. \cite{gpt3}
 These models have been used in a variety of applications, such as chatbots,
-question-answering systems, and text summarization. However, LLMs often struggle
-with generating accurate and informative responses, especially in specialized
-domains like science, technology, engineering, and mathematics (STEM).
+question-answering systems, and text summarization, with remarkable performance.  \cite{nlp_applications}
+However, LLMs often struggle with generating accurate and informative responses, especially in specialized
+domains like science, technology, engineering, and mathematics (STEM).  \cite{something_about_allucinations}
 
-One way to address this issue is to combine the strengths of LLMs with the
-retrieval of relevant information from a knowledge base. The Retrieval-Augmented
-Generation (RAG) model is a recent approach that does just that. RAG uses a
-retrieval mechanism to find relevant passages from a knowledge base and then
-incorporates this information into the generation process. This allows the model
-to generate more accurate and informative responses.
+A successful approach to address this limitation has been the combination of LLMs with retrieval
+mechanisms from a knowledge base to generate more accurate and informative responses.
+Along this line of research, started with \cite{rag}, several variants and improvements have been proposed,
+such as \cite{replug} \cite{at_least_one_more}. These are extensively reviewed in \cite{rag_review}.
 
-In this paper, we present Wikipedia-Savvy-RAG, a RAG system fine-tuned for STEM
-domain discussions. Our system features a chat interface that allows users to
-interact with the model in real-time. Users can ask questions about STEM
-subjects, and the model will provide answers based on the Wikipedia passages it
-retrieves from its knowledge base. 
+In this paper, we present Wikipedia-Savvy-RAG, a lightweight RAG system fine-tuned for STEM question answering
+in chat format. In building our system, we strived to keep the computational resources required for both
+training and inference contained. Indeed, our system can be deployed on personal computers with a CUDA-enabled GPU
+with at least 8GB of memory, through a Streamlit web application we developed. Furthermore, the finetuning can 
+be replicated on a single consumer-grade GPU in a few hours.
 
-The system was built under the constraints of low computational resources for 
-both inference and finetuning, and can be deployed on personal computers with a
-CUDA-enabled GPU with at least 8GB of memory obtaining reasonable performances.
+To build the vector database, we processed the English Wikipedia available on WikiMedia \cite{wikimedia} and obtained 
+dense representations of the chunks using a lightweight text embedder \cite{baai}. We then built a vector database using
+the Faiss library \cite{faiss} and SQLite \cite{sqlite} to index and retrieve embeddings and passages, respectively. To keep resources low,
+we employed a small pretrained LLM with 500M parameters \cite{qwen}, and we used QLORA \cite{qlora} to finetune it efficiently, 
+keeping the embedder frozen, on a subset of the Yahoo Answers dataset \cite{yahoo_answers}.
+In order to benchmark our system and conduct a variety of ablation studies, we used the MMLU dataset \cite{mmlu}.
 
-We evaluated our system using STEM multiple-choice questions from the MMLU
-dataset. We fine-tuned the LLM for improved performance, comparing the accuracy
-of our system with and without RAG, before and after fine-tuning.
-
-This report will outline the steps we took to build our system, the motivation
+This report will outline the steps we took to build our system, the motivations
 behind our choices, and the results of our evaluation. 
 
 \section{Related Works}
@@ -76,6 +73,7 @@ From the publication of the original RAG paper by Lewis et al. in 2020 \textit{(
 different works have been developed to improve the RAG model: these are extensively
 reviewed in the work by \textit{cite}.
 
+% in realtà, nel paper originale lo facevano già... qual'è davvero il contributo di replug?
 One of the most relevant works is the one by \textit{cite}, where the authors
 introduce REPLUG, a new paradigm in which the language model is treated as a
 black box. The retrieval component first retrieves the top-k passages from the
