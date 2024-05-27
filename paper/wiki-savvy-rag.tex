@@ -310,35 +310,12 @@ to follow when building such systems.
 
 \subsection{Faiss indexes}
 
-\begin{table}[h]
-\centering
-\begin{tabular}{|c|c|c|c|c|c|c|}
-\hline
-Index & Rank 1 & Rank 10 & Rank 50 & Rank 100 & Elapsed Time & Size on Disk (MB) \\
-\hline
-SQ4 & 0.72 & 0.832 & 0.8477 & 0.8558 & 03:53.59 & 2,610 \\
-SQ8 & 0.99 & 0.9873 & 0.9885 & 0.9892 & 03:29.50 & 5,220 \\
-PQ64 & 0.4167 & 0.535 & 0.5798 & 0.5919 & 00:52.62 & 870 \\
-PQ128 & 0.63 & 0.781 & 0.8038 & 0.8144 & 01:55.76 & 1,740 \\
-OPQ64\_256,IVF1000\_HNSW32,PQ64x4fsr & 0.18 & 0.2613 & 0.2797 & 0.2834 & 00:00.11 & 546 \\
-OPQ64\_256,IVF2000\_HNSW32,PQ64x4fsr & 0.14 & 0.2493 & 0.2694 & 0.2755 & 00:00.01 & 548 \\
-OPQ64\_256,IVF5000\_HNSW32,PQ64x4fsr & 0.1433 & 0.247 & 0.2717 & 0.2714 & 00:00.01 & 553 \\
-OPQ128\_512,IVF1000\_HNSW32,PQ128x4fsr & 0.2867 & 0.368 & 0.3849 & 0.3829 & 00:00.01 & 983 \\
-OPQ128\_512,IVF2000\_HNSW32,PQ128x4fsr & 0.2967 & 0.3433 & 0.3653 & 0.3656 & 00:00.01 & 986 \\
-OPQ128\_512,IVF5000\_HNSW32,PQ128x4fsr & 0.25 & 0.3233 & 0.3409 & 0.334 & 00:00.01 & 996 \\
-OPQ256\_1024,IVF1000\_HNSW32,PQ256x4fsr & 0.4067 & 0.4643 & 0.4737 & 0.473 & 00:00.03 & 1,857 \\
-OPQ256\_1024,IVF2000\_HNSW32,PQ256x4fsr & 0.3833 & 0.438 & 0.4435 & 0.439 & 00:00.02 & 1,863 \\
-OPQ256\_1024,IVF5000\_HNSW32,PQ256x4fsr & 0.3467 & 0.388 & 0.3802 & 0.3666 & 00:00.02 & 1,882 \\
-HNSW16\_SQ4 & 0.5933 & 0.661 & 0.5829 & 0.4872 & 00:00.11 & 4,571 \\
-HNSW16\_PQ12 & 0.0 & 0.0037 & 0.0055 & 0.005 & 00:00.01 & 2,125 \\
-HNSW16\_PQ24 & 0.0 & 0.002 & 0.0021 & 0.0021 & 00:00.01 & 2,288 \\
-HNSW32\_PQ12 & 0.0333 & 0.0733 & 0.1001 & 0.1097 & 00:00.02 & 3,862 \\
-HNSW32\_PQ24 & 0.24 & 0.3193 & 0.353 & 0.3486 & 00:00.04 & 4,026 \\
-\hline
-\end{tabular}
-\caption{Extensive comparison of various indexing methods. Rank n is the top-n recall, using exhaustive search as ground truth.}
-\label{tab:faiss-index-extensive}
-\end{table}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/faiss-indexes.png}
+    \caption{Extensive comparison of Faiss indexes. Rank n is the top-n recall using exhaustive search as ground truth.}
+    \label{fig:faiss-indexes-extensive}
+\end{figure}
 
 \subsection{Training plots}
 
