@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 
 TRUST_AFTER = datetime.datetime(year=2024, month=5, day=27, hour=21, minute=43)
 
-
 def extract_steps(name):
     m = re.search(r"step(\d+)", name)
     if m:
@@ -18,27 +17,25 @@ def extract_steps(name):
 
 
 BENCHMARK_OUT_DIR = "out"
-ALLOWED_STEPS = [
-    0,
-    100,
-    200,
-    300,
-    500,
-    700,
-    1000,
-    1500,
-    3000,
-    5000,
-    10000,
-    60000,
-    30000,
-]
+ALLOWED_STEPS = [0, 100, 200, 300, 500, 700, 1000, 1500, 3000, 5000, 10000, 60000, 30000]
 # load data from output folder
 data = []
 
 for filename in os.listdir(BENCHMARK_OUT_DIR):
+    # filename has formt "mmlu_2024-05-27-21-43-00.json"
+    extract_date: datetime.datetime = datetime.datetime.strptime(
+        filename.split("_")[1].split(".")[0], "%Y-%m-%d-%H-%M-%S"
+    )
+
     with open(os.path.join(BENCHMARK_OUT_DIR, filename)) as f:
-        data.append(json.load(f))
+        temp = json.load(f)
+
+    if temp["args"]["config_path"] == "configs/llm_vm.yaml":
+        data.append(temp)
+        continue
+
+    if extract_date > TRUST_AFTER:
+        data.append(temp)
 
 nd = []
 for d in data:
@@ -126,6 +123,7 @@ plt.xlabel("training_step")
 plt.ylabel("accuracy")
 plt.grid()
 plt.show()
+
 
 # accuracy vs kshots (using replug, fixed number of documents (e.g. 3), fixed training_step)
 
