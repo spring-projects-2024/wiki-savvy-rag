@@ -24,7 +24,7 @@ source activate base
 conda info --envs
 
 for file in configs/checkpoints/step*.yaml; do
-    python3 scripts/benchmark/mmlu.py --config_path $file --log_answers True --k_shot 1 --use_rag 1 --n_docs_retrieved 3 
+    python3 scripts/benchmark/mmlu.py --config_path $file --log_answers True --k_shot 0 --use_rag 1 --inference_type "replug" --n_docs_retrieved 5 --n_samples 500
 done
 
 conda deactivate
