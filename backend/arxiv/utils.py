@@ -20,8 +20,6 @@ def get_plain_doc_from_id(id: str):
     download_source_files(id)
     doc = get_text_from_extensions(id, ".tex")
     parsed_doc = LatexNodes2Text().latex_to_text(doc)
-    pattern = r"\{'text':\s+([^}]+)\}"
-    result = re.sub(pattern, r"\1", parsed_doc)
     return parsed_doc
 
 
@@ -30,7 +28,7 @@ def get_ids_from_link_prompt(query: str) -> List[str]:
     Takes the query for the LLM, from the user and checks if it contains a link to archive paper.
     If that is the case, returns paper ids from the link, otherwise returns None
     """
-    pattern = r"https:\/\/arxiv\.org\/abs\/([0-9]{4}\.[0-9]{5})"
+    pattern = r"https:\/\/arxiv\.org\/(?:abs|pdf)\/([0-9]{4}\.[0-9]{5})"
     ret_ids = re.findall(pattern, query)
     if len(ret_ids) != 0:
         return set(ret_ids)

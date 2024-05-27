@@ -66,6 +66,7 @@ class ChatbotController:
     def __init__(self):
         self.configs = None
         self.rag = None
+        self.papers_chks = []
 
     def _init_rag_handler(self):
         rag_initialization_cfgs = self.configs["rag_initialization"]
@@ -183,7 +184,8 @@ class ChatbotController:
         return retrieved_docs_str
 
     def get_chunks_from_ids(self, ids: List[str]):
-        return papers_to_chunks(ids)
+        """Returns a dictionary (indexed by the paper id) that contains a list of chunks related to the paper"""
+        self.papers_chks = papers_to_chunks(ids)
 
     mock_responses = [
         "Banana and dragonfruit salad is a delicious and healthy dish that you can make in minutes.",
