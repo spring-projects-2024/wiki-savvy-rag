@@ -36,6 +36,7 @@ vector database and keeping the query and passage embedders frozen. Finally, we 
 benchmark our system and run a variety of ablation studies, using the pretrained llm without RAG as our baseline.
 The system is lightweight and can be deployed on most modern personal computers. To demonstrate its capabilities,
 we developed a Streamlit web application that allows users to interact with the model in real-time with a chat-like interface.
+Experiments are fully reproducible and the code is available at \cite{link_to_repo}.
 
 \end{abstract}
 
@@ -139,21 +140,23 @@ As for the decoding strategy, we implemented greedy decoding, top-k sampling, an
 
 \section{Finetuning}
 
-\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
+The llm was pretrained alligned, but it was never tought to consider retrieved passages to compose its answer to a user query.
+To address this, we finetuned our system on a question answering task, using a simple recipe.
 
 \subsection{Data}
 
-\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
+As training data, we downloaded the Yahoo Answers dataset and used its metadata to filter it and keep only STEM questions. As validation data,
+we used the validation split of the MMLU dataset. During training, for a given question, we retrieved the single most similar passage from
+our knowledge base and formatted the input to meet the expectations of Qwen, including the retrieved passage as context.
 
 \subsection{Training}
 
-\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
+We froze the query and passage embedders and finetuned the llm only. We used the QLORA technique \cite{qlora} to drastically reduce the number of training
+parameters and the memory requirements while minimally impacting performance. In essence, this consists in freezing and quantizing the pretrained weights and adding low
+rank adapters to each layer, as in \cite{lora}. Then, we backpropagate through the 4-bit quantized frozen weights to train the adapters.
+As a training criterion, we use cross entropy loss between predicted logits and the ground truth answer. This allows exploiting the inherent
+parallelism of the transformer architecture, since thanks to the causal mask we obtain an error signal for each ground truth token in parallel at every step.
+Details about our training setup can be found in out GitHub repository.
 
 \section{Demo}
 
