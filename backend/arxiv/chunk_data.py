@@ -5,14 +5,15 @@ import arxiv
 
 client = arxiv.Client(delay_seconds=0.0)
 
-SHORT_CHUNK_LENGTH = 40
+SHORT_CHUNK_LENGTH = 50
 MAX_CHUNK_LENGTH = 1000
 
 
 def clean_latex_code(paragraph):
+    cl = re.sub(r"\S*\\\S*", "", paragraph)
     latex_pattern = r"\\(?:[A-Za-z]+|.)"
-    cl = re.sub(latex_pattern, "", paragraph)
-    cl = re.sub(r"\\.*?\\n", "", cl)
+    cl = re.sub(latex_pattern, "", cl)
+    cl = re.sub(r".*\\.*", "", cl)
     cl = re.sub("(?:={4,}|.*\n)", "", cl)
     cl = re.sub(r"<cit\.>", "", cl)
     cl = re.sub(r"[\w.-]+\.[\w.-]+\.[\w.-]+", "", cl)
@@ -45,7 +46,7 @@ def papers_to_chunks(ids: List[str]):
         for chunk in paper_ch:
             title = paper_title
             title += f" Section {i}"
-            c_dictionary = {"title": title, "text": chunk}
+            c_dictionary = {"titles": "[ " + title + "]", "text": chunk}
             chunks.append(c_dictionary)
             i += 1
     return chunks

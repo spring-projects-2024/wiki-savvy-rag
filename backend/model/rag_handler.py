@@ -187,6 +187,7 @@ class RagHandler(nn.Module):
         return_generator: bool = False,
         return_prompt: bool = False,
         history: Optional[List[Dict]] = None,
+        papers_chks=[],
     ) -> (
         Tuple[str, List[Tuple[str, float]]]
         | Tuple[str, List[Tuple[str, float]], List[Dict]]
@@ -226,6 +227,7 @@ class RagHandler(nn.Module):
                 decoding_strategy=decoding_strategy,
                 return_generator=return_generator,
                 return_prompt=return_prompt,
+                papers_chks=papers_chks,
             )
         elif inference_type == "replug":
             return self.replug_inference(
@@ -234,6 +236,7 @@ class RagHandler(nn.Module):
                 decoding_strategy=decoding_strategy,
                 return_generator=return_generator,
                 return_prompt=return_prompt,
+                papers_chks=papers_chks,
             )
 
         assert False, "This should never be reached"
@@ -300,6 +303,7 @@ class RagHandler(nn.Module):
         decoding_strategy: str = "greedy",
         return_generator: bool = False,
         return_prompt: bool = False,
+        paper_chunks=[],
     ) -> (
         Tuple[str, List[Tuple[str, float]]]
         | Tuple[str, List[Tuple[str, float]], List[Dict]]
@@ -325,7 +329,9 @@ class RagHandler(nn.Module):
 
         assert decoding_strategy in DECODING_STRATEGIES
 
-        retrieved_docs = self.faiss.search_text(query, n_neighbors=n_docs_retrieved)
+        retrieved_docs = self.faiss.search_text_with_docs(
+            query, n_neighbors=n_docs_retrieved, other_docs=paper_chunks
+        )
         prompt = self._craft_multiple_docs_query(query, retrieved_docs)
         autoregressive_state = [
             {
@@ -361,6 +367,7 @@ class RagHandler(nn.Module):
         decoding_strategy: str = "greedy",
         return_generator: bool = False,
         return_prompt: bool = False,
+        papers_chks=[],
     ) -> (
         Tuple[str, List[Tuple[str, float]]]
         | Tuple[str, List[Tuple[str, float]], List[Dict]]
@@ -389,7 +396,9 @@ class RagHandler(nn.Module):
 
         assert decoding_strategy in DECODING_STRATEGIES
 
-        retrieved_docs = self.faiss.search_text(query, n_neighbors=n_docs_retrieved)
+        retrieved_docs = self.faiss.search_text_with_docs(
+            query, n_neighbors=n_docs_retrieved, other_docs=papers_chks
+        )
         autoregressive_state = [
             {
                 "past_key_values": None,

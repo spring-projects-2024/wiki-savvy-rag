@@ -60,9 +60,9 @@ if prompt := st.chat_input("Please ask a question."):
 
     with st.spinner("Thinking..."):
         controller.get_chunks_from_ids(st.session_state["uploaded_file"])
-        print(controller.papers_chks)
 
         stream, retrieved_docs = controller.inference(st.session_state.messages, prompt)
+        print(retrieved_docs)
 
         st.session_state.messages.append({"role": "user", "content": prompt})
 

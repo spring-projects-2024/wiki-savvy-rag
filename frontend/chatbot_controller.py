@@ -148,6 +148,7 @@ class ChatbotController:
                 inference_type=self.configs["inference_type"],
                 return_generator=True,
                 history=history,
+                papers_chks=self.papers_chks,
             )
 
     def _mock_inference(self, history: List[Dict], query: str):
@@ -164,6 +165,9 @@ class ChatbotController:
 
     def _post_process_titles(self, text: str):
         """This function is necessary because the json in titles is not formatted properly"""
+        if not isinstance(text, str):
+            text = text[0]
+
         return (
             text.replace("['", '["')
             .replace("',", '",')
