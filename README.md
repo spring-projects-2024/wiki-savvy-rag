@@ -234,6 +234,6 @@ Following the results on the benchmark for various values of the examples (shots
 
 ![](media/k_shot_ablation.png)
 
-Here an histogram summarizing the difference between the naive and the REPLUG on methods on 1 (silly scenario) and 3 retrieved documents.
+Here an histogram summarizing the difference between the naive and the REPLUG on methods on 1 (silly scenario) and 3 retrieved documents:
 
 ![](media/replug_vs_naive.jpeg)
