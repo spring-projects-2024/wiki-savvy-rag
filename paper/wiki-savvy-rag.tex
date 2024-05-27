@@ -280,15 +280,15 @@ Second, even such a small model can benefit from retrieval, as shown by the sign
 to the pretrained LLM baseline. Furthermore, averaging probabilities as in \cite{replug}, the performance of the system improves with the
 number of retrieved passages, reaching a peak at k=3 followed by a plateau. These findings are summarized in figure \ref{fig:mmlu_passages}.
 Third, the k-shot setting, where the model is given k examples in the prompt, is detrimental to performance (see Appendix). Probably, the 
-increased complexity of the prompt confuses such a small model more than the demonstration helps. Fourth, we compared the naive and replug
-inference strategies, considering the number of retrieved passages at which replug peaks in performance, and we found, somewhat surprisingly,
-that the naive strategy outperforms the replug one (0.29 vs 0.28 accuracy, see Appendix), at least with such a small model.
+increased complexity of the prompt confuses such a small model more than the demonstration helps. Fourth, we compared the naive and REPLUG
+inference strategies, considering the number of retrieved passages at which REPLUG peaks in performance, and we found, somewhat surprisingly,
+that the naive strategy outperforms the REPLUG one (0.29 vs 0.28 accuracy, see Appendix), at least with such a small model.
 [TODO: comment on accuracy during training]
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\linewidth]{figures/replug_before_finetuning.png}
-    \caption{accuracy vs number of retrieved passages, replug inference strategy}
+    \caption{accuracy vs number of retrieved passages, REPLUG inference strategy}
     \label{fig:mmlu_passages}
 \end{figure}
 
