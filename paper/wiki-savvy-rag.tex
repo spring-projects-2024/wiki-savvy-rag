@@ -99,7 +99,7 @@ To get the dense embeddings for sentences, it uses the last hidden state of the 
 
 We chose this model for its balance between performance and computational cost.
 In fact, the embedder is significantly smaller than its peers, being a BERT-like model with 33.4M 
-parameters and only 0.12GB of memory usage, but achieves a 51.68 score on the MTEB Retrival task.
+parameters and only 0.12GB of memory usage, but achieves a 51.68 score on the MTEB Retrieval task.
 
 \subsection{Vector Database}
 
@@ -193,10 +193,14 @@ the amount of quantization bits.
 
 The Measuring Massive Multitask Language Understanding (MMLU) is a collection of 
 multiple-choice questions that spans a wide range of topics.
-For evaluating our system, we focused on the STEM subjects, which are the most
-relevant for our application.
 We hand-picked the subcategories that according to us were part of the STEM domain and
 obtain a total of about 3000 questions.
+We benchmarked the system considering different variations of it. First we compared the 
+performances changing the number of retrieved passages; then we changed the number of 
+examples in the prompt; finally we compared the different inference strategies (naive and REPLUG).
+To assess the performances throughout training steps, we compared the performances of different 
+model checkpoints.
+
 
 \section{Results}
 
@@ -224,7 +228,7 @@ are the following:
 \centering
 \begin{tabular}{|c|c|c|c|}
 \hline
-Index & Recall & Query Time (300) & Memory (MB) \\
+Index & Recall & Query Time & Memory \\
 \hline
 1 & 0.832 & 03:53.59 & 2,609 \\
 2 & 0.9873 & 03:29.50 & 5,219 \\
@@ -233,7 +237,9 @@ Index & Recall & Query Time (300) & Memory (MB) \\
 5 & 0.661 & 00:00.11 & 4,570 \\
 \hline
 \end{tabular}
-\caption{Faiss index comparison}
+\caption{Faiss index comparison.
+Here Query Time is evaluated on 300 MMLU queries and Memory is expressed in MB.
+}
 \
 \label{tab:faiss-index}
 \end{table}
@@ -255,9 +261,8 @@ again with an oscillatory pattern. This is probably due in part to the use of di
 to measure generalization more reliably. Training curves are shown in figure \ref{fig:training_curves}.
 
 \subsection{MMLU}
-\textit{Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed nec purus eget
-nunc. Donec tincidunt, nunc in volutpat tempus, nulla justo varius lacus, vel
-suscipit orci mi eget justo. Nulla sit amet magna in odio aliquam suscipit.}
+
+
 
 \section{Conclusion}
 We developed, fine-tuned, and evaluated a Retrieval-Augmented Generation (RAG) 
