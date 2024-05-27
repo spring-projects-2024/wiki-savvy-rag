@@ -184,7 +184,8 @@ class ChatbotController:
                     json.loads(self._post_process_titles(doc["titles"]))
                 )
             except json.JSONDecodeError as e:
-                titles = doc["titles"]
+                titles = doc["titles"].replace("[", "")
+                titles = titles.replace("]", "")
             retrieved_docs_str += f"""  
             <strong>Chunk {i+1}</strong>: {titles} (score: {score:.2f})</br>"""
         retrieved_docs_str += "</p>"

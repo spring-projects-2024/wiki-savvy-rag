@@ -13,6 +13,7 @@ build_sidebar()
 configs = st.session_state["configs"]
 controller = load_controller()
 
+use_arxiv = configs["rag_initialization"]["use_arxiv"]
 
 with st.spinner("Loading/Updating the Chatbot. It could take a while..."):
     controller.update_configs(configs)
@@ -34,6 +35,7 @@ if len(st.session_state["messages"]) == 2:
         icon="😍",
     )
 
+
 # Display chat messages
 for message in st.session_state.messages:
     if (
@@ -52,17 +54,17 @@ for message in st.session_state.messages:
 
 if prompt := st.chat_input("Please ask a question."):
     st.chat_message("user").markdown(prompt)
-    link_id = get_ids_from_link_prompt(prompt)
-    if link_id != None:
-        st.session_state["uploaded_file"].extend(
-            [paper_id for paper_id in link_id if link_id]
-        )
+
+    if use_arxiv:
+        link_id = get_ids_from_link_prompt(prompt)
+        if link_id != None:
+            st.session_state["uploaded_file"].extend(
+                [paper_id for paper_id in link_id if link_id]
+            )
 
     with st.spinner("Thinking..."):
         controller.get_chunks_from_ids(st.session_state["uploaded_file"])
-
         stream, retrieved_docs = controller.inference(st.session_state.messages, prompt)
-        print(retrieved_docs)
 
         st.session_state.messages.append({"role": "user", "content": prompt})
 
@@ -82,16 +84,18 @@ if prompt := st.chat_input("Please ask a question."):
             }
         )
 
-uploaded_files = st.file_uploader(
-    "📁 Upload File",
-    accept_multiple_files=True,
-    key=st.session_state["file_upload_key"],
-)
-if uploaded_files:
-    for paper in uploaded_files:
-        bytes_data = paper.getvalue()
-        id = get_id_from_pdf(bytes_data)
-        st.session_state["uploaded_file"].append(id)
-        st.session_state["file_upload_key"] += 1
-else:
-    st.session_state["uploaded_file"] = []
+if use_arxiv:
+
+    uploaded_files = st.file_uploader(
+        "📁 Upload File",
+        accept_multiple_files=True,
+        key=st.session_state["file_upload_key"],
+    )
+    if uploaded_files:
+        for paper in uploaded_files:
+            bytes_data = paper.getvalue()
+            id = get_id_from_pdf(bytes_data)
+            st.session_state["uploaded_file"].append(id)
+            st.session_state["file_upload_key"] += 1
+    else:
+        st.session_state["uploaded_file"] = []
