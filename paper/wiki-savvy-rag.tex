@@ -10,6 +10,27 @@
 \usepackage{microtype}
 \usepackage{inconsolata}
 \usepackage{natbib} % this is probably into you nips_2018 format file
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{subcaption}
+
+
+\newcommand{\sideBySideImages}[4]{%
+    \begin{figure}[ht]
+        \centering
+        \begin{subfigure}{#3\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{#1}
+        \end{subfigure}%
+        \hfill%
+        \begin{subfigure}{#3\linewidth}
+            \centering
+            \includegraphics[width=\linewidth]{#2}
+        \end{subfigure}
+        \caption{Side by side images with width parameter}
+        \label{#4}
+    \end{figure}
+}
 
 % TODOS:
 % - Add the MMLU results and figures
@@ -260,6 +281,8 @@ with enough smoothing, decreased steadily, as expected. As for the validation lo
 again with an oscillatory pattern. This is probably due in part to the use of different datasets for training and validation, which we did
 to measure generalization more reliably. The sharp drop in validation loss right at the beginning of training could be due to the 4 bit quantization,
 as in the first few steps the model is still learning to correct the quantization errors. Training curves are shown in figure \ref{fig:training_curves}.
+
+\sideBySideImages{train-loss.png}{val-loss.png}{0.48}{fig:training_curves}
 
 \subsection{MMLU}
 
