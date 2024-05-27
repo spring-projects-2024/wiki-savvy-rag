@@ -15,7 +15,7 @@
 \usepackage{subcaption}
 
 
-\newcommand{\sideBySideImages}[4]{%
+\newcommand{\sideBySideImages}[5]{%
     \begin{figure}[ht]
         \centering
         \begin{subfigure}{#3\linewidth}
@@ -34,7 +34,6 @@
 
 % TODOS:
 % - Add the MMLU results and figures
-% - add training figures
 % - In the abstract, briefly mention our findings once we have some
 % - embeddings section: first one to go
 
@@ -275,14 +274,15 @@ subvectors product quantization, which had the lowest memory usage and a good re
 \subsection{Training}
 
 We trained our model for slightly over 2 epochs, measuring the average cross-entropy on both the training and validation sets. We used weights
-and biases to monitor the training process through a variety of metrics and statistics, including parameters and gradients histograms.
+and biases to monitor the training process through a variety of metrics and statistics, including parameters and gradients histograms. A selection of them 
+is shown in the Appendix.
 Due to limited memory, we had to resort to gradient accumulation to simulate a larger batch size than 1 (we used 2). The training loss, 
 with enough smoothing, decreased steadily, as expected. As for the validation loss, after an initial sharp decrease, it started increasing
 again with an oscillatory pattern. This is probably due in part to the use of different datasets for training and validation, which we did
 to measure generalization more reliably. The sharp drop in validation loss right at the beginning of training could be due to the 4 bit quantization,
 as in the first few steps the model is still learning to correct the quantization errors. Training curves are shown in figure \ref{fig:training_curves}.
 
-\sideBySideImages{train-loss.png}{val-loss.png}{0.48}{fig:training_curves}
+\sideBySideImages{figures/train-loss.png}{figures/val-loss.png}{0.48}{fig:training_curves}{left: training loss vs steps, right: validation loss vs steps}
 
 \subsection{MMLU}
 
@@ -319,6 +319,12 @@ to follow when building such systems.
 
 \section{Appendix}
 \label{sec:appendix}
+
+\subsection{Training plots}
+
+\sideBySideImages{figures/paramsA.png}{figures/paramsB.png}{0.48}{fig:params}{Evolution of the histogram of the parameters during training. left: A adapter of a self attention layer. right: B adapter of a mlp layer}
+
+\sideBySideImages{figures/gradientsA.png}{figures/gradientsB.png}{0.48}{fig:gradients}{Evolution of the histogram of the gradients during training. left: A adapter of a self attention layer. right: B adapter of a mlp layer}
 
 \subsection{Other ablations on MMLU}
 
