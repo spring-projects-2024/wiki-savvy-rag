@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 
 TRUST_AFTER = datetime.datetime(year=2024, month=5, day=27, hour=22, minute=9)
 
+
 def extract_steps(name):
     m = re.search(r"step(\d+)", name)
     if m:
@@ -17,7 +18,21 @@ def extract_steps(name):
 
 
 BENCHMARK_OUT_DIR = "out"
-ALLOWED_STEPS = [0, 100, 200, 300, 500, 700, 1000, 1500, 3000, 5000, 10000, 60000, 30000]
+ALLOWED_STEPS = [
+    0,
+    100,
+    200,
+    300,
+    500,
+    700,
+    1000,
+    1500,
+    3000,
+    5000,
+    10000,
+    60000,
+    30000,
+]
 # load data from output folder
 data = []
 
@@ -62,14 +77,11 @@ for d in data:
     if d["args"]["inference_type"] != "replug":
         continue
 
-
     new_data[cfpath] = new_data.get(cfpath, [])
 
     if d["args"]["use_rag"] == False:
         new_data[cfpath].append((0, d["metrics"]["accuracy"]))
         continue
-
-
 
     new_data[cfpath].append((d["args"]["n_docs_retrieved"], d["metrics"]["accuracy"]))
 
@@ -89,8 +101,6 @@ plt.grid()
 plt.savefig("../../media/replug_before_finetuning.png")
 
 plt.show()
-
-
 
 # accuracy vs kshots (using replug, fixed number of documents (e.g. 3), fixed training_step)
 
@@ -126,16 +136,49 @@ plt.xlabel("k_shot")
 plt.ylabel("accuracy")
 plt.grid()
 plt.savefig("../../media/k_shot_ablation.png")
-
+plt.show()
 
 # find naive accuracy on config/llm_vm.yaml
-
 for d in data:
-    if d["args"]["config_path"] == "configs/llm_vm.yaml" and d["args"]["k_shot"] == 0 and \
-        d["args"]["n_docs_retrieved"] == 3 and d["args"]["inference_type"] == "replug":
-            print("replug:  ", d["metrics"]["accuracy"])
+    if (
+        d["args"]["config_path"] == "configs/llm_vm.yaml"
+        and d["args"]["k_shot"] == 0
+        and d["args"]["n_docs_retrieved"] == 3
+        and d["args"]["inference_type"] == "replug"
+    ):
+        x1 = ("replug:  ", d["metrics"]["accuracy"])
 
-    if d["args"]["config_path"] == "configs/llm_vm.yaml" and d["args"]["k_shot"] == 0 and \
-        d["args"]["n_docs_retrieved"] == 3 and d["args"]["inference_type"] == "naive":
-            print("naive:   ", d["metrics"]["accuracy"])
+    if (
+        d["args"]["config_path"] == "configs/llm_vm.yaml"
+        and d["args"]["k_shot"] == 0
+        and d["args"]["n_docs_retrieved"] == 3
+        and d["args"]["inference_type"] == "naive"
+    ):
+        y1 = ("naive:   ", d["metrics"]["accuracy"])
 
+    if (
+        d["args"]["config_path"] == "configs/llm_vm.yaml"
+        and d["args"]["k_shot"] == 0
+        and d["args"]["n_docs_retrieved"] == 1
+        and d["args"]["inference_type"] == "replug"
+    ):
+        z = ("naive 1:   ", d["metrics"]["accuracy"])
+
+# make histogram with x1 and y1
+
+# set color to default blue, green
+
+plt.bar(["replug\n(1 doc)", "naive\n(1 doc)", "replug\n(3 doc)", "naive\n(3 doc)"], [z[1], z[1], x1[1], y1[1]],
+        color=["tab:blue", "tab:green", "tab:blue", "tab:green"]
+        )
+
+
+plt.title("Replug vs Naive")
+plt.xlabel("Inference type")
+plt.ylabel("accuracy")
+plt.grid()
+# make figure  slim and tall
+plt.gcf().set_size_inches(3, 5)
+
+plt.savefig("../../media/replug_vs_naive.png")
+plt.show()
