@@ -2,11 +2,14 @@
 
 ![](media/demo.gif)
 
-For our project, we implemented, fine-tuned, and evaluated a Retrieval Augmented Generation system that could discuss a range of topics in the STEM domain. To showcase our system, we developed a simple application with a chat interface that replies to the user prompts with the help of retrieved Wikipedia passages.
+For our project, we implemented, fine-tuned, and evaluated a Retrieval Augmented Generation system that can discuss a range of topics in the STEM domain. Importantly, we put a lot of effort into coding (almost) everything from scratch ourselves, from filtering, cleaning and embedding the 100GB wikipedia dump, to the inference code for RAG with various prompting, aggregation and decoding strategies, to the code for running benchmarks with mmlu, all the way to the training and evaluation loops and the logging of a variety of metrics to weights and biases during finetuning.
+To showcase our system, we developed a simple Streamlit application with a chat interface that replies to the user prompts with the help of retrieved Wikipedia passages.
 
-We downloaded, cleaned, and filtered the English Wikipedia (~100GB) and built a vector database of semantic embeddings based on STEM articles. We then built a RAG system using one of open-source LLMs, `Qwen/Qwen1.5-0.5B-Chat` and `microsoft/phi-3-mini-128k-instruct`, and the open-source embedder `BAAI/bge-small-en-v1.5`. To evaluate our system, we considered its accuracy on question answering benchmarks focusing on the STEM domain, e.g., using an appropriate subset of MMLU.
+We downloaded, filtered and cleaned the English Wikipedia (~100GB) and built a vector database of semantic embeddings based on all STEM articles, using the FAISS library for efficient retrieval of embeddings and SQLite for accessing text chunks from disk. After filtering, the xml dumpm of wikipedia went down to 22GB, and after cleaning it went all the way to 8GB of clean text. We then built a RAG system using the open-source LLM `Qwen/Qwen1.5-0.5B-Chat` and the embedder `BAAI/bge-small-en-v1.5`.
 
-To improve the performance of our system, we fine-tuned the LLM on a STEM question answering task. We assessed the performance with and without RAG, as well as before and after fine-tuning.
+To improve the performance of our system, we kept the embedder frozen and fine-tuned the LLM on a subset of the Yahoo Answers dataset, using QLORA to speed up training and reduce the memory footprint. As a training objective, we used the cross entropy loss between predicted logits and ground truth answer, which allows to exploit the inherent parallelism of the transformer architecture. To develop the training code, we started from an existing project of one of us, publicly available at https://github.com/MattiaSC01/JEPA, which offers a Trainer class to handle the training and evaluation loops, and a Logger class to handle interactions with weights and biases. The Trainer class can be subclassed to have model-specific behaviour, as we did.
+
+To evaluate our system, we considered its accuracy on a subset of the MMLU benchmark focusing on STEM questions. We assessed the performance with and without RAG, and we considered its evolution during finetuning. We also ran a number of ablations concerning the number of retrieved documents, the generation strategy, the number of provided examples in the prompt.
 
 The chat was developed using Streamlit and allows users to configure key aspects of the chatbot, such as selecting the model, determining the number of retrieved documents, choosing the type of RAG inference, and setting the decoding strategy.
 
@@ -20,14 +23,13 @@ Our project is organized into the following directories:
 - `frontend`: This directory includes the code for the ChatBot demo interface.
 - `notebooks`: This directory contains Python notebooks primarily used for exploratory data analysis.
 - `scripts`: This directory has scripts for building the dataset, computing embeddings, training models, constructing the FAISS vector database, fine-tuning the model, and benchmarking with MMLU.
-- `wikidump_processing`: This directory includes all the code for retrieving, processing, and cleaning the Wikipedia dump. 
+- `wikidump_processing`: This directory includes all the code for retrieving, processing, and cleaning the Wikipedia dump.
 
+## Preliminary steps
 
-## Preliminary steps 
+The following steps are required to both run the ChatBot and to replicate our results on the MMLU evaluation dataset.
 
-The following steps are required to both run the ChatBot and to replicate our results on the MMLU evaluation dataset.  
-
-Since we are aware that executing all the steps is computationally demanding, we link a 
+Since we are aware that executing all the steps is computationally demanding, we link a
 zip files containing all the required files to run the ChatBot and the benchmarks at [this link](https://bocconi-my.sharepoint.com/:u:/g/personal/federico_zarantonello_studbocconi_it/ESKBb1Hh7hFJhPzT-LvENOQBH0MqysZM9AtW_jdhYzqn1A?e=prSAOp).
 Simply copy and paste the content of the unzipped directory in the project root and you should be fine!
 
@@ -110,16 +112,19 @@ bash bash_scripts/train_vector_database.sh
 If `refextract` import throws error and can't find libmagic, based on your virtual env, you may also need to run:
 
 For Conda
+
 ```bash
 conda install -c conda-forge libmagic
 ```
 
 On MacOS (Brew), Python Virtual Environment
+
 ```bash
 brew install libmagic
 ```
 
-On Windows, Python Virtual Environment 
+On Windows, Python Virtual Environment
+
 ```bash
 pip install python-magic-bin
 ```
@@ -133,11 +138,11 @@ To run the ChatBot demo, run the following script:
 ```
 
 To be able to use the Retrieval Augmented Generation with chunks from Wikipedia, the ChatBot requires to have in your system the following files:
-* **SQLite database file**: this is produced by following [these instructions](#create-sqlite-dataset).
-* **Vector database**: produced by following [these instructions](#build-vector-database).
+
+- **SQLite database file**: this is produced by following [these instructions](#create-sqlite-dataset).
+- **Vector database**: produced by following [these instructions](#build-vector-database).
 
 To be able to run using a finetuned model, you need also the adapter files (see the [Finetuning the LLM](#finetuning-the-llm) section).
-
 
 ### Options
 
@@ -147,31 +152,25 @@ The demo allows users to customize configuration options, as shown in the follow
 
 All options can be configured directly through the chatbot's UI:
 
-* **Device**: Users can select from all compatible devices available on their machine. If a CUDA-enabled graphics card is present, it is recommended to select it for improved performance.
-* **Model**: Choose between `Qwen/Qwen1.5-0.5B-Chat`, a finetuned version of it, and  `microsoft/phi-3-mini-128k-instruct`. Despite all our analysis were done on Qwen 1.5, we inserted also Microsoft's Phi-3 for comparison. These models require approximately 2GB and 16GB of memory on the selected device, respectively.
-* **Finetuned Model Path**: Path to the finetuned checkpoint to use.
-* **Decoding Strategy**: Supported options include:
-  * Greedy decoding
-  * Top-k decoding (considering 50 tokens)
-  * Top-p decoding (with a cumulative probability of 0.9)
-* **Use RAG**: Option to retrieve and use documents to enhance the assistant's replies.
-* **Database Path**: Path to the SQLite database.
-* **Vector Index Path**: Path to the vector database.
-* **Inference Type**: Defines how to use retrieved documents during inference:
-  * **Naive**: Append all documents before the query and perform inference based on that.
-  * **REPLUG**: Append each document to the query separately, determine token probabilities, and calculate weighted averages of these tokens based on document similarity. For more information, see the [REPLUG](https://arxiv.org/abs/2301.12652) paper.
-* **Number of Documents to Retrieve**: Specify the number of documents to retrieve.
-* **Mock Responses**: Whether to mock responses (for testing purposes).
-
+- **Device**: Users can select from all compatible devices available on their machine. If a CUDA-enabled graphics card is present, it is recommended to select it for improved performance.
+- **Model**: Choose between `Qwen/Qwen1.5-0.5B-Chat`, a finetuned version of it, and `microsoft/phi-3-mini-128k-instruct`. Despite all our analysis were done on Qwen 1.5, we inserted also Microsoft's Phi-3 for comparison. These models require approximately 2GB and 16GB of memory on the selected device, respectively.
+- **Finetuned Model Path**: Path to the finetuned checkpoint to use.
+- **Decoding Strategy**: Supported options include:
+  - Greedy decoding
+  - Top-k decoding (considering 50 tokens)
+  - Top-p decoding (with a cumulative probability of 0.9)
+- **Use RAG**: Option to retrieve and use documents to enhance the assistant's replies.
+- **Database Path**: Path to the SQLite database.
+- **Vector Index Path**: Path to the vector database.
+- **Inference Type**: Defines how to use retrieved documents during inference:
+  - **Naive**: Append all documents before the query and perform inference based on that.
+  - **REPLUG**: Append each document to the query separately, determine token probabilities, and calculate weighted averages of these tokens based on document similarity. For more information, see the [REPLUG](https://arxiv.org/abs/2301.12652) paper.
+- **Number of Documents to Retrieve**: Specify the number of documents to retrieve.
+- **Mock Responses**: Whether to mock responses (for testing purposes).
 
 ### Notes for future improvements
 
 Currently, with the RAG option enabled, the chatbot only considers the user's prompt and does not take into account the history of previous messages. Integrating memory handling with RAG is outside the scope of this project. However, future enhancements may include this capability.
-
-
-## Finetuning the LLM
-
-*Talk also about how to reproduce (there is a link to this section)*
 
 ## Our results (and how to reproduce them)
 
@@ -215,19 +214,26 @@ Here is a table summarizing our results:
 
 The index we chose is PQ128 because it was a good compromise between accuracy, speed and size on memory.
 
-### Benchmark on MMLU  
+### Finetuning the LLM
+
+We finetuned our RAG system keeping frozen the embedder. We used the pytorch and peft libraries to finetune the llm with QLORA. Our training configuration can be found in `configs/training/final.yaml`. To replicate the finetuning, run:
+
+```
+python scripts/training/train.py --config_path configs/training/final.yaml
+```
+
+### Benchmark on MMLU
 
 The Measuring Massive Multitask Language Understanding (MMLU) is a collection of multiple-choice questions that spans a wide range of topics.
 We hand-picked the subcategories that according to us were part of the STEM domain and obtain a total of about 3000 questions.
 
 We benchmarked the system considering different variations of it. First we compared the performances changing the number of retrieved passages; then we changed the number of examples in the prompt; finally we compared the different inference strategies (naive and REPLUG).
-To assess the performances throughout training steps, we compared the performances of different model checkpoints. 
+To assess the performances throughout training steps, we compared the performances of different model checkpoints.
 
-In general, to run a benchmark execute the following script: 
+In general, to run a benchmark execute the following script:
 
 ```bash
-python scripts/benchmark/mmlu.py --split "test" --subset "stem" --output "/path/to/output.json" --k_shot 1 --batch_size 1 --config_path "/path/to/config.yaml" --use_rag True --n_docs_retrieved 3 --log_answers True --inference_type "replug"   
+python scripts/benchmark/mmlu.py --split "test" --subset "stem" --output "/path/to/output.json" --k_shot 1 --batch_size 1 --config_path "/path/to/config.yaml" --use_rag True --n_docs_retrieved 3 --log_answers True --inference_type "replug"
 ```
-
 
 Refer to the bash scripts in the folders `bash_scripts/benchmark_original_model` for benchmarks on different variation of the original model and to the `bash_scripts/chkpts_bench` for benchmarks on the training checkpoints.
