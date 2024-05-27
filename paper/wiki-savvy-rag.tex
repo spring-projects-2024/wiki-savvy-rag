@@ -32,17 +32,6 @@
     \end{figure}
 }
 
-% TODOS:
-% - Add the MMLU results and figures
-% - In the abstract, briefly mention our findings once we have some
-% - rewrite the conclusion
-% embeddings section: first one to go in need of space
-
-
-% findings:
-% - accuracy during training ?
-
-
 \title{Wikipedia-Savvy-RAG: Wikipedia-backed RAG system expert about STEM subjects}  
 
 \author{Dario Filatrella \and Michele Palma \and Mattia Scardecchia \and Federico Zarantonello}
@@ -57,7 +46,8 @@ Then, we used QLORA to efficiently finetune a small pretrained language model
 (500M params) on a subset of the Yahoo Answers dataset, feeding the model with the most relevant passages from the 
 vector database and keeping the query and passage embedders frozen. Finally, we used the MMLU dataset to 
 benchmark our system and run a variety of ablation studies, using the pretrained llm without RAG as our baseline.
-We show that even a small LLM can benefit from retrieval, and that [TODO: fill!].
+We show that even a small LLM can benefit from retrieval, and that, surprisingly, in this regime showing more solved examples and using
+a more sophisticated inference strategy are both detrimental to performance.
 The system is lightweight and can be deployed on most modern personal computers. To demonstrate its capabilities,
 we developed a Streamlit web application that allows users to interact with the model in real-time with a chat-like interface.
 Experiments are fully reproducible and the code is available at \url{https://github.com/spring-projects-2024/wiki-savvy-rag}.
@@ -279,7 +269,8 @@ Third, the k-shot setting, where the model is given k examples in the prompt, is
 increased complexity of the prompt confuses such a small model more than the demonstration helps. Fourth, we compared the naive and REPLUG
 inference strategies, considering the number of retrieved passages at which REPLUG peaks in performance, and we found, somewhat surprisingly,
 that the naive strategy outperforms the REPLUG one (0.29 vs 0.28 accuracy, see Appendix), at least with such a small model.
-[TODO: comment on accuracy during training]
+Finally, as you can see in the training curves in \ref{fig:training_curves}, after an initial decrease that is attributable to recovering from 4bit
+quantization, the model's validation performance (on MMLU) starts increasing, suggesting that the model is not benefitting much from the finetuning.
 
 \begin{figure}[h]
     \centering
@@ -298,7 +289,8 @@ provided Arxiv papers.
 From our experiments, we found that even a very small LLM significantly benefit from retrieval, and that, 
 surprisingly, with such a small model concatenating all retrieved passages is more effective than averaging
 next token probabilities over conditioning documents. We also found that the k-shot setting is detrimental to
-performance with such a small model. [Comment on accuracy during training]
+performance with such a small model, and that finetuning is not as effective as we hoped, probably due to the small
+size of the model and the complexity of the task.
 
 \newpage
 
@@ -344,10 +336,11 @@ performance with such a small model. [Comment on accuracy during training]
     \label{fig:mmlu_shots}
 \end{figure}
 
-In \ref{fig:mmlu_strategies} we compare the different inference strategies (naive and REPLUG).
-
-\subsection{Checkpoints comparison on MMLU}
-
-In \ref{fig:checkpoints} we compare the performances of different model checkpoints on the MMLU dataset.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/replug_vs_naive.png}
+    \caption{we compare different inference strategies (naive and replug)}
+    \label{fig:mmlu_strategies}
+\end{figure}
 
 \end{document}
