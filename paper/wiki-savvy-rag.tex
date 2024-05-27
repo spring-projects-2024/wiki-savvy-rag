@@ -104,20 +104,10 @@ that will be used by the RAG model.
 In the end we obtained a total of 13 million chunks, with an average length of about 230 words.
 We stored all of these, together with their titles, in an SQLite database.
 
-\subsection{Embeddings}
-
-We tokenized and embedded the chunks using the open-source BAAI/bge-small-en-v1.5 model 
-\cite{bge_hf}. This model is the smaller version of the BAAI General Embeedding family v1.5. 
-To get the dense embeddings for sentences, it uses the last hidden state of the [CLS] token, and it outputs 
-384-dimensional vectors.
-
-We chose this model for its balance between performance and computational cost.
-In fact, the embedder is significantly smaller than its peers, being a BERT-like model with 33.4M 
-parameters and only 0.12GB of memory usage, but achieves a 51.68 score on the MTEB Retrieval task.
-
 \subsection{Vector Database}
 
-We used the Faiss library to build a vector database of the embeddings for efficient retrieval, using dot product to compare vectors.
+We tokenized and embedded the chunks using the open-source BAAI/bge-small-en-v1.5 model 
+\cite{bge_hf}. Then, we used the Faiss library to build a vector database of the embeddings for efficient retrieval, using dot product to compare vectors.
 Faiss is a library for efficient similarity search and clustering of dense vectors that offers different indexing methods.
 We mostly investigated three index variants: Flat uses simple brute-force search, IVF uses centroid-based clustering to 
 implement a hierarchical search that reduces the number of comparisons, and HNSW creates a multi-layered graph structure 
