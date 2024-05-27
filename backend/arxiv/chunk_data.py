@@ -5,8 +5,8 @@ import arxiv
 
 client = arxiv.Client(delay_seconds=0.0)
 
-SHORT_CHUNK_LENGTH = 45
-TOO_SHORT_CHUNK_LENGTH = 1000
+SHORT_CHUNK_LENGTH = 40
+MAX_CHUNK_LENGTH = 1000
 
 
 def clean_latex_code(paragraph):
@@ -32,30 +32,20 @@ def extract_chunks(id):
 
     if len(first_step_chunks) == 0:
         return None
-    else:
-        return first_step_chunks
+
+    return first_step_chunks
 
 
 def papers_to_chunks(ids: List[str]):
-    chunks = {}
+    chunks = []
     for id in ids:
-        ch = extract_chunks(id)
-        title = get_title_from_id(id, client)
-        chunks[title] = ch
+        paper_ch = extract_chunks(id)
+        paper_title = get_title_from_id(id, client)
+        i = 1
+        for chunk in paper_ch:
+            title = paper_title
+            title += f" Section {i}"
+            c_dictionary = {"title": title, "text": chunk}
+            chunks.append(c_dictionary)
+            i += 1
     return chunks
-
-
-def split_text_into_paragraphs(text):
-    paragraphs = text.split("\n")
-    return [para.strip() for para in paragraphs if para.strip()]
-
-
-def process_text_list(text_list):
-    processed_list = []
-    for text in text_list:
-        if len(text) > 1000:
-            paragraphs = split_text_into_paragraphs(text)
-            processed_list.extend(paragraphs)
-        else:
-            processed_list.append(text)
-    return processed_list

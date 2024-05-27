@@ -119,7 +119,7 @@ class FaissWrapper:
         return [(self._index_to_text(i), j) for i, j in zip(D[0], I[0]) if i != -1]
 
     def search_text_with_docs(self, text: str, n_neighbors=10, other_docs=[]):
-        return self.search_text(self, text, n_neighbors)
+        wikis = self.search_text(self, text, n_neighbors)
 
     def search_multiple_texts(
         self, texts: List[str], n_neighbors: int
@@ -185,9 +185,9 @@ if __name__ == "__main__":
     }
     faiss = FaissWrapper("cpu", **faiss_kwargs)
     query = "What is the mechanism thanks to which aeroplanes can fly?"
+    papers = []
     res = faiss.search_text(query)
-    for r in res:
-        print(r)
+    print(res[0])
 
 
 # INDEX_PATH = "backend/vector_database/data/PQ128.index"
