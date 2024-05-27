@@ -15,3 +15,4 @@ arxiv
 peft
 bitsandbytes
 PyMuPDF
+thefuzz

@@ -1,11 +1,57 @@
 import time
 import json
-from backend.benchmark.utils import craft_query, load_mmlu
+from backend.benchmark.utils import craft_query, load_mmlu, craft_few_shot_prompt, format_example, format_example_0_shot
 import argparse
 import yaml
 import datasets
 import os
 from backend.model.rag_handler import RagHandler
+import re
+from thefuzz import process
+
+choices = ["A", "B", "C", "D"]
+def extract_choice(gen, choice_list):
+    # answer is A | choice is A | choose A
+    res = re.search(
+        r"(?:(?:[Cc]hoose)|(?:(?:[Aa]nswer|[Cc]hoice)(?![^ABCD]{0,20}?(?:n't|not))[^ABCD]{0,10}?\b(?:|is|:|be))\b)[^ABCD]{0,20}?\b(A|B|C|D)\b",
+        gen,
+    )
+
+    # A is correct | A is right
+    if res is None:
+        res = re.search(
+            r"\b(A|B|C|D)\b(?![^ABCD]{0,8}?(?:n't|not)[^ABCD]{0,5}?(?:correct|right))[^ABCD]{0,10}?\b(?:correct|right)\b",
+            gen,
+        )
+
+    # straight answer: A
+    if res is None:
+        res = re.search(r"^(A|B|C|D)(?:\.|,|:|$)", gen)
+
+    # simply extract the first appearred letter
+    if res is None:
+        res = re.search(r"(?<![a-zA-Z])(A|B|C|D)(?![a-zA-Z=])", gen)
+
+    if res is None:
+        return choices[choice_list.index(process.extractOne(gen, choice_list)[0])]
+    return res.group(1)
+
+
+def process_before_extraction(gen, choice_dict):
+    # replace the choice by letter in the generated sentence
+    # from longest one to shortest one
+    for key, val in sorted(choice_dict.items(), key=lambda x: len(x[1]), reverse=True):
+        pattern = re.compile(re.escape(val.rstrip(".")), re.IGNORECASE)
+        gen = pattern.sub(key, gen)
+    return gen
+
+def extract_answer(response, question):
+    gen = process_before_extraction(
+        response, {choice: answ for choice, answ in zip(choices, question["choices"])}
+    )
+    pred = extract_choice(gen, question["choices"])
+    return pred
+
 
 
 def evaluate(
@@ -28,6 +74,14 @@ def evaluate(
 
     examples = [dataset[i] for i in range(k_shot)]  # k-shot evaluation
 
+    if k_shot > 0:
+        few_shot_prompt: str = craft_few_shot_prompt(
+            subject=examples[0]["subject"],
+            examples=examples,
+        )
+    else:
+        few_shot_prompt: str = ""
+
     if n_samples is None:
         n_samples = len(dataset)
     else:
@@ -36,9 +90,15 @@ def evaluate(
     i = k_shot
     while i + batch_size < n_samples:
         batch = [dataset[i + j] for j in range(batch_size)]
-        queries = [
-            craft_query(question, chat=True, examples=examples) for question in batch
-        ]
+        if k_shot > 0:
+            queries = [
+                few_shot_prompt + format_example(question, include_answer=False)
+                for question in batch
+            ]
+        else:
+            queries = [format_example_0_shot(question) for question in batch]
+
+
         responses = [
             rag_handler.inference(
                 query=query,
@@ -53,11 +113,19 @@ def evaluate(
             response = response.strip()
             complete_response = response
 
-            response = response[0].lower()  # extract first character
             # Almonds is a correct answer a fourth of the time (asymptotically)
-            target = chr(ord("a") + question["answer"])
-            if response == target:
-                metrics["correct"] += 1
+            pred = extract_answer(response, question)
+
+            pred_to_num = {"A": 0, "B": 1, "C": 2, "D": 3}
+            pred = pred_to_num[pred]
+            print(pred, question["answer"], type(pred), type(question["answer"]))
+            if "answer" in question:
+                if pred == question["answer"]:
+                    metrics["correct"] += 1
+
+            # target = chr(ord("a") + question["answer"])
+            # if response == target:
+            #     metrics["correct"] += 1
             metrics["total"] += 1
 
             if log_answers:

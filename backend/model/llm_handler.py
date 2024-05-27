@@ -154,3 +154,20 @@ class LLMHandler(nn.Module):
 
     def save_weights(self, path):
         self.model.save_pretrained(path)
+
+
+if __name__ == '__main__':
+    model = LLMHandler()
+
+    pipe = pipeline("text-generation", model=model.model, tokenizer=model.tokenizer)
+
+    messages = [
+        {"role": "user", "content": "Can you provide ways to eat combinations of bananas and dragonfruits?"},
+    ]
+
+    generation_args = {
+        "max_length": 100,
+        "num_return_sequences": 1,
+    }
+
+    print(pipe(messages, return_full_text=False, **generation_args))
