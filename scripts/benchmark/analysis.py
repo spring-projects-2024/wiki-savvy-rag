@@ -178,7 +178,7 @@ plt.xlabel("Inference type")
 plt.ylabel("accuracy")
 plt.grid()
 # make figure  slim and tall
-plt.gcf().set_size_inches(3, 5)
+plt.gcf().set_size_inches(3.5, 5.5)
 
 plt.savefig("../../media/replug_vs_naive.png")
 plt.show()
