@@ -145,6 +145,7 @@ All options can be configured directly through the chatbot's UI:
   - **REPLUG**: Append each document to the query separately, determine token probabilities, and calculate weighted averages of these tokens based on document similarity. For more information, see the [REPLUG](https://arxiv.org/abs/2301.12652) paper.
 - **Number of Documents to Retrieve**: Specify the number of documents to retrieve.
 - **Mock Responses**: Whether to mock responses (for testing purposes).
+- **Use ArXiv**: Whether to use the experimental feature of uploading ArXiv papers through the chatbot for question-answering about them.
 
 ### Notes for future improvements
 
@@ -196,7 +197,7 @@ The index we chose is PQ128 because it was a good compromise between accuracy, s
 
 We finetuned our RAG system keeping frozen the embedder. We used the pytorch and peft libraries to finetune the llm with QLORA. Our training configuration can be found in `configs/training/final.yaml`. To replicate the finetuning, run:
 
-```
+```bash
 python scripts/training/train.py --config_path configs/training/final.yaml
 ```
 
@@ -215,3 +216,15 @@ python scripts/benchmark/mmlu.py --split "test" --subset "stem" --output "/path/
 ```
 
 Refer to the bash scripts in the folders `bash_scripts/benchmark_original_model` for benchmarks on different variation of the original model and to the `bash_scripts/chkpts_bench` for benchmarks on the training checkpoints.
+
+Following the results for various numbers of documents retrieved by the model:
+
+![](media/replug_before_finetuning.png)
+
+Following the results on the benchmark for various values of the examples (shots) given to the model:
+
+![](media/k_shot_ablation.png)
+
+Here an histogram summarizing the difference between the naive and the REPLUG on methods on 1 (silly scenario) and 3 retrieved documents.
+
+![](media/replug_vs_naive.jpeg)
