@@ -267,10 +267,10 @@ is shown in the Appendix.
 Due to limited memory, we had to resort to gradient accumulation to simulate a larger batch size than 1 (we used 2). The training loss, 
 with enough smoothing, decreased steadily, as expected. As for the validation loss, after an initial sharp decrease, it started increasing
 again with an oscillatory pattern. This is probably due in part to the use of different datasets for training and validation, which we did
-to measure generalization more reliably. The sharp drop in validation loss right at the beginning of training could be due to the 4 bit quantization,
-as in the first few steps the model is still learning to correct the quantization errors. Training curves are shown in figure \ref{fig:training_curves}.
+to measure generalization more reliably. The sharp drop in both losses right at the beginning of training (validation 4.4 -> 4.0, training 3.9 -> 3.5) could be due to
+ the 4 bit quantization, as in the first few steps the model is still learning to correct the quantization errors. Training curves are shown in figure \ref{fig:training_curves}.
 
-\sideBySideImages{figures/train-loss.png}{figures/val-loss.png}{0.48}{fig:training_curves}{left: training loss vs steps, right: validation loss vs steps}
+\sideBySideImages{figures/train-loss.png}{figures/val-loss.png}{0.48}{fig:training_curves}{left: training loss curve, right: validation loss curve}
 
 \subsection{MMLU}
 
@@ -312,7 +312,7 @@ to follow when building such systems.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\linewidth]{figures/faiss-indexes.png}
+    \includegraphics[width=0.8\linewidth]{figures/faiss-indexes-extensive.png}
     \caption{Extensive comparison of Faiss indexes. Rank n is the top-n recall using exhaustive search as ground truth.}
     \label{fig:faiss-indexes-extensive}
 \end{figure}
