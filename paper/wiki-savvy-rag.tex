@@ -298,8 +298,18 @@ to follow when building such systems.
 \section{Appendix}
 \label{sec:appendix}
 
-This is a section in the appendix.
+\subsection{Other ablations on MMLU}
 
-\textit{I don't think it's really needed}
+In \ref{fig:mmlu_passages} we show the performances of the system with different 
+number of retrieved passages. The considered values are 0 (no retrieval), 1, 3 and 5.
+
+In \ref{fig:mmlu_shots} we compare the different number of examples (shots) given to
+the model in the prompt. The considered values are 0, 1, 3 and 5.
+
+In \ref{fig:mmlu_strategies} we compare the different inference strategies (naive and REPLUG).
+
+\subsection{Checkpoints comparison on MMLU}
+
+In \ref{fig:checkpoints} we compare the performances of different model checkpoints on the MMLU dataset.
 
 \end{document}
