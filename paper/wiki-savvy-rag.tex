@@ -2,13 +2,14 @@
 
 \documentclass[11pt]{article}
 
-\usepackage{WIKI-SAVVY-RAG}
+\usepackage{wiki-savvy-rag}
 \usepackage{times}
 \usepackage{latexsym}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{microtype}
 \usepackage{inconsolata}
+\usepackage{natbib} % this is probably into you nips_2018 format file
 
 % TODOS:
 % - In the abstract, briefly mention our findings once we have some
@@ -44,12 +45,12 @@ the development of large language models (LLMs) that can generate human-like tex
 These models have been used in a variety of applications, such as chatbots,
 question-answering systems, and text summarization, with remarkable performance.  \cite{nlp_applications}
 However, LLMs often struggle with generating accurate and informative responses, especially in specialized
-domains like science, technology, engineering, and mathematics (STEM).  \cite{something_about_allucinations}
+domains like science, technology, engineering, and mathematics (STEM).  \cite{hallucinations_llm}
 
 A successful approach to address this limitation has been the combination of LLMs with retrieval
 mechanisms from a knowledge base to generate more accurate and informative responses.
-Along this line of research, started with \cite{rag}, several variants and improvements have been proposed,
-such as \cite{replug} \cite{at_least_one_more}. These are extensively reviewed in \cite{rag_review}.
+Along this line of research, started with \cite{rag_paper}, several variants and improvements have been proposed,
+such as \cite{replug} \cite{radit}. These are extensively reviewed in \cite{rag_survey}.
 
 In this paper, we present Wikipedia-Savvy-RAG, a lightweight RAG system fine-tuned for STEM question answering
 in chat format. In building our system, we strived to keep the computational resources required for both
@@ -298,8 +299,11 @@ We think that this work demonstrates the potential of RAG systems in specialized
 domains like STEM and provived us with valuable insights about the best practices 
 to follow when building such systems.
 
+\newpage
+
 \bibliography{wiki-savvy-rag}
 \bibliographystyle{acl_natbib}
+\nocite{*}
 
 \appendix
 
