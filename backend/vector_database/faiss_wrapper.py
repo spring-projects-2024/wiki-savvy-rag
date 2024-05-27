@@ -118,8 +118,8 @@ class FaissWrapper:
         I, D = self._search_text_get_I_D(text, n_neighbors)
         return [(self._index_to_text(i), j) for i, j in zip(D[0], I[0]) if i != -1]
 
-    def search_text_with_docs():
-        pass
+    def search_text_with_docs(self, text: str, n_neighbors=10, other_docs=[]):
+        return self.search_text(self, text, n_neighbors)
 
     def search_multiple_texts(
         self, texts: List[str], n_neighbors: int
