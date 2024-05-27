@@ -88,6 +88,7 @@ plt.grid()
 # save to disk
 plt.savefig("../../media/replug_before_finetuning.png")
 
+plt.show()
 
 
 
