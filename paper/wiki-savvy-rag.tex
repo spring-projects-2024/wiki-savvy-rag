@@ -57,9 +57,8 @@ Experiments are fully reproducible and the code is available at \url{https://git
 \section{Introduction and Related Works}
 
 In recent years, the field of natural language processing has seen a surge in
-the development of large language models (LLMs) that can generate human-like text. \cite{gpt3}
-These models have been used in a variety of applications, such as chatbots,
-question-answering systems, and text summarization, with remarkable performance.  \cite{nlp_applications}
+the development of large language models (LLMs) that can generate human-sounding text, with applications to chatbots,
+question-answering, text summarization and many more. \cite{gpt3}
 However, LLMs often struggle with generating accurate and informative responses, especially in specialized
 domains like science, technology, engineering, and mathematics (STEM).  \cite{hallucinations_llm}
 
@@ -69,15 +68,13 @@ Along this line of research, started with \cite{rag_paper}, several variants and
 such as \cite{replug} \cite{radit}. These are extensively reviewed in \cite{rag_survey}.
 
 In this paper, we present Wikipedia-Savvy-RAG, a lightweight RAG system fine-tuned for STEM question answering
-in chat format. In building our system, we strived to keep the computational resources required for both
-training and inference contained. Indeed, our system can be deployed on personal computers with a CUDA-enabled GPU
-with at least 8GB of memory, through a Streamlit web application we developed. Furthermore, the finetuning can 
-be replicated on a single consumer-grade GPU in a few hours. In doing so, the main research question that we aimed to
+in chat format. We strived to develop a system that can be trained and deployed on cheap hardware. Indeed, our system 
+can be deployed on personal computers with a CUDA-enabled GPU with at least 8GB of memory, through a Streamlit web application we developed,
+and the finetuning can be replicated on a single consumer-grade GPU in a few hours. The main research question that we aimed to
 answer is whether and to what extent a small LLM can benefit from retrieval in knowledge intensive tasks, and whether a
 simple finetuning recipe under tight computational constraints can still improve performance. 
 
-To build the vector database, we processed the English Wikipedia available on WikiMedia \cite{wikimedia} and obtained 
-dense representations of the chunks using a lightweight text embedder \cite{baai}. We then built a vector database using
+To build the vector database, we processed the English Wikipedia available on WikiMedia \cite{wikimedia} and created a vector database using
 the Faiss library \cite{faiss} and SQLite \cite{sqlite} to index and retrieve embeddings and passages, respectively. To keep resources low,
 we employed a small pretrained LLM with 500M parameters \cite{qwen}, and we used QLORA \cite{qlora} to finetune it efficiently, 
 keeping the embedder frozen, on a subset of the Yahoo Answers dataset \cite{yahoo_answers}.
@@ -88,8 +85,7 @@ We will also discuss potential improvements and future work.
 
 \section{Knowledge Base}
 
-Since we decided to focus on STEM subjects, we needed a knowledge base that was rich in scientific and technical information.
-We downloaded the English Wikipedia dump, filtered the articles related to STEM subjects, and cleaned the text.
+To build our knowledge based we downloaded and processed the English Wikipedia dump, keeping only STEM articles.
 
 \subsection{Filtering and Cleaning}
 
@@ -195,8 +191,7 @@ the amount of quantization bits.
 The Massive Multitask Language Understanding (MMLU) \cite{mmlu_hf} is a collection of 
 multiple-choice questions that spans a wide range of topics. We selected around 3000 STEM questions out of it
 and used them for evaluation, carrying out several ablation studies, including the number of retrieved passages,
-the number of examples in the prompt, and the inference strategy. We also considered the evolution of the performance during finetuning.
-For most of the experiments, we used a random subsample of 1000 questions, to speed up the process.
+the number of examples in the prompt, and the inference strategy, on a random subsample of 1000 questions.
 
 \section{Results}
 
@@ -227,7 +222,7 @@ Index & Recall & Query Time & Memory \\
 \label{tab:faiss-index}
 \end{table}
 
-As it is expected, Flat indexes are the ones that perform the best in terms of recall.
+As expected, Flat indexes are the ones that perform the best in terms of recall.
 Here what really matters is the trade-off between compression level and accuracy.
 The query time significantly decreseas with the use of IVF and HNSW indexes, but the recall
 is also affected.
@@ -242,16 +237,16 @@ and biases to monitor the training process through a variety of metrics and stat
 is shown in the Appendix.
 Due to limited memory, we had to resort to gradient accumulation to simulate a larger batch size than 1 (we used 2). The training loss, 
 with enough smoothing, decreased steadily, as expected. As for the validation loss, after an initial sharp decrease, it started increasing
-again with an oscillatory pattern. This is probably due in part to the use of different datasets for training and validation, which we did
+again. This is probably due in part to the use of different datasets for training and validation, which we did
 to measure generalization more reliably. The sharp drop in both losses right at the beginning of training (validation 4.4 -> 4.0, training 3.9 -> 3.5) could be due to
- the 4 bit quantization, as in the first few steps the model is still learning to correct the quantization errors. Training curves are shown in figure \ref{fig:training_curves}.
+the aggressive initial 4 bit quantization. Training curves are shown in figure \ref{fig:training_curves}.
 
 \sideBySideImages{figures/train-loss.png}{figures/val-loss.png}{0.48}{fig:training_curves}{left: training loss curve, right: validation loss curve}
 
 \subsection{MMLU}
 
-From our ablations, several findings emerged. First, pretrained Qwen is incapable of achieving competitive performance on a 
-challenging benchmark like MMLU, even with retrieval. In fact, its accuracy is close to random guessing, especially without RAG.
+From our ablations, several findings emerged. First, pretrained Qwen can't achieve competitive performance on a 
+challenging benchmark like MMLU. In fact, its accuracy is close to random guessing, especially without RAG.
 Second, even such a small model can benefit from retrieval, as shown by the significant improvement in accuracy when using RAG compared
 to the pretrained LLM baseline. Furthermore, averaging probabilities as in \cite{replug}, the performance of the system improves with the
 number of retrieved passages, reaching a peak at k=3 followed by a plateau. These findings are summarized in figure \ref{fig:mmlu_passages}.
