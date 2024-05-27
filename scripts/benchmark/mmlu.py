@@ -87,8 +87,8 @@ def evaluate(
     else:
         n_samples = min(n_samples + k_shot, len(dataset))
 
-    i = k_shot + 1000
-    while i + batch_size < n_samples+1000:
+    i = k_shot
+    while i + batch_size < n_samples:
         batch = [dataset[i + j] for j in range(batch_size)]
         if k_shot > 0:
             queries = [
