@@ -1,18 +1,19 @@
 import streamlit as st
 from chatbot_controller import load_controller
 from sidebar import build_sidebar
-from backend.arxiv.utils import get_id_from_link_prompt
+from backend.arxiv.utils import get_ids_from_link_prompt, get_id_from_pdf
 import os
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
-
 st.set_page_config("Wikipedia Savvy", page_icon=":books:")
+
 
 build_sidebar()
 configs = st.session_state["configs"]
-
 controller = load_controller()
+
+use_arxiv = configs["use_arxiv"]
 
 with st.spinner("Loading/Updating the Chatbot. It could take a while..."):
     controller.update_configs(configs)
@@ -21,6 +22,20 @@ st.title(":books: Wikipedia Savvy")
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
+
+if "file_upload_key" not in st.session_state:
+    st.session_state["file_upload_key"] = 0
+
+if "uploaded_file" not in st.session_state:
+    st.session_state["uploaded_file"] = []
+
+
+if len(st.session_state["messages"]) == 2 and use_arxiv:
+    st.toast(
+        "Did you know that you can use link to arXiv papers to augment the model's reply? \n You can also directly upload the pdf of an arXiv paper, using the Upload button below!",
+        icon="😍",
+    )
+
 
 # Display chat messages
 for message in st.session_state.messages:
@@ -37,22 +52,50 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+
 if prompt := st.chat_input("Please ask a question."):
     st.chat_message("user").markdown(prompt)
+
+    if use_arxiv:
+        link_id = get_ids_from_link_prompt(prompt)
+        if link_id != None:
+            st.session_state["uploaded_file"].extend(
+                [paper_id for paper_id in link_id if link_id]
+            )
+
     with st.spinner("Thinking..."):
+        controller.get_chunks_from_ids(st.session_state["uploaded_file"])
         stream, retrieved_docs = controller.inference(st.session_state.messages, prompt)
 
-    st.session_state.messages.append({"role": "user", "content": prompt})
+        st.session_state.messages.append({"role": "user", "content": prompt})
 
-    if len(retrieved_docs) > 0:
-        with st.chat_message("rag", avatar=":material/article:"):
-            st.write(
-                controller.build_retrieved_docs_html(retrieved_docs),
-                unsafe_allow_html=True,
-            )
+        if len(retrieved_docs) > 0:
+            with st.chat_message("rag", avatar=":material/article:"):
+                st.write(
+                    controller.build_retrieved_docs_html(retrieved_docs),
+                    unsafe_allow_html=True,
+                )
     with st.chat_message("assistant"):
         response = st.write_stream(stream)
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": response,
+                "retrieved_docs": retrieved_docs,
+            }
+        )
 
-    st.session_state.messages.append(
-        {"role": "assistant", "content": response, "retrieved_docs": retrieved_docs}
+if use_arxiv:
+    uploaded_files = st.file_uploader(
+        "📁 Upload File",
+        accept_multiple_files=True,
+        key=st.session_state["file_upload_key"],
     )
+    if uploaded_files:
+        for paper in uploaded_files:
+            bytes_data = paper.getvalue()
+            id = get_id_from_pdf(bytes_data)
+            st.session_state["uploaded_file"].append(id)
+            st.session_state["file_upload_key"] += 1
+    else:
+        st.session_state["uploaded_file"] = []

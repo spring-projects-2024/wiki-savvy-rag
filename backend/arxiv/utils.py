@@ -1,6 +1,3 @@
-# todo:
-# remove comments
-# execute macros
 import concurrent.futures
 import os
 import tarfile
@@ -8,19 +5,31 @@ import time
 from typing import List
 from urllib.request import urlretrieve
 import arxiv
-from refextract import extract_references_from_url
 import re
+import fitz
+from pylatexenc.latex2text import LatexNodes2Text
+
+try:
+    from refextract import extract_references_from_url
+except:
+    extract_references_from_url = None
 
 arx_client = arxiv.Client(delay_seconds=0.0)
 
 
-def get_id_from_link_prompt(query: str) -> List[str]:
+def get_plain_doc_from_id(id: str):
+    download_source_files(id)
+    doc = get_text_from_extensions(id, ".tex")
+    parsed_doc = LatexNodes2Text().latex_to_text(doc)
+    return parsed_doc
+
+
+def get_ids_from_link_prompt(query: str) -> List[str]:
     """
     Takes the query for the LLM, from the user and checks if it contains a link to archive paper.
     If that is the case, returns paper ids from the link, otherwise returns None
     """
-
-    pattern = r"https:\/\/arxiv\.org\/abs\/([0-9]{4}\.[0-9]{5})"
+    pattern = r"https:\/\/arxiv\.org\/(?:abs|pdf)\/([0-9]{4}\.[0-9]{5})"
     ret_ids = re.findall(pattern, query)
     if len(ret_ids) != 0:
         return set(ret_ids)
@@ -77,16 +86,15 @@ def download_source_files(id: str):
     path = f"{id}.tar.gz"
 
     if not os.path.exists(path):
-
         path, headers = urlretrieve(url, path)
 
-        try:  # todo: policy to re-try
-            tar = tarfile.open(path)
-            tar.extractall(f"{id}/")
-            tar.close()
-
-        except:
-            print(f"Error extracting {path}")
+    try:  # todo: policy to re-try
+        tar = tarfile.open(path)
+        tar.extractall(f"{id}/")
+        time.sleep(5)
+        tar.close()
+    except:
+        Exception("Error extracting {path}")
 
 
 def get_references_raw(id) -> List:
@@ -169,21 +177,32 @@ def parse_references(references):
     return id_list
 
 
+def get_id_from_pdf(pdf_file):
+    """Given a pdf file, it will return the paper id (as title)"""
+    doc = fitz.open(stream=pdf_file, filetype="pdf")
+    first_page = doc[0]
+    blocks = first_page.get_text("dict")["blocks"]
+    title = ""
+    max_font_size = 0
+    for block in blocks:
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                # Check if the current span has the largest font size found so far
+                if span["size"] > max_font_size:
+                    max_font_size = span["size"]
+                    title = span["text"]
+
+    title = title.strip()
+    # use a regex to get the plain arxiv id
+    pattern = r"arXiv:([\d.]+)v1"
+    re_match = re.search(pattern, title)
+    if re_match:
+        return re_match.group(1)
+    else:
+        return None
+
+
 if __name__ == "__main__":
     title = "Supersymmetric Quantum Mechanics, multiphoton algebras and coherent states"
-    x = get_id_from_link_prompt(
-        "i have two papers here https://arxiv.org/abs/2005.11401  and also https://arxiv.org/abs/2405.10302 https://arxiv.org/abs/12345678 https://arxiv.org/src/87654321/supplementary.zip"
-    )
-    print(get_id_from_link_prompt(x))
-
-    id = get_info_from_title(title, arx_client).get_short_id()
-    print(f"{id=}")
-    print(f"ID found in {time.process_time()} seconds")
-
-    references = get_references_raw(id)
-    print(f"Number of references to search: {len(references)}")
-    print(f"References found in {time.process_time()} seconds")
-
-    ids = parse_references(references)
-    print(f"Number of references found: {len(ids)}")
-    print(f"References parsed in {time.process_time()} seconds")
+    x = get_ids_from_link_prompt("https://arxiv.org/abs/2005.11401")
+    print(get_plain_doc_from_id("2005.11401"))

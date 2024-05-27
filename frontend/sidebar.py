@@ -1,7 +1,7 @@
 import os
 import torch
 import streamlit as st
-from backend.model.rag_handler import DECODING_STRATEGIES, INFERENCE_TYPES, TOP_K, TOP_P
+from backend.model.rag_handler import DECODING_STRATEGIES, TOP_K, TOP_P
 from chatbot_controller import (
     CUSTOM_MODEL_PATH_DEFAULT,
     DB_PATH_DEFAULT,
@@ -9,6 +9,7 @@ from chatbot_controller import (
     DEVICE_DEFAULT,
     INDEX_PATH_DEFAULT,
     INFERENCE_TYPE_DEFAULT,
+    INFERENCE_TYPES,
     MOCK_RESPONSES_DEFAULT,
     MODEL_DEFAULT,
     MODELS,
@@ -60,6 +61,7 @@ def build_sidebar():
             "retrieved_docs": RETRIEVED_DOCS_DEFAULT,
             "decoding_strategy": DECODING_STRATEGY_DEFAULT,
             "mock_responses": MOCK_RESPONSES_DEFAULT,
+            "use_arxiv": False,
         }
 
     configs = st.session_state["configs"].copy()
@@ -151,6 +153,11 @@ def build_sidebar():
                 "Number of retrieved documents", 1, 10, configs["retrieved_docs"]
             )
 
+            new_use_arxiv = st.checkbox(
+                "Use ArXiv (Experimental Feature ⚠️)",
+                value=configs["use_arxiv"],
+            )
+
             submitted = st.form_submit_button("Apply")
             if submitted:
                 configs["rag_initialization"] = {
@@ -165,6 +172,7 @@ def build_sidebar():
                 configs["retrieved_docs"] = new_retrieved_docs
                 configs["decoding_strategy"] = new_decoding_strategy
                 configs["mock_responses"] = new_mock_responses
+                configs["use_arxiv"] = new_use_arxiv
 
                 st.session_state["configs"] = configs
                 st.rerun()

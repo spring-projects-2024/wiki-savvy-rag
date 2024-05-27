@@ -15,3 +15,6 @@ arxiv
 peft
 bitsandbytes
 thefuzz
+PyMuPDF
+pylatexenc
+tools

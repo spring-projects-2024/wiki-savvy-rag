@@ -107,28 +107,6 @@ The exact configuration we used is in the following bash script:
 bash bash_scripts/train_vector_database.sh
 ```
 
-### Troubleshooting libmagic dependency
-
-If `refextract` import throws error and can't find libmagic, based on your virtual env, you may also need to run:
-
-For Conda
-
-```bash
-conda install -c conda-forge libmagic
-```
-
-On MacOS (Brew), Python Virtual Environment
-
-```bash
-brew install libmagic
-```
-
-On Windows, Python Virtual Environment
-
-```bash
-pip install python-magic-bin
-```
-
 ## ChatBot
 
 To run the ChatBot demo, run the following script:

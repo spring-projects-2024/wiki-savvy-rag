@@ -78,6 +78,17 @@ class FaissWrapper:
         """
         return self._index.search(vectors, n_neighbors)
 
+    def _search_text_papers_chks(self, query: str, chunks):
+        em_query = self.embedder.get_embedding(query).numpy()
+        em_query = em_query.flatten()
+        result = []
+        for chunk in chunks:
+            em_chunk = self.embedder.get_embedding(chunk["text"]).numpy()
+            em_chunk = em_chunk.flatten()
+            distance = np.dot(em_chunk, em_query)
+            result.append((chunk, distance))
+        return result
+
     def _search_vector(
         self, vector: np.ndarray, n_neighbors: int
     ) -> Tuple[np.ndarray, np.ndarray]:
@@ -117,6 +128,12 @@ class FaissWrapper:
 
         I, D = self._search_text_get_I_D(text, n_neighbors)
         return [(self._index_to_text(i), j) for i, j in zip(D[0], I[0]) if i != -1]
+
+    def search_text_with_docs(self, text: str, n_neighbors=10, other_docs=[]):
+        wikis = self.search_text(text, n_neighbors)
+        papers = self._search_text_papers_chks(text, other_docs)
+        sorted_data = sorted(wikis + papers, key=lambda x: x[1], reverse=True)
+        return [item for item in sorted_data[:n_neighbors]]
 
     def search_multiple_texts(
         self, texts: List[str], n_neighbors: int
@@ -182,9 +199,12 @@ if __name__ == "__main__":
     }
     faiss = FaissWrapper("cpu", **faiss_kwargs)
     query = "What is the mechanism thanks to which aeroplanes can fly?"
-    res = faiss.search_text(query)
-    for r in res:
-        print(r)
+    papers = [
+        {"title": "A", "text": "aeroplanes job offers"},
+        {"title": "B", "text": "thanks to which aeroplanes can fly?"},
+    ]
+    res = faiss.search_text_with_docs(query, 10, papers)
+    print(res)
 
 
 # INDEX_PATH = "backend/vector_database/data/PQ128.index"
