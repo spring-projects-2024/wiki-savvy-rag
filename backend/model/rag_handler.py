@@ -101,7 +101,6 @@ class RagHandler(nn.Module):
             "text-generation",
             model=self.llm.model,
             tokenizer=self.llm.tokenizer,
-            device=device,
         )
 
         self.llm.model.generation_config.max_length = 2500
@@ -260,21 +259,21 @@ class RagHandler(nn.Module):
                     return_prompt=return_prompt,
                 )
             elif inference_type == "pipe":
-                # retrieved_docs = self.faiss.search_text(
-                #     query, n_neighbors=n_docs_retrieved
-                # )
+                retrieved_docs = self.faiss.search_text(
+                    query, n_neighbors=n_docs_retrieved
+                )
                 #
-                retrieved_docs = [
-                    ({
-                        "text": "test"
-                     }, 1),
-                    ({
-                        "text": "test2"
-                     }, 1)
-                ]
+                # retrieved_docs = [
+                #     ({
+                #         "text": "test"
+                #      }, 1),
+                #     ({
+                #         "text": "test2"
+                #      }, 1)
+                # ]
 
                 messages = self._craft_multiple_docs_query(query, retrieved_docs, do_prep=False)
-                assert type(messages) == list
+
                 outputs = self.pipe(messages, return_full_text=False)
                 return (outputs[0]["generated_text"],)
 
