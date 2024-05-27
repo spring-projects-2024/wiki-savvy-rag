@@ -112,7 +112,7 @@ class FaissWrapper:
         vector = self.embedder.get_embedding(text).numpy()
         return self._search_vector(vector, n_neighbors)
 
-    def _index_to_text(self, index: int) -> str:
+    def _index_to_text(self, index: int) -> Dict:
         """
         :param index: The index of the text.
         :return: The text corresponding to the index.

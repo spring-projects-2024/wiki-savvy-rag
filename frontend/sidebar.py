@@ -1,7 +1,7 @@
 import os
 import torch
 import streamlit as st
-from backend.model.rag_handler import DECODING_STRATEGIES, INFERENCE_TYPES, TOP_K, TOP_P
+from backend.model.rag_handler import DECODING_STRATEGIES, TOP_K, TOP_P
 from chatbot_controller import (
     CUSTOM_MODEL_PATH_DEFAULT,
     DB_PATH_DEFAULT,
@@ -9,6 +9,7 @@ from chatbot_controller import (
     DEVICE_DEFAULT,
     INDEX_PATH_DEFAULT,
     INFERENCE_TYPE_DEFAULT,
+    INFERENCE_TYPES,
     MOCK_RESPONSES_DEFAULT,
     MODEL_DEFAULT,
     MODELS,

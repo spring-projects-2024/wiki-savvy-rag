@@ -30,13 +30,14 @@ MODELS = [
 MODEL_DEFAULT = 0
 DB_PATH_DEFAULT = "./scripts/dataset/data/dataset.db"
 INDEX_PATH_DEFAULT = "./scripts/vector_database/data/PQ128.index"
-CUSTOM_MODEL_PATH_DEFAULT = "./checkpoints/step600"
+CUSTOM_MODEL_PATH_DEFAULT = "./checkpoints/step500"
 DEVICE_DEFAULT = "cpu"
 USE_RAG_DEFAULT = True
 RETRIEVED_DOCS_DEFAULT = 5
 INFERENCE_TYPE_DEFAULT = "replug"
 DECODING_STRATEGY_DEFAULT = "top_k"
 MOCK_RESPONSES_DEFAULT = False
+INFERENCE_TYPES = ["naive", "replug"]
 
 
 @st.cache_resource(show_spinner="Loading Chatbot. It could take a while...")

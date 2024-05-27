@@ -1,20 +1,25 @@
 #!/bin/bash
 
-#SBATCH --job-name="run_file"
-#SBATCH --account=3144860
-#SBATCH --partition=gpu
+#SBATCH --job-name="mmlu_benchmark"
+
+#SBATCH --account=3144366
+
+#SBATCH --partition=stud
+
 #SBATCH --gpus=1
-#SBATCH --output=/home/3144860/wiki/wiki-savvy-rag/out/%x_%j.out # %x gives job name and %j gives job id
-#SBATCH --error=/home/3144860/wiki/wiki-savvy-rag/err/%x_%j.er
-#SBATCH --nodelist=gnode02
+
+#SBATCH --output=out/%x_%j.out # %x gives job name and %j gives job id
+
+#SBATCH --error=err/%x_%j.er
+
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
-#SBATCH --qos=normal
 
+cd /home/3144366/textbook-savvy-rag
 
-cd /home/3144860/wiki/wiki-savvy-rag
+module load modules/miniconda3
 
-source /home/3144860/miniconda3/bin/activate nlp
+source activate base
 
 conda info --envs
 

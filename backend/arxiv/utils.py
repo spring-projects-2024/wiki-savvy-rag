@@ -1,6 +1,3 @@
-# todo:
-# remove comments
-# execute macros
 import concurrent.futures
 import os
 import tarfile
@@ -8,10 +5,14 @@ import time
 from typing import List
 from urllib.request import urlretrieve
 import arxiv
-from refextract import extract_references_from_url
 import re
 import fitz
 from pylatexenc.latex2text import LatexNodes2Text
+
+try:
+    from refextract import extract_references_from_url
+except:
+    extract_references_from_url = None
 
 arx_client = arxiv.Client(delay_seconds=0.0)
 
@@ -204,21 +205,4 @@ def get_id_from_pdf(pdf_file):
 if __name__ == "__main__":
     title = "Supersymmetric Quantum Mechanics, multiphoton algebras and coherent states"
     x = get_ids_from_link_prompt("https://arxiv.org/abs/2005.11401")
-    """   # print(get_ids_from_link_prompt(x))
-
-    id = get_info_from_title(title, arx_client).get_short_id()
-    print(f"{id=}")
-    print(f"ID found in {time.process_time()} seconds")
-
-    # references = get_references_raw(id)
-    print(f"Number of references to search: {len(references)}")
-    print(f"References found in {time.process_time()} seconds")
-
-    ids = parse_references(references)
-    print(f"Number of references found: {len(ids)}")
-    print(f"References parsed in {time.process_time()} seconds")
-
-    local_pdf_path = "your_path_to_file.pdf"
-    print(get_id_from_pdf(local_pdf_path)) """
-
     print(get_plain_doc_from_id("2005.11401"))

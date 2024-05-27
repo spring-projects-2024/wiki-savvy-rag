@@ -28,7 +28,7 @@ Our project is organized into the following directories:
 The following steps are required to both run the ChatBot and to replicate our results on the MMLU evaluation dataset.  
 
 Since we are aware that executing all the steps is computationally demanding, we link a 
-zip files containing all the required files to run the ChatBot and most of the benchmarks at [this link](https://bocconi-my.sharepoint.com/:u:/g/personal/federico_zarantonello_studbocconi_it/ETwUiIiLIQdEklW5u-VqP8YB6_0ulvNoHHVQgq0SgHB-vw?e=zqDD8H).
+zip files containing all the required files to run the ChatBot and the benchmarks at [this link](https://bocconi-my.sharepoint.com/:u:/g/personal/federico_zarantonello_studbocconi_it/ESKBb1Hh7hFJhPzT-LvENOQBH0MqysZM9AtW_jdhYzqn1A?e=prSAOp).
 Simply copy and paste the content of the unzipped directory in the project root and you should be fine!
 
 ### Installation
@@ -81,7 +81,7 @@ The following script calculates the embeddings and dumps them on multiple files 
 The required space on disk for all the embeddings is about 20GB.
 
 ```bash
-python scripts/embeddings/compute_embeddings.py --device "cuda:0" --db_dir "scripts/dataset/data" --db_name="dataset" --output_dir "scripts/embeddings/data/" --max_accumulation 250
+python scripts/embeddings/compute_embeddings.py --device "cuda" --db_dir "scripts/dataset/data" --db_name="dataset" --output_dir "scripts/embeddings/data/" --max_accumulation 250
 ```
 
 Since the computation of the embeddings is heavy and might cause troubles (like out of memory errors), we created a bash script that runs multiple instances of the script:
@@ -103,25 +103,6 @@ The exact configuration we used is in the following bash script:
 
 ```bash
 bash bash_scripts/train_vector_database.sh
-```
-
-### Troubleshooting libmagic dependency
-
-If `refextract` import throws error and can't find libmagic, based on your virtual env, you may also need to run:
-
-For Conda
-```bash
-conda install -c conda-forge libmagic
-```
-
-On MacOS (Brew), Python Virtual Environment
-```bash
-brew install libmagic
-```
-
-On Windows, Python Virtual Environment 
-```bash
-pip install python-magic-bin
 ```
 
 ## ChatBot
@@ -217,4 +198,17 @@ The index we chose is PQ128 because it was a good compromise between accuracy, s
 
 ### Benchmark on MMLU  
 
+The Measuring Massive Multitask Language Understanding (MMLU) is a collection of multiple-choice questions that spans a wide range of topics.
+We hand-picked the subcategories that according to us were part of the STEM domain and obtain a total of about 3000 questions.
 
+We benchmarked the system considering different variations of it. First we compared the performances changing the number of retrieved passages; then we changed the number of examples in the prompt; finally we compared the different inference strategies (naive and REPLUG).
+To assess the performances throughout training steps, we compared the performances of different model checkpoints. 
+
+In general, to run a benchmark execute the following script: 
+
+```bash
+python scripts/benchmark/mmlu.py --split "test" --subset "stem" --output "/path/to/output.json" --k_shot 1 --batch_size 1 --config_path "/path/to/config.yaml" --use_rag True --n_docs_retrieved 3 --log_answers True --inference_type "replug"   
+```
+
+
+Refer to the bash scripts in the folders `bash_scripts/benchmark_original_model` for benchmarks on different variation of the original model and to the `bash_scripts/chkpts_bench` for benchmarks on the training checkpoints.

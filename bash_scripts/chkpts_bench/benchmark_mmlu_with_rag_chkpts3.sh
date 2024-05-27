@@ -12,6 +12,8 @@
 
 #SBATCH --error=err/%x_%j.er
 
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=8G
 
 cd /home/3144366/textbook-savvy-rag
 
@@ -21,8 +23,8 @@ source activate base
 
 conda info --envs
 
-python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 0
-python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 1
-python3 scripts/benchmark/mmlu.py --config_path "configs/llm_vm.yaml" --log_answers True --k_shot 5
+for file in configs/checkpoints/step*.yaml; do
+    python3 scripts/benchmark/mmlu.py --config_path $file --log_answers True --k_shot 0 --use_rag 1 --inference_type "replug" --n_docs_retrieved 5 --n_samples 500
+done
 
 conda deactivate
