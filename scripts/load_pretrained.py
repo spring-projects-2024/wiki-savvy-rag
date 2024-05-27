@@ -1,13 +1,13 @@
+import torch
 import yaml
 import argparse
 from backend.model.rag_handler import RagHandler
-
 
 config_path = "configs/training/final.yaml"
 with open(config_path, "r") as f:
     config = yaml.safe_load(f)
 
-device = config["device"]
+device = "cpu"
 model_name = config["model_name"]
 run_id = config["run_id"]
 use_qlora = config["use_qlora"]
@@ -28,7 +28,7 @@ llm_generation_config = config.get("llm_generation_config", {})
 llm_kwargs = config.get("llm_kwargs", None)
 tokenizer_kwargs = config.get("tokenizer_kwargs", None)
 faiss_kwargs = config.get("faiss_kwargs", None)
-pretrained_model_path = "/home/3144860/wiki/wiki-savvy-rag/checkpoints/final/step100"
+pretrained_model_path = "checkpoints/step100"
 
 rag_handler = RagHandler(
     model_name=model_name,
@@ -40,5 +40,16 @@ rag_handler = RagHandler(
     faiss_kwargs=faiss_kwargs,
     pretrained_model_path=pretrained_model_path,
 )
+
+
+query = {
+    "input_ids": torch.tensor([[329, 3829, 190, 643]]),
+    "attention_mask": torch.tensor([[1, 1, 1, 1]]),
+}
+
+# print logits
+logits = rag_handler.llm.get_logits(query)
+
+print(logits)
 
 print("Loaded!")
