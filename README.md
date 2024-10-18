@@ -2,7 +2,7 @@
 
 Wiki Savvy is a Retrieval Augmented LLM that can discuss any STEM-related topic through a chat interface, retrieving facts from the English Wikipedia and citing its sources. It was developed by Mattia Scardecchia, Dario Filatrella, Federico Zarantonello and Michele Palma as a project for a Natural Language Processing class at Bocconi University, in Spring 2024.
 
-We downloaded, filtered and cleaned the English Wikipedia (~100GB) and built a vector database of semantic embeddings based on all STEM articles, using the FAISS library for efficient retrieval of embeddings and SQLite for accessing text chunks from disk. We used QLoRA for efficient supervised finetuning of the open-source LLM `Qwen/Qwen1.5-0.5B-Chat` on a subset of the Yahoo Answers question answering dataset, retrieving documents with a frozen pre-trained `BAAI/bge-small-en-v1.5` embedder, and tracked progress on the MMLU benchmark.
+We downloaded, filtered and cleaned the English Wikipedia (~100GB) and built a vector database of semantic embeddings based on all STEM articles, using the FAISS library for efficient retrieval of embeddings and SQLite for accessing text chunks from disk. We used QLoRA for efficient supervised finetuning of [this](https://huggingface.co/Qwen/Qwen1.5-0.5B-Chat) open-source LLM on a subset of the Yahoo Answers question answering dataset, retrieving documents with [this](https://huggingface.co/BAAI/bge-small-en-v1.5) frozen pre-trained embedder, and tracking progress on the MMLU benchmark.
 
 Below you can see a simple demonstration of our chatbot through a Streamlit demo we developed. \
 
